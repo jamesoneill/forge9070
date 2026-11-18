@@ -38,8 +38,12 @@ def main() -> None:
             executable: Path = binary, prefix: tuple[str, ...] = ()) -> subprocess.CompletedProcess:
         command = [str(executable), *prefix, *arguments]
         started = time.monotonic()
-        result = subprocess.run(command, input=stdin, capture_output=True, text=True,
-                                encoding="utf-8", timeout=90)
+        # Text-mode stdin translates LF to CRLF on Windows. Send exact UTF-8
+        # bytes so token counts describe the requested prompt on every platform.
+        result = subprocess.run(command, input=None if stdin is None else stdin.encode("utf-8"),
+                                capture_output=True, timeout=90)
+        result.stdout = result.stdout.decode("utf-8")
+        result.stderr = result.stderr.decode("utf-8")
         executions.append({"command": command, "exit_code": result.returncode,
                            "elapsed_seconds": time.monotonic() - started,
                            "stdout": result.stdout, "stderr": result.stderr})
@@ -84,13 +88,13 @@ def main() -> None:
                         generated["decode_steps"] / generated["decode_seconds"], rel_tol=1e-10)
     checks.append("Actual MoE CPU generation produces complete output and distinguishes output tokens from decode steps")
 
-    text = "£ café\n日本語 😀"
     stdin_generation = generation.copy()
     stdin_generation[stdin_generation.index("--prompt") + 1] = "-"
-    unicode_result = document(stdin_generation, stdin=text)
-    assert unicode_result["prompt_tokens"] == len(text.encode("utf-8"))
-    assert unicode_result["text"] == "AAAA"
-    checks.append("Standard-input Unicode prompt uses the complete reversible byte tokenizer")
+    for text in ("£ café\n日本語 😀", "£ café\r\n日本語 😀"):
+        unicode_result = document(stdin_generation, stdin=text)
+        assert unicode_result["prompt_tokens"] == len(text.encode("utf-8"))
+        assert unicode_result["text"] == "AAAA"
+    checks.append("Standard-input Unicode prompts preserve UTF-8 bytes and LF/CRLF line endings")
 
     denied = run([argument for argument in generation if argument != "--cpu"], success=False)
     assert "--cpu" in denied.stderr and "fallback" in denied.stderr.lower()
