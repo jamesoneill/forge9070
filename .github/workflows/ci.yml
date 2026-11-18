@@ -125,14 +125,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes libvulkan1 mesa-vulkan-drivers
           python -c 'import glob, os; paths = glob.glob("/usr/share/vulkan/icd.d/lvp_icd*.json"); assert len(paths) == 1, paths; open(os.environ["GITHUB_ENV"], "a").write("VK_ICD_FILENAMES=" + paths[0] + "\n")'
-      - name: Check Vulkan numerical execution and all-expert retention
+      - name: Check Vulkan kernels and all-expert retention
         if: runner.os == 'Linux'
         env:
           FORGE_VULKAN_TEST: '1'
-        run: |
-          cargo test --locked -p forge-engine --lib software_vulkan -- --ignored --test-threads=1
-          cargo test --locked -p forge9070 --test new_qwen38_parity hybrid_vulkan -- --ignored --test-threads=1
-          python scripts/validate-native-gpu-api.py --binary target/release/forge-engine --output artifacts/ci-vulkan-api.json
+        run: cargo test --locked -p forge-engine --lib software_vulkan -- --ignored --test-threads=1
+      - name: Check Vulkan Qwen numerical parity
+        if: runner.os == 'Linux'
+        env:
+          FORGE_VULKAN_TEST: '1'
+        run: cargo test --locked -p forge9070 --test new_qwen38_parity hybrid_vulkan -- --ignored --test-threads=1
+      - name: Check Vulkan HTTP concurrency correctness
+        if: runner.os == 'Linux'
+        env:
+          FORGE_VULKAN_TEST: '1'
+        # Hosted software Vulkan checks correctness; allow its four simultaneous
+        # requests to finish without treating this as a hardware speed target.
+        run: python scripts/validate-native-gpu-api.py --binary target/release/forge-engine --request-timeout 600 --output artifacts/ci-vulkan-api.json
       - name: Parse Windows launch scripts
         if: runner.os == 'Windows'
         shell: pwsh

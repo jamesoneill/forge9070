@@ -3,17 +3,28 @@
 
 Set FORGE_VULKAN_TEST=1 and select the intended ICD. This is not a speed test.
 """
-import argparse, concurrent.futures, importlib.util, json, os, threading, time
+import argparse, concurrent.futures, hashlib, importlib.util, json, math, os, subprocess, threading, time
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('native_api_helpers',ROOT/'scripts/validate-native-api.py')
 helpers=importlib.util.module_from_spec(spec);spec.loader.exec_module(helpers)
 
+def positive_seconds(value):
+    try:
+        seconds=float(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError('request timeout must be a positive finite number of seconds') from error
+    if not math.isfinite(seconds) or seconds<=0:
+        raise argparse.ArgumentTypeError('request timeout must be a positive finite number of seconds')
+    return seconds
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--request-timeout',type=positive_seconds,default=120.0,metavar='SECONDS',
+                        help='HTTP response deadline for software-Vulkan requests (default: 120 seconds)')
     args=parser.parse_args()
     assert os.environ.get('FORGE_VULKAN_TEST')=='1','Explicit FORGE_VULKAN_TEST=1 is required'
     binary=args.binary.resolve();model=ROOT/'tests/fixtures/tiny-qwen38.gguf'
@@ -25,7 +36,7 @@ def main():
             assert status==200,response
             expected.append((response['choices'][0]['message'],response['usage']['completion_tokens']))
     options=['--backend','vulkan','--allow-software-vulkan','--vram-mib','256']
-    with helpers.server(binary,model,parallel=4,context=64,max_tokens=8,backend=options,request_timeout=120) as (_,request):
+    with helpers.server(binary,model,parallel=4,context=64,max_tokens=8,backend=options,request_timeout=args.request_timeout) as (_,request):
         barrier=threading.Barrier(5)
         def run(body):
             barrier.wait(timeout=10)
@@ -33,7 +44,7 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
             futures=[pool.submit(run,body) for body in bodies]
             barrier.wait(timeout=10)
-            actual=[future.result(timeout=150) for future in futures]
+            actual=[future.result(timeout=args.request_timeout+30) for future in futures]
         for i,(status,response) in enumerate(actual):
             assert status==200,response
             assert (response['choices'][0]['message'],response['usage']['completion_tokens'])==expected[i],(i,response,expected[i])
@@ -43,7 +54,12 @@ def main():
         assert execution['backend']=='vulkan' and memory['cpu_state_operations'] is False,runtime
         assert memory['selected_experts_omitted']==0 and memory['cpu_expert_fallbacks']==0,runtime
         assert memory['completed_tokens']>0 and memory['gpu_expert_executions']>0,runtime
-    report={'status':'passed','version':'0.9.0','cases':4,'elapsed_seconds':time.monotonic()-started,
+    project_version=next(line.split('"')[1] for line in (ROOT/'Cargo.toml').read_text().splitlines() if line.startswith('version = "'))
+    engine_version=subprocess.run([str(binary),'--version'],capture_output=True,text=True,encoding='utf-8',check=True,timeout=10).stdout.strip()
+    report={'status':'passed','version':project_version,'engine_version':engine_version,
+        'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
+        'cases':4,'elapsed_seconds':time.monotonic()-started,
+        'request_timeout_seconds':args.request_timeout,
         'scope':'Four simultaneous Qwen3.8 HTTP requests on independent device states; exact synthetic CPU answer/usage comparison; no hardware speed or trained quality claim',
         'software_vulkan_allowed_for_test':True,'target_amd_hardware_verified':False,
         'checks':['Four actual active requests observed','Each response/usage matches independent CPU execution',
