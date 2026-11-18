@@ -1,0 +1,133 @@
+{
+  "version": "0.9.1",
+  "independent_engine_version": "0.2.1",
+  "checked_at_utc": "2026-11-17T20:46:26.537361+00:00",
+  "status": "build_native_unit_api_and_configuration_gates_passed_browser_and_target_hardware_acceptance_pending",
+  "release_scope": {
+    "architectures": [
+      "qwen3",
+      "qwen3moe",
+      "qwen4exp"
+    ],
+    "backends": [
+      "cpu",
+      "vulkan",
+      "hybrid"
+    ],
+    "concurrency": {
+      "active_maximum": 4,
+      "bounded_fifo_queue": true,
+      "continuous_batching": false,
+      "default_active": 1
+    },
+    "configuration_ui": true,
+    "engine": "forge-native",
+    "fallback": "no_implicit_backend_or_external_runtime_fallback",
+    "gguf_shards": true,
+    "gpu_performance_verified": false,
+    "hardware_performance_claim": "none",
+    "http_architecture_policy": "validated_moe_only",
+    "http_server": true,
+    "independent_runtime": true,
+    "model_discovery": "bounded_read_only_complete_gguf_moe_scan",
+    "moe_loading": {
+      "bounded_gpu_expert_cache_for_qwen4exp": true,
+      "direct_io_with_reported_buffered_fallback": true,
+      "lazy_ple_rows": true,
+      "owned_bounded_host_cache": true,
+      "prefill_protects_decode_cache": true,
+      "selected_experts_omitted": 0,
+      "transfer_compute_overlap": false
+    },
+    "qwen3_8": true,
+    "qwen_vulkan_budget_policy": "retain_every_selected_expert; explicit_counted_CPU_expert_execution_if_device_working_set_cannot_fit",
+    "requires_explicit_backend": true,
+    "rusting_strata_dependency": false,
+    "settings_persistence": "explicit_json_file",
+    "stage": "native_gpu_and_coding_api_target_hardware_acceptance_pending",
+    "startup_without_model": true,
+    "state": "immutable_mapped_model_and_independent_sequences",
+    "tool_calling_api": true,
+    "version": "0.2.1",
+    "vulkan": true,
+    "weight_formats": [
+      "F32",
+      "F16",
+      "BF16",
+      "Q4_0",
+      "Q8_0",
+      "Q2_0",
+      "Q4_K",
+      "Q5_K",
+      "Q6_K",
+      "IQ2_S",
+      "IQ3_XXS",
+      "IQ3_S",
+      "IQ4_NL",
+      "IQ4_XS"
+    ]
+  },
+  "release_build": {
+    "passed": true,
+    "elapsed_seconds": 62.603575280998484,
+    "platform": "Linux x86_64",
+    "record": "build-release-0.9.1.json"
+  },
+  "native_units": {
+    "passed": 75,
+    "failed": 0,
+    "ignored": 4,
+    "record": "native-core-tests-0.9.1.json"
+  },
+  "native_cli": {
+    "passed": 16,
+    "skipped": 0,
+    "record": "forge-engine-cli-0.9.1.json"
+  },
+  "native_http": {
+    "passed": 28,
+    "record": "native-api-0.9.1.json"
+  },
+  "native_configuration_api": {
+    "passed": 50,
+    "skipped_browser_group": 1,
+    "record": "native-ui-0.9.1.json"
+  },
+  "launcher_checks": {
+    "passed": 6,
+    "windows_conversion_stub": true,
+    "powershell_execution": false,
+    "record": "native-ui-launchers-0.9.1.json"
+  },
+  "source_checks": {
+    "passed": 9,
+    "record": "native-ui-source-checks-0.9.1.json"
+  },
+  "browser": {
+    "rendering_verified": false,
+    "interactions_verified": false,
+    "screenshots": false,
+    "automated_attempt": "Chromium required socket operation denied before page launch",
+    "separate_interface": "Local service connection refused",
+    "records": [
+      "native-ui-browser-attempt-0.9.1.json",
+      "native-ui-browser-preview-0.9.1.json"
+    ]
+  },
+  "inherited_numerical_evidence": {
+    "version": "0.9.0",
+    "record": "v0.9.0/validation.json",
+    "rerun_for_ui_release": false,
+    "model_arithmetic_and_gpu_kernels_changed": false
+  },
+  "hardware": {
+    "rx9070xt_inference_tested": false,
+    "windows_build_tested": false,
+    "native_wsl_vulkan_tested": false,
+    "full_pretrained_qwen38_inference_tested": false,
+    "pretrained_quality_tested": false,
+    "external_coding_client_tested": false,
+    "real_model_tokens_per_second_claimed": false
+  },
+  "package_contains_pretrained_weights": false
+}

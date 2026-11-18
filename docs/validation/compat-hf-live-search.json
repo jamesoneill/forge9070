@@ -1,0 +1,74 @@
+{
+  "command": [
+    "./target/debug/forge9070",
+    "models",
+    "search",
+    "Qwen3-30B-A3B-abliterated",
+    "--limit",
+    "1",
+    "--json"
+  ],
+  "version": "forge9070 0.4.0",
+  "source_state": "final v0.4 debug build after compression reporting and fidelity changes",
+  "complete_checkpoint_downloaded": false,
+  "inference_performed": false,
+  "elapsed_seconds": 18.3,
+  "exit_code": 0,
+  "results": [
+    {
+      "id": "mradermacher/Huihui-Qwen3-30B-A3B-Instruct-2507-abliterated-GGUF",
+      "downloads": 268538,
+      "likes": 43,
+      "gated": false,
+      "private": false,
+      "tags": [
+        "transformers",
+        "gguf",
+        "abliterated",
+        "uncensored",
+        "en",
+        "base_model:huihui-ai/Huihui-Qwen3-30B-A3B-Instruct-2507-abliterated",
+        "base_model:quantized:huihui-ai/Huihui-Qwen3-30B-A3B-Instruct-2507-abliterated",
+        "license:apache-2.0",
+        "endpoints_compatible",
+        "region:us",
+        "conversational"
+      ],
+      "verified_file": "Huihui-Qwen3-30B-A3B-Instruct-2507-abliterated.Q4_K_M.gguf",
+      "compatibility": {
+        "policy": "sparse_moe_only",
+        "architecture": "qwen3moe",
+        "layers": 48,
+        "experts_per_layer": 128,
+        "active_experts_per_token": 8,
+        "shards": 1,
+        "tensors": 579,
+        "tensor_weight_bytes": 18550716416,
+        "quantization_histogram": {
+          "F32": 241,
+          "Q4_K": 289,
+          "Q6_K": 49
+        },
+        "compression": {
+          "tensor_elements": 30532122624,
+          "sub4bit_tensors": 0,
+          "sub4bit_elements": 0,
+          "sub4bit_formats": [],
+          "routed_expert_tensors": 144,
+          "routed_expert_elements": 28991029248,
+          "sub4bit_routed_expert_tensors": 0,
+          "sub4bit_routed_expert_elements": 0,
+          "unknown_type_tensors": 0
+        },
+        "supported_metadata": true,
+        "issues": [],
+        "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation."
+      }
+    }
+  ],
+  "status": "passed",
+  "source_sha256": {
+    "vendor/rusting-strata/src/hf.rs": "f4e16e2fca63cc491bf57242a44f3693b140c137a2bdeacadf5f80ffd379c352",
+    "vendor/rusting-strata/src/compatibility.rs": "98271fee98b3ac0fd829933e5c4030a96ae2bed3d8775ab9845d23c49e2b47e3"
+  }
+}

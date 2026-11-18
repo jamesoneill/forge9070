@@ -1,0 +1,50 @@
+{
+  "checked_at_utc": "2026-11-17T20:45:20.005168+00:00",
+  "passed": 9,
+  "records": [
+    {
+      "name": "html-ids-unique",
+      "passed": true
+    },
+    {
+      "name": "direct-js-element-ids-exist",
+      "passed": true
+    },
+    {
+      "name": "assets-comply-with-no-inline-script-style-policy",
+      "passed": true
+    },
+    {
+      "name": "javascript-syntax",
+      "passed": true
+    },
+    {
+      "name": "scripts/validate-native-ui.py-syntax",
+      "passed": true
+    },
+    {
+      "name": "scripts/validate-native-api.py-syntax",
+      "passed": true
+    },
+    {
+      "name": "index.html-exact-current-source-embedded-in-release",
+      "passed": true
+    },
+    {
+      "name": "style.css-exact-current-source-embedded-in-release",
+      "passed": true
+    },
+    {
+      "name": "app.js-exact-current-source-embedded-in-release",
+      "passed": true
+    }
+  ],
+  "browser_execution": false,
+  "source_sha256": {
+    "crates/forge-engine/src/ui/index.html": "ef804b98ef6fb5c8faeb77bca2e6e1d04d1af0125e688983e39549d03b9d7ce0",
+    "crates/forge-engine/src/ui/style.css": "cb7d0c86f0e35243610cb434a312d385ae792ac21aef323cccb2cace5d42798e",
+    "crates/forge-engine/src/ui/app.js": "03c489725ea57eb500696b033c9e32a485c83f99d412e58be618053f97120500",
+    "scripts/validate-native-ui.py": "aee82135bef4e57294941635c0aeb077aab641751a34a6f90ab82fab64b65881",
+    "scripts/validate-native-api.py": "eb3461974c396ffa551bf89ffe0286378a26d06ae78c842a8e77981f1d171627"
+  }
+}

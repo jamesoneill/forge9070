@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a focused improvement with a concrete use case.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow
+      description: What are you trying to accomplish, and where does the current behavior fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user-visible result and whether it targets the native or compatibility engine.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and constraints
+      description: Note existing workarounds and relevant memory, model, client or platform constraints.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or acceptance criteria
+      description: How could we verify the improvement? Link primary technical sources where useful; do not assume another engine's benchmark is a Forge result.

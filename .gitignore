@@ -1,0 +1,52 @@
+/target/
+/artifacts/
+/dist/
+*.gguf
+!tests/fixtures/*.gguf
+*.log
+__pycache__/
+
+# Machine-local settings, credentials and model downloads.
+.env
+.env.*
+!.env.example
+forge-service.json
+native-service.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.part
+/models/
+/downloads/
+
+# Editor and operating-system files.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Optional upstream captures contain environment-specific paths and generated
+# transcripts. Keep the source generators and required numerical/template
+# fixtures; do not republish captured upstream runs with this distribution.
+/vendor/rusting-strata/docs/V100-results.md
+/vendor/rusting-strata/docs/parity/cross-backend.json
+/vendor/rusting-strata/tools/deepseek_ref/ref_1.json
+/vendor/rusting-strata/tools/deepseek_ref/ref_2.json
+/vendor/rusting-strata/tools/deepseek_ref/ref_3.json
+/vendor/rusting-strata/tools/deepseek_ref/ref_long.json
+/vendor/rusting-strata/tools/deepseek_ref/gguf_meta.txt
+/vendor/rusting-strata/tools/deepseek_ref/gguf_tensors.txt
+/vendor/rusting-strata/tools/deepseek_ref/long_prompt.txt
+/vendor/rusting-strata/tools/glm_ref/p1_llama.json
+/vendor/rusting-strata/tools/glm_ref/p2_llama.json
+/vendor/rusting-strata/tools/glm_ref/p3_llama.json
+/vendor/rusting-strata/tools/glm_ref/server_llama.err
+/vendor/rusting-strata/tools/glm_ref/server_llama2.err
+/vendor/rusting-strata/tools/glm_ref/p1_req.json
+/vendor/rusting-strata/tools/glm_ref/p2_req.json
+/vendor/rusting-strata/tools/glm_ref/p3_req.json
+/vendor/rusting-strata/tools/glm_ref/strs.jsonl
+/vendor/rusting-strata/tools/prompts.json
+/vendor/rusting-strata/docs/parity/cuda-sm70.json
+/vendor/rusting-strata/docs/parity/vk-sm70.json

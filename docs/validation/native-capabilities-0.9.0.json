@@ -1,0 +1,60 @@
+{
+  "architectures": [
+    "qwen3",
+    "qwen3moe",
+    "qwen4exp"
+  ],
+  "backends": [
+    "cpu",
+    "vulkan",
+    "hybrid"
+  ],
+  "concurrency": {
+    "active_maximum": 4,
+    "bounded_fifo_queue": true,
+    "continuous_batching": false,
+    "default_active": 1
+  },
+  "engine": "forge-native",
+  "fallback": "no_implicit_backend_or_external_runtime_fallback",
+  "gguf_shards": true,
+  "gpu_performance_verified": false,
+  "hardware_performance_claim": "none",
+  "http_architecture_policy": "validated_moe_only",
+  "http_server": true,
+  "independent_runtime": true,
+  "moe_loading": {
+    "bounded_gpu_expert_cache_for_qwen4exp": true,
+    "direct_io_with_reported_buffered_fallback": true,
+    "lazy_ple_rows": true,
+    "owned_bounded_host_cache": true,
+    "prefill_protects_decode_cache": true,
+    "selected_experts_omitted": 0,
+    "transfer_compute_overlap": false
+  },
+  "qwen3_8": true,
+  "qwen_vulkan_budget_policy": "retain_every_selected_expert; explicit_counted_CPU_expert_execution_if_device_working_set_cannot_fit",
+  "requires_explicit_backend": true,
+  "rusting_strata_dependency": false,
+  "stage": "native_gpu_and_coding_api_target_hardware_acceptance_pending",
+  "state": "immutable_mapped_model_and_independent_sequences",
+  "tool_calling_api": true,
+  "version": "0.2.0",
+  "vulkan": true,
+  "weight_formats": [
+    "F32",
+    "F16",
+    "BF16",
+    "Q4_0",
+    "Q8_0",
+    "Q2_0",
+    "Q4_K",
+    "Q5_K",
+    "Q6_K",
+    "IQ2_S",
+    "IQ3_XXS",
+    "IQ3_S",
+    "IQ4_NL",
+    "IQ4_XS"
+  ]
+}

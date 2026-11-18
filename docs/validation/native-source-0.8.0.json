@@ -1,0 +1,17 @@
+{
+  "Cargo.toml": "11349823f81d47c97ebed002d98987cd8133f5c68a83eee20793a5b489f4ee30",
+  "Cargo.lock": "177b7c3bced852471119b1397fd1af66efbee446e4fbb7fdee878cf50df9b297",
+  "src/main.rs": "13196db1173eb30e2b509843d33a00ee232c634e58fb595fa04557a62327c440",
+  "crates/forge-engine/Cargo.toml": "55f3238755a3682f754c4d8f668f513d1e9b4965d891993259af832234094b64",
+  "crates/forge-engine/src/cli.rs": "8e074beb576085b49665688893d6df29ae4d84c4cb1d05f6bed0ace8ca5ef3f9",
+  "crates/forge-engine/src/gguf.rs": "f79f31fcb85d481b492f064bfefa64d72677eb25363707571493d4efe703b697",
+  "crates/forge-engine/src/lib.rs": "1d425f243905ac042be792d3403ad40599af1f176814d14e134d177833c7cecb",
+  "crates/forge-engine/src/main.rs": "6b0cec4a6280a8652153c6515805c0f0bddbeb64171a085cc697b3e0197a94f5",
+  "crates/forge-engine/src/math.rs": "a4466ecaab952f61a22e910f1524d2ef0584f0d22d83ba4ca7df656bfa01b06b",
+  "crates/forge-engine/src/model.rs": "198961668b471e4fb8495cefbfa387c6c2337b7b814ab7f7404a7546bf129bf5",
+  "crates/forge-engine/src/performance.rs": "6ccf22f7c339aec85a5ab3731931544b4abe3fc9311167a3ab9e95918d6ec635",
+  "crates/forge-engine/src/quant.rs": "477c852eb696e4bfb80ac79935577f37e90f42bd7d353e82a0fd56624b700fdd",
+  "crates/forge-engine/src/tokenizer.rs": "c1b355297233fbad94639b3f2038020fc5827c1a3b8cf762890fc941c4b1bed3",
+  "tests/new_engine_parity.rs": "3f83d2b105001b6434c0942b89f4f294eee850a44ec0a4e01e57bae3c71b93c6",
+  "scripts/validate-forge-engine.py": "568bf6264ef0857ebb6098d31a561d09766f79903f56e7d3870d7e4d4e558660"
+}

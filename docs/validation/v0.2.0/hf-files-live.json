@@ -1,0 +1,75 @@
+{
+  "repo": "DevQuasar/huihui-ai.Qwen3-8B-abliterated-GGUF",
+  "revision": "main",
+  "commit": "8585a13b1f8798bffa863c2db012f48dd6be7b3b",
+  "models": [
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q2_K.gguf",
+      "size": 3281728768,
+      "shards": 1,
+      "sha256": "e2c01eff34523c23284ca4f585bf53a3161b4d150c6bed0d71290126ae5e3396"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q3_K_L.gguf",
+      "size": 4431389952,
+      "shards": 1,
+      "sha256": "ab0c6c3f3de2528129a50ce2806f1ee37f804f0ebf0f713cd0a40af27f0cc7fe"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q3_K_M.gguf",
+      "size": 4124157184,
+      "shards": 1,
+      "sha256": "57c2fa8a8e58edc39d9f462bb061a5c2d0ba38d70b02bc20a5d2d6a16e00180a"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q3_K_S.gguf",
+      "size": 3769607424,
+      "shards": 1,
+      "sha256": "a38cb991c729875c052184fe9093e220820fc5e848dac2de2c80de1de4caf157"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q4_K_M.gguf",
+      "size": 5027779840,
+      "shards": 1,
+      "sha256": "a3fdc3e75409a282c12b54818cdad7cf2d36075e6c0a2a2d7e4b0307c88224dc"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q4_K_S.gguf",
+      "size": 4802008320,
+      "shards": 1,
+      "sha256": "4bda86833e6024dae0adcac7050b016b07c7075c48e57495225d1d1c9ce6b98d"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q5_K_M.gguf",
+      "size": 5851108608,
+      "shards": 1,
+      "sha256": "3b080ad9206755dc6505ac599a08a3679bfb0db4da674a562d2e8e5efead648b"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q5_K_S.gguf",
+      "size": 5720757504,
+      "shards": 1,
+      "sha256": "0ccb5191dadbf5c56068457f1990e47efbac7bfb0b3187f330fb829be19711a1"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q6_K.gguf",
+      "size": 6725895424,
+      "shards": 1,
+      "sha256": "378ac4374245702649a732640c8290b94887a7145242a1f0705fb6a0d1d491dd"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.Q8_0.gguf",
+      "size": 8709514496,
+      "shards": 1,
+      "sha256": "e687405f1a00d66c3679a71c28f34e08dd8f4b94a98a0a6c29624905d3b4e5e2"
+    },
+    {
+      "file": "huihui-ai.Qwen3-8B-abliterated.f16.gguf",
+      "size": 16388039936,
+      "shards": 1,
+      "sha256": "21ae212c56a79c2157689c46859304c9e8e192a981887666de507f82d0f1677a"
+    }
+  ],
+  "license": null,
+  "gated": false
+}

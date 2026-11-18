@@ -1,0 +1,23 @@
+[
+  {
+    "profile": "debug",
+    "command": [
+      "<build-home>/.cargo/bin/cargo",
+      "build",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 45.33
+  },
+  {
+    "profile": "release",
+    "command": [
+      "<build-home>/.cargo/bin/cargo",
+      "build",
+      "--locked",
+      "--release"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 166.96
+  }
+]

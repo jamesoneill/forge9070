@@ -1,0 +1,20 @@
+{
+  "checked_at_utc": "2026-11-17T20:37:25.711165+00:00",
+  "scope": "Launcher argument handling and Python/Bash syntax checks on Linux. Windows-path conversion was a stub; PowerShell and Windows execution were not tested.",
+  "passed": 6,
+  "checks": [
+    "Python harness syntax compiled",
+    "Bash launcher syntax parsed",
+    "Native arguments preserved spaces and literal shell metacharacters",
+    "Invalid port rejected",
+    "Windows path conversions passed as separate literal arguments (stub only)",
+    "WSL UNC executable rejected (stub only)"
+  ],
+  "source_sha256": {
+    "scripts/configure-native-windows.ps1": "bcb57a4fa309698ece3413947d62c9d844bee5373a0216b21c684aa170901b92",
+    "scripts/configure-native-wsl.sh": "2f6ed684882869da7a4078818f62c2ec7ed4851eececa3a87e03f1d6486ce8a3",
+    "scripts/validate-native-ui.py": "aee82135bef4e57294941635c0aeb077aab641751a34a6f90ab82fab64b65881"
+  },
+  "windows_execution": false,
+  "powershell_execution": false
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "scripts/validate-code-context.py",
+    "--exe",
+    "target/release/forge9070",
+    "--output",
+    "artifacts/code-context-integration-0.7.0.json"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.5697021484375,
+  "stdout": "{\"passed\": 34, \"records\": 34, \"output\": \"artifacts/code-context-integration-0.7.0.json\"}\n",
+  "stderr": ""
+}

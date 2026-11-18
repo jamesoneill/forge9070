@@ -1,0 +1,77 @@
+{
+  "checked_at_utc": "2026-11-16T23:02:18Z",
+  "version": "0.4.1",
+  "source_stage": "Final metadata-only first-shard fix",
+  "command": [
+    "./target/debug/forge9070",
+    "models",
+    "files",
+    "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+    "--revision",
+    "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+    "--file",
+    "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+    "--json"
+  ],
+  "elapsed_seconds": 46.73,
+  "exit_code": 0,
+  "report": {
+    "repo": "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+    "revision": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+    "commit": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+    "models": [
+      {
+        "file": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+        "size": 93672359738,
+        "shards": 4,
+        "sha256": "93ff23a08e5cd7501f24fa16f5b415d5807d0175e04edd3ed6a7a41b601a4eef",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen4exp",
+          "layers": 48,
+          "experts_per_layer": 512,
+          "active_experts_per_token": 10,
+          "shards": 4,
+          "tensors": 1224,
+          "tensor_weight_bytes": 93661335040,
+          "quantization_histogram": {
+            "BF16": 24,
+            "F32": 557,
+            "IQ2_S": 6,
+            "IQ3_XXS": 56,
+            "IQ4_NL": 14,
+            "IQ4_XS": 35,
+            "Q2_0": 2,
+            "Q5_0": 33,
+            "Q6_K": 213,
+            "Q8_0": 284
+          },
+          "compression": {
+            "tensor_elements": 176943899520,
+            "sub4bit_tensors": 64,
+            "sub4bit_elements": 53687091200,
+            "sub4bit_formats": [
+              "IQ2_S",
+              "IQ3_XXS",
+              "Q2_0"
+            ],
+            "routed_expert_tensors": 144,
+            "routed_expert_elements": 120795955200,
+            "sub4bit_routed_expert_tensors": 64,
+            "sub4bit_routed_expert_elements": 53687091200,
+            "unknown_type_tensors": 0
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation."
+        }
+      }
+    ],
+    "license": "other",
+    "gated": false,
+    "policy": "sparse_moe_only",
+    "excluded": []
+  },
+  "stderr": "",
+  "scope": "Bounded remote GGUF metadata only; no full model download or inference."
+}

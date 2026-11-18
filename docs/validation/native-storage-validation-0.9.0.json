@@ -1,0 +1,185 @@
+{
+  "version": "0.9.0",
+  "recorded_at_utc": "2026-11-17T19:52:57.747181+00:00",
+  "status": "recorded_focused_gates_passed",
+  "evidence_kind": "previously_executed_command_receipts",
+  "receipt_method": "Commands, exit status and counts transcribed from completed tool execution outputs observed in this agent task. This JSON was prepared without rerunning the tests.",
+  "full_stdout_archived": false,
+  "rerun_during_report_creation": false,
+  "working_directory": "forge9070",
+  "execution_environment": "Linux x86_64; Rust Cargo executable <build-home>/.cargo/bin/cargo",
+  "source_state_scope": "Each receipt covers the working tree at its own execution time. Later concurrent edits are outside that receipt; the final aggregate validation is separate.",
+  "total_tests_passed": 37,
+  "total_tests_failed": 0,
+  "checks": [
+    {
+      "name": "storage_cache_and_offset_io",
+      "command": "<build-home>/.cargo/bin/cargo test -p forge-engine --lib gguf:: --locked --offline",
+      "passed": 17,
+      "failed": 0,
+      "exit_code": 0,
+      "scope": [
+        "Complete GGUF shards, metadata-only first shard and opening from a later shard",
+        "Malformed counts, offsets, overlaps, metadata and shard sets",
+        "Owned cache hard capacity, immutable lease identity, LRU and concurrent misses",
+        "Prefill hit-only policy and bounded complete-triplet warmup without PLE reads",
+        "Warmup failure atomicity and direct/buffered positional-read fallback"
+      ],
+      "receipt_note": "Completed successful gate recorded in this agent execution transcript before later aggregate tests."
+    },
+    {
+      "name": "all_supported_quantization_reference_parity",
+      "command": "<build-home>/.cargo/bin/cargo test -p forge9070 --test new_quant_parity --locked --offline",
+      "passed": 3,
+      "failed": 0,
+      "exit_code": 0,
+      "scope": [
+        "All 14 native GGML formats: exact decoded-value comparison across 32 deterministic packed-pattern seeds",
+        "Scalar and selected SIMD dot products against the reference across eight seeds with unaligned storage",
+        "Malformed geometry and nonfinite scale rejection"
+      ],
+      "test_names": [
+        "every_supported_format_matches_reference_values_across_mixed_bit_patterns",
+        "quantized_direct_and_vector_dots_match_reference_without_row_allocations",
+        "extended_storage_rejects_invalid_geometry_and_nonfinite_scales"
+      ],
+      "receipt_note": "The compatibility engine is an integration-test oracle only; it is not a dependency of native inference."
+    },
+    {
+      "name": "host_memory_accounting",
+      "command": "<build-home>/.cargo/bin/cargo test -p forge-engine --lib memory::tests --locked --offline",
+      "passed": 7,
+      "failed": 0,
+      "exit_code": 0,
+      "scope": [
+        "Actual Qwen3.8 PLE shape/type and exact lazy-versus-dense classification",
+        "Actual 48-layer geometry with 12 attention/indexer and 36 recurrent layers",
+        "One/four host-state slot reserves and resident-GPU host allowance",
+        "Automatic/explicit cache budgets, requested ceiling clamping and exhausted headroom",
+        "Checked metadata arithmetic, overflow, malformed recurrent metadata and context/slot bounds"
+      ],
+      "test_names": [
+        "actual_qwen38_ple_table_is_lazy_but_projections_are_dense",
+        "qwen38_attention_indexer_and_recurrent_reserves_scale_with_slots",
+        "automatic_and_explicit_cache_respect_the_same_headroom",
+        "explicit_ceiling_is_clamped_before_checking_available_ram",
+        "no_cache_headroom_disables_cache_but_does_not_waive_state_reserves",
+        "metadata_and_budget_overflow_return_errors_without_panicking",
+        "recurrent_metadata_cannot_silently_become_zero_and_shapes_are_checked"
+      ],
+      "receipt_note": "Final successful focused run followed correction of an unrelated concurrently edited protocol-test compilation error."
+    },
+    {
+      "name": "protocol_literal_markup_and_reasoning",
+      "command": "<build-home>/.cargo/bin/cargo test -p forge-engine --lib protocol::tests --locked --offline",
+      "passed": 10,
+      "failed": 0,
+      "exit_code": 0,
+      "scope": [
+        "JSON/XML function-call parsing and identity validation",
+        "Disabled tools preserve literal tool markup",
+        "Backtick/tilde fences and inline code preserve examples with active tools",
+        "Default thinking does not hide plain output; actual reasoning prefixes remain supported",
+        "Generation annotations, request validation and deterministic sampler finite-value gate"
+      ],
+      "test_names": [
+        "actual_reasoning_prefix_controls_reasoning_extraction",
+        "literal_tool_markup_without_enabled_tools",
+        "markdown_examples_preserve_literals_before_real_tool_calls",
+        "default_thinking_does_not_hide_plain_or_literal_code_answers",
+        "native_tool_json_xml_and_reasoning",
+        "real_tool_call_does_not_change_later_markdown_state",
+        "sampler_stable_seed_and_finite_gate",
+        "request_validation_and_tool_identity",
+        "markdown_fences_only_close_with_matching_delimiters",
+        "generation_annotation_keeps_whitespace_control"
+      ],
+      "receipt_note": "This ten-test run predates the subsequently added official-template and tojson parity cases; those require their separate/final gate."
+    }
+  ],
+  "checkpoint_header_evidence": {
+    "artifact": "artifacts/qwen38-header-checks/ista-gsq-rco-iq3-s-v050.json",
+    "artifact_sha256": "ca2d21bb89ac70904c780b17e9c77adff678adaee400a6be0cc702a48ea8d4a3",
+    "checked_at_utc": "2026-11-16T23:37:10.427770+00:00",
+    "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "resolved_commit": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "selected_file": "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "architecture": "qwen4exp",
+    "shards": 2,
+    "tensor_count": 1224,
+    "layers": 48,
+    "experts_per_layer": 512,
+    "active_experts_per_token_per_layer": 10,
+    "tensor_payload_bytes": 83606638080,
+    "reported_shard_file_bytes": 83617662656,
+    "weight_memory_bytes": {
+      "routed_expert_bytes": 50292326400,
+      "lazy_embedding_bytes": 28800138240,
+      "other_weight_bytes": 4514173440
+    },
+    "tensor_counts": {
+      "routed_experts": 144,
+      "lazy_embedding": 1,
+      "other_weights": 1079
+    },
+    "lazy_embedding": {
+      "name": "per_layer_token_embd.weight",
+      "dimensions": [
+        160,
+        320001536
+      ],
+      "quantization": "IQ4_NL",
+      "payload_bytes": 28800138240
+    },
+    "quantization_histogram": {
+      "BF16": 484,
+      "F16": 1,
+      "F32": 292,
+      "IQ2_S": 40,
+      "IQ3_S": 20,
+      "IQ3_XXS": 34,
+      "IQ4_NL": 87,
+      "IQ4_XS": 45,
+      "Q2_0": 9,
+      "Q4_K": 47,
+      "Q5_K": 35,
+      "Q6_K": 129,
+      "Q8_0": 1
+    },
+    "count_basis": "Retained bounded header report, with the single lazy PLE tensor name/shape/type confirmed against the bounded descriptor extraction; other tensor count is total minus routed minus lazy.",
+    "full_weights_downloaded": false,
+    "full_checkpoint_inference_executed": false
+  },
+  "native_quantization_formats": [
+    "F32",
+    "F16",
+    "BF16",
+    "Q4_0",
+    "Q8_0",
+    "Q2_0",
+    "Q4_K",
+    "Q5_K",
+    "Q6_K",
+    "IQ2_S",
+    "IQ3_XXS",
+    "IQ3_S",
+    "IQ4_NL",
+    "IQ4_XS"
+  ],
+  "actual_geometry_host_state_reserve_bytes": {
+    "context_4096_slots_1": 890109952,
+    "context_32768_slots_1": 4149084160,
+    "context_32768_slots_4": 16596336640
+  },
+  "limitations": {
+    "model_weights_included": false,
+    "full_pretrained_model_inference_tested": false,
+    "answer_quality_evaluated": false,
+    "gpu_execution_in_these_four_gates": false,
+    "rx9070xt_throughput_measured": false,
+    "windows_direct_io_executed": false,
+    "gpu_shader_and_model_validation": "Owned by separate Vulkan/Qwen gates; not represented by these four command receipts.",
+    "memory_plan": "Estimate of available headroom and payload/state allowances; not an OS memory reservation or performance guarantee."
+  }
+}

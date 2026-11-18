@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible application or model-loading failure.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include a minimal reproduction. Redact keys, tokens, personal paths and private prompts.
+        For vulnerabilities, use the security policy instead of this public form.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include the executable name and its --version output, or the source commit.
+      placeholder: forge-engine 0.2.1 / Forge9070 0.9.1
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Entry point
+      options:
+        - forge-engine or forge9070 engine (native)
+        - forge9070 serve or other compatibility command
+        - Build or launcher
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Windows/native Linux/WSL route, Rust version, GPU and driver; include the backend selected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps and command to reproduce
+      description: Include relevant arguments with credentials removed. Prefer a bundled fixture when it reproduces the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: model
+    attributes:
+      label: Model details, if relevant
+      description: Publisher/repository, revision, quantization, shard count and configured context. Do not upload model weights.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted error or diagnostic output
+      description: Paste the relevant output only. A doctor report is discovery evidence, not proof of GPU inference.
+      render: text

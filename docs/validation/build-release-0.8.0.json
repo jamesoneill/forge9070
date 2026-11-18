@@ -1,0 +1,18 @@
+{
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "forge9070",
+    "-p",
+    "forge-engine",
+    "--bins"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 53.043243657004496,
+  "stdout": "",
+  "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   <workspace>/<project>/vendor/rusting-strata/Cargo.toml\nworkspace: <workspace>/<project>/Cargo.toml\n   Compiling forge-engine v0.1.0 (<workspace>/<project>/crates/forge-engine)\n   Compiling forge9070 v0.8.0 (<workspace>/<project>)\n    Finished `release` profile [optimized] target(s) in 52.99s\n"
+}

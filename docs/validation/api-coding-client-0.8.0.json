@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "tests/api-coding-client.py",
+    "--binary",
+    "target/release/forge9070"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 4.38499107700045,
+  "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"Authenticated GET /v1/models exposes the actual model ID\",\n    \"Developer instructions and max_completion_tokens reach nonstreaming generation\",\n    \"SSE has stable IDs, truthful model, finish reason and include_usage=False\",\n    \"SSE has stable IDs, truthful model, finish reason and include_usage=True\",\n    \"Stop sequences end generation with stop instead of length\",\n    \"Explicit model mismatch does not silently use another checkpoint\",\n    \"Unavailable image preparation returns JSON400 before SSE, stream=False\",\n    \"Unavailable image preparation returns JSON400 before SSE, stream=True\",\n    \"Messages token counting reports image preparation errors as JSON400\",\n    \"Preparation failures release execution capacity and leave no queued request\",\n    \"HTTP 400 explicitly rejects unsupported/invalid max_tokens\",\n    \"HTTP 400 explicitly rejects unsupported/invalid tool_choice\",\n    \"HTTP 400 explicitly rejects unsupported/invalid tool_choice\",\n    \"HTTP 400 explicitly rejects unsupported/invalid parallel_tool_calls\",\n    \"HTTP 400 explicitly rejects unsupported/invalid response_format\",\n    \"HTTP 400 explicitly rejects unsupported/invalid logprobs\",\n    \"HTTP 400 explicitly rejects unsupported/invalid reasoning_effort\",\n    \"HTTP 400 explicitly rejects unsupported/invalid stream\",\n    \"HTTP 400 explicitly rejects unsupported/invalid stream_options\",\n    \"HTTP 400 explicitly rejects unsupported/invalid tools\",\n    \"HTTP 400 explicitly rejects unsupported/invalid messages\",\n    \"HTTP 400 explicitly rejects unsupported/invalid messages\",\n    \"A generated fixture function call returns a call ID, JSON arguments and tool_calls finish reason\",\n    \"Assistant tool_calls and matching tool results survive a second API turn\",\n    \"SSE tool-call deltas include function, arguments, index, ID, finish reason and final usage\"\n  ],\n  \"backend_tested\": \"cpu\",\n  \"fixture\": \"temporary synthetic GGUFs; one emits a forced function-call token\",\n  \"real_model_tool_selection_tested\": false,\n  \"qwen38_gpu_correctness_tested\": false,\n  \"actual_external_coding_client_tested\": false\n}\n",
+  "stderr": ""
+}

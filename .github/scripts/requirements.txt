@@ -1,0 +1,3 @@
+# Development-only browser harness; the application embeds its UI and has no
+# Python, Playwright or Chromium runtime dependency.
+playwright==1.65.2

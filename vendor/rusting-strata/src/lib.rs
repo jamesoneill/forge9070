@@ -1,0 +1,33 @@
+// Keep the original CLI's crate-qualified imports valid when embedded here.
+extern crate self as rusting_strata;
+
+pub mod cli;
+pub mod admission;
+pub mod serving_policy;
+pub mod memory;
+pub mod config;
+pub mod gguf;
+pub mod cache_identity;
+pub mod quant;
+pub mod weights;
+pub mod ops;
+pub mod tokenizer;
+pub mod model;
+pub mod backend;
+pub mod cuda;
+pub mod vulkan;
+pub mod gpu_model;
+pub mod cpu_moe;
+pub mod expert_cache;
+pub mod expert_ram;
+pub mod expert_tail;
+pub mod cpu_worker;
+pub mod serve;
+pub mod chat;
+pub mod vision;
+pub mod hf;
+pub mod deepseek;
+pub mod gemma4;
+pub mod glm;
+pub mod ngram;
+pub mod compatibility;

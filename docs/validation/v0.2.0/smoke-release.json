@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": [
+    "CPU generation executes real model and emits AAAA",
+    "HTTP health waits until real model is loaded",
+    "Configured API key is enforced",
+    "OpenAI model listing returns loaded model",
+    "OpenAI chat returns exact text, token count and finish reason",
+    "OpenAI SSE stream returns exact text and DONE marker",
+    "Server clamps a 32-token request to configured 16-token cap",
+    "Malformed chat request returns HTTP 400"
+  ],
+  "fixture": "tests/fixtures/tiny-qwen3.gguf",
+  "backend_tested": "cpu",
+  "rx9070xt_gpu_tested": false,
+  "large_moe_model_tested": false,
+  "binary": "target/release/forge9070",
+  "version": "0.2.0",
+  "date": "2026-11-16"
+}

@@ -1,0 +1,169 @@
+{
+  "backend": "cpu",
+  "concurrent_requests": 4,
+  "decode_steps_per_request": 64,
+  "engine": "forge-native-cpu",
+  "engine_version": "0.1.0",
+  "identical_greedy_checksums": true,
+  "load_seconds_excluded": 0.001621334,
+  "measurement_notes": [
+    "CPU only; no inference about RX9070XT performance",
+    "Fixed decode-step workload continues through EOS for repeatability",
+    "Concurrent requests share one immutable model and one CPU worker budget",
+    "Request completion durations include scheduling within the measured phase",
+    "Timing excludes weight loading, tokenization and warmup",
+    "Tiny synthetic checkpoints measure harness behavior, not useful-model throughput"
+  ],
+  "median_aggregate_decode_steps_per_second": 100110.78666352257,
+  "median_aggregate_prefill_tokens_per_second": 150676.48359832662,
+  "model": "tests/fixtures/tiny-qwen3moe.gguf",
+  "model_config": {
+    "architecture": "qwen3moe",
+    "block_count": 1,
+    "context_length": 256,
+    "embedding_length": 32,
+    "expert_count": 4,
+    "expert_feed_forward_length": 64,
+    "expert_weights_scale": 1.0,
+    "experts_per_token": 2,
+    "feed_forward_length": 64,
+    "head_count": 1,
+    "head_count_kv": 1,
+    "head_dim": 32,
+    "normalize_expert_weights": true,
+    "rms_epsilon": 9.999999974752427e-7,
+    "rope_base": 10000.0,
+    "rope_dimension_count": 32,
+    "training_context_length": 512,
+    "vocab_size": 261
+  },
+  "model_file_bytes": 188256,
+  "p95_request_decode_completion_seconds": 0.002564533,
+  "prompt_tokens_per_request": 35,
+  "repetitions": 5,
+  "samples": [
+    {
+      "aggregate_decode_steps_per_second": 100110.78666352257,
+      "aggregate_prefill_tokens_per_second": 152172.4244001961,
+      "decode_seconds": 0.002557167,
+      "greedy_checksum": [
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000920009,
+      "request_decode_completion_seconds": [
+        0.002556125,
+        0.002468672,
+        0.00253619,
+        0.00148527
+      ],
+      "request_prefill_seconds": [
+        0.000880539,
+        0.000896293,
+        0.000892842,
+        0.00058478
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 101669.72668715153,
+      "aggregate_prefill_tokens_per_second": 150676.48359832662,
+      "decode_seconds": 0.002517957,
+      "greedy_checksum": [
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000929143,
+      "request_decode_completion_seconds": [
+        0.002472768,
+        0.002481842,
+        0.001472801,
+        0.002474475
+      ],
+      "request_prefill_seconds": [
+        0.000879337,
+        0.000909363,
+        0.000918382,
+        0.000577229
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 94744.00244557956,
+      "aggregate_prefill_tokens_per_second": 153055.4793314974,
+      "decode_seconds": 0.002702018,
+      "greedy_checksum": [
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000914701,
+      "request_decode_completion_seconds": [
+        0.002430743,
+        0.001591493,
+        0.002446608,
+        0.002564533
+      ],
+      "request_prefill_seconds": [
+        0.00087468,
+        0.000896032,
+        0.000895997,
+        0.000534273
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 94631.05532478968,
+      "aggregate_prefill_tokens_per_second": 149133.0575792083,
+      "decode_seconds": 0.002705243,
+      "greedy_checksum": [
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000938759,
+      "request_decode_completion_seconds": [
+        0.002457834,
+        0.00266753,
+        0.002452416,
+        0.002109075
+      ],
+      "request_prefill_seconds": [
+        0.000652169,
+        0.000890355,
+        0.000887996,
+        0.000619224
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 100310.3744045541,
+      "aggregate_prefill_tokens_per_second": 149432.95530353568,
+      "decode_seconds": 0.002552079,
+      "greedy_checksum": [
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477,
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000936875,
+      "request_decode_completion_seconds": [
+        0.002445466,
+        0.002494546,
+        0.00246748,
+        0.001541676
+      ],
+      "request_prefill_seconds": [
+        0.000880008,
+        0.000903569,
+        0.000900429,
+        0.000692806
+      ]
+    }
+  ],
+  "tokenize_seconds_excluded": 0.000200797,
+  "warmup_iterations_excluded": 1,
+  "worker_threads": 4
+}

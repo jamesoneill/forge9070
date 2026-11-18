@@ -1,0 +1,263 @@
+{
+  "status": "passed",
+  "command": [
+    "./target/debug/forge9070",
+    "models",
+    "files",
+    "mradermacher/Qwen3-30B-A3B-abliterated-GGUF",
+    "--json"
+  ],
+  "elapsed_seconds": 180.04,
+  "complete_checkpoint_downloaded": false,
+  "metadata": {
+    "repo": "mradermacher/Qwen3-30B-A3B-abliterated-GGUF",
+    "revision": "main",
+    "commit": "5eed9fdfc8dd2a614fa0f344befbb68d9e049978",
+    "models": [
+      {
+        "file": "Qwen3-30B-A3B-abliterated.IQ4_XS.gguf",
+        "size": 16557092832,
+        "shards": 1,
+        "sha256": "9c7a62790d536334bb3b13e250ad72be14cbd07ba608cf11c9559d56f9d64a89",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 16551122944,
+          "quantization_histogram": {
+            "F32": 241,
+            "IQ4_XS": 283,
+            "Q5_K": 54,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q2_K.gguf",
+        "size": 11258609632,
+        "shards": 1,
+        "sha256": "6d9d4b6d1c240d94fff68d348c91cc51058c8ca9b4a8f2482e09d95be24fbaeb",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 11252639744,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q2_K": 193,
+            "Q3_K": 96,
+            "Q4_K": 48,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q3_K_L.gguf",
+        "size": 15900669920,
+        "shards": 1,
+        "sha256": "c393cf00702a92467f0ae574e67115f5c79658e49e105d5fae566a91d483e3f1",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 15894700032,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q3_K": 193,
+            "Q5_K": 144,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q3_K_M.gguf",
+        "size": 14711846880,
+        "shards": 1,
+        "sha256": "bf47fd3ea844fe5e753f44e5b755dbad6adf5ef14af3d75fc8a914cf3f6f00e4",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 14705876992,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q3_K": 193,
+            "Q4_K": 139,
+            "Q5_K": 5,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q3_K_S.gguf",
+        "size": 13292468192,
+        "shards": 1,
+        "sha256": "f9f6687979999f3469b47a13a32db901a50f4d6c2bccc8f6e701753d064d21d6",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 13286498304,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q3_K": 337,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q4_K_M.gguf",
+        "size": 18556686304,
+        "shards": 1,
+        "sha256": "60549f0232ed856dd0268e006e8f764620ea3eeaac3239ff0843e647dd9ae128",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 18550716416,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q4_K": 289,
+            "Q6_K": 49
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q4_K_S.gguf",
+        "size": 17456009184,
+        "shards": 1,
+        "sha256": "530dc3bd11891983b312342b9d9f40a7a0e2137d2baa7c91b8c17ef544a4b759",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 17450039296,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q4_K": 327,
+            "Q5_K": 10,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q5_K_M.gguf",
+        "size": 21725581280,
+        "shards": 1,
+        "sha256": "abb8a6f02775e316417ed605f04db30e9286f699c19ec2d1fe71f50dacc3e183",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 21719611392,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q5_K": 289,
+            "Q6_K": 49
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q5_K_S.gguf",
+        "size": 21080510432,
+        "shards": 1,
+        "sha256": "8ea657c6e1571150ca370d832184765128f357862340e0d99b75b5091d6cd9fe",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen3moe",
+          "layers": 48,
+          "experts_per_layer": 128,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 579,
+          "tensor_weight_bytes": 21074540544,
+          "quantization_histogram": {
+            "F32": 241,
+            "Q5_K": 337,
+            "Q6_K": 1
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      }
+    ],
+    "license": "apache-2.0",
+    "gated": false,
+    "policy": "sparse_moe_only",
+    "excluded": [
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q6_K.gguf",
+        "reason": "verify GGUF header Qwen3-30B-A3B-abliterated.Q6_K.gguf: timeout: global"
+      },
+      {
+        "file": "Qwen3-30B-A3B-abliterated.Q8_0.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      }
+    ]
+  },
+  "source_state": "Earlier 0.3 development build, before read batching and the final FFN-buffer/MTP geometry guards. Final frozen-source search is recorded in compat-hf-live-search.json.",
+  "verification_limits": {
+    "complete_checkpoint_downloaded": false,
+    "inference_performed": false,
+    "note": "Timeout/budget exclusions are unverified choices, not proof of incompatible architecture or quantization.",
+    "timeout_or_budget_exclusions": 2,
+    "explicit_unsupported_quantization_exclusions": 0
+  }
+}

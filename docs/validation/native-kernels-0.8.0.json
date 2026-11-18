@@ -1,0 +1,171 @@
+{
+  "benchmark": "checked_cpu_row_dot_warm_memory",
+  "engine": "forge-native-cpu",
+  "host_arch": "x86_64",
+  "host_os": "linux",
+  "iterations_per_sample": 64,
+  "notes": [
+    "Both scalar and selected paths include public row validation",
+    "Serial row evaluation; excludes Rayon, attention and model orchestration",
+    "Warm memory, synthetic weights, alternated timing order; not a model token-rate benchmark",
+    "FMA and reduction ordering may round differently; comparison uses full output values",
+    "A ratio above one means selected kernel took less median time on this host",
+    "No claim about RX9070XT GPU throughput, real-model speed or answer quality"
+  ],
+  "repetitions": 7,
+  "row_width": 4096,
+  "rows": 256,
+  "samples": [
+    {
+      "correctness_scaled_error_limit": 0.0002,
+      "encoded_weight_bytes": 4194304,
+      "format": "F32",
+      "max_absolute_error": 0.0001010894775390625,
+      "max_error_scaled_by_max_abs_reference_or_one": 0.00004947185516357422,
+      "scalar_median_seconds": 0.087046282,
+      "scalar_over_selected_time_ratio": 1.7680579747918803,
+      "scalar_seconds": [
+        0.086938058,
+        0.087046282,
+        0.122456428,
+        0.084704808,
+        0.08571959,
+        0.090429509,
+        0.087178532
+      ],
+      "selected_kernel": "avx2_fma",
+      "selected_kernel_median_seconds": 0.049232708,
+      "selected_kernel_rows_per_second": 332786.8944361135,
+      "selected_kernel_seconds": [
+        0.047376727,
+        0.050690279,
+        0.048626904,
+        0.051221191,
+        0.049232708,
+        0.048795799,
+        0.052329514
+      ]
+    },
+    {
+      "correctness_scaled_error_limit": 0.0002,
+      "encoded_weight_bytes": 2097152,
+      "format": "F16",
+      "max_absolute_error": 0.0001010894775390625,
+      "max_error_scaled_by_max_abs_reference_or_one": 0.00004947185516357422,
+      "scalar_median_seconds": 0.213768078,
+      "scalar_over_selected_time_ratio": 4.477780055172058,
+      "scalar_seconds": [
+        0.223732728,
+        0.213768078,
+        0.21243129,
+        0.242463355,
+        0.218091933,
+        0.212414469,
+        0.213385989
+      ],
+      "selected_kernel": "avx2_fma_f16c",
+      "selected_kernel_median_seconds": 0.047739745,
+      "selected_kernel_rows_per_second": 343194.1247277295,
+      "selected_kernel_seconds": [
+        0.046476519,
+        0.046650972,
+        0.046963043,
+        0.047823464,
+        0.08190078,
+        0.07968011,
+        0.047739745
+      ]
+    },
+    {
+      "correctness_scaled_error_limit": 0.0002,
+      "encoded_weight_bytes": 2097152,
+      "format": "BF16",
+      "max_absolute_error": 0.0001010894775390625,
+      "max_error_scaled_by_max_abs_reference_or_one": 0.00004947185516357422,
+      "scalar_median_seconds": 0.081902447,
+      "scalar_over_selected_time_ratio": 1.7316537245099042,
+      "scalar_seconds": [
+        0.081617972,
+        0.081758672,
+        0.082327745,
+        0.081709359,
+        0.084939644,
+        0.083495843,
+        0.081902447
+      ],
+      "selected_kernel": "avx2_fma",
+      "selected_kernel_median_seconds": 0.047297243,
+      "selected_kernel_rows_per_second": 346404.96910147596,
+      "selected_kernel_seconds": [
+        0.048033725,
+        0.047023793,
+        0.047341949,
+        0.04700853,
+        0.063587835,
+        0.047066987,
+        0.047297243
+      ]
+    },
+    {
+      "correctness_scaled_error_limit": 0.0002,
+      "encoded_weight_bytes": 589824,
+      "format": "Q4_0",
+      "max_absolute_error": 0.00003719329833984375,
+      "max_error_scaled_by_max_abs_reference_or_one": 0.000029186847314122133,
+      "scalar_median_seconds": 0.093135782,
+      "scalar_over_selected_time_ratio": 1.9057447649803767,
+      "scalar_seconds": [
+        0.093135782,
+        0.0909364,
+        0.090803541,
+        0.093719145,
+        0.089529284,
+        0.098771457,
+        0.095136216
+      ],
+      "selected_kernel": "avx2_fma",
+      "selected_kernel_median_seconds": 0.048871068,
+      "selected_kernel_rows_per_second": 335249.47725717805,
+      "selected_kernel_seconds": [
+        0.057867273,
+        0.054340674,
+        0.04738986,
+        0.047535508,
+        0.047301108,
+        0.052698216,
+        0.048871068
+      ]
+    },
+    {
+      "correctness_scaled_error_limit": 0.0002,
+      "encoded_weight_bytes": 1114112,
+      "format": "Q8_0",
+      "max_absolute_error": 0.0001010894775390625,
+      "max_error_scaled_by_max_abs_reference_or_one": 0.00004947185516357422,
+      "scalar_median_seconds": 0.099389942,
+      "scalar_over_selected_time_ratio": 1.8867083285417354,
+      "scalar_seconds": [
+        0.099389942,
+        0.105432132,
+        0.100777609,
+        0.10530784,
+        0.095969272,
+        0.098602093,
+        0.099084785
+      ],
+      "selected_kernel": "avx2_fma",
+      "selected_kernel_median_seconds": 0.052679018,
+      "selected_kernel_rows_per_second": 311015.66851530905,
+      "selected_kernel_seconds": [
+        0.048959921,
+        0.052679018,
+        0.066151462,
+        0.058316756,
+        0.04944713,
+        0.050309781,
+        0.059826616
+      ]
+    }
+  ],
+  "version": "0.1.0"
+}

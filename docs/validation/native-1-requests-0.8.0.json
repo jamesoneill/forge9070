@@ -1,0 +1,124 @@
+{
+  "backend": "cpu",
+  "concurrent_requests": 1,
+  "decode_steps_per_request": 64,
+  "engine": "forge-native-cpu",
+  "engine_version": "0.1.0",
+  "identical_greedy_checksums": true,
+  "load_seconds_excluded": 0.002099876,
+  "measurement_notes": [
+    "CPU only; no inference about RX9070XT performance",
+    "Fixed decode-step workload continues through EOS for repeatability",
+    "Concurrent requests share one immutable model and one CPU worker budget",
+    "Request completion durations include scheduling within the measured phase",
+    "Timing excludes weight loading, tokenization and warmup",
+    "Tiny synthetic checkpoints measure harness behavior, not useful-model throughput"
+  ],
+  "median_aggregate_decode_steps_per_second": 38702.21787897333,
+  "median_aggregate_prefill_tokens_per_second": 67644.35304940744,
+  "model": "tests/fixtures/tiny-qwen3moe.gguf",
+  "model_config": {
+    "architecture": "qwen3moe",
+    "block_count": 1,
+    "context_length": 256,
+    "embedding_length": 32,
+    "expert_count": 4,
+    "expert_feed_forward_length": 64,
+    "expert_weights_scale": 1.0,
+    "experts_per_token": 2,
+    "feed_forward_length": 64,
+    "head_count": 1,
+    "head_count_kv": 1,
+    "head_dim": 32,
+    "normalize_expert_weights": true,
+    "rms_epsilon": 9.999999974752427e-7,
+    "rope_base": 10000.0,
+    "rope_dimension_count": 32,
+    "training_context_length": 512,
+    "vocab_size": 261
+  },
+  "model_file_bytes": 188256,
+  "p95_request_decode_completion_seconds": 0.002329979,
+  "prompt_tokens_per_request": 35,
+  "repetitions": 5,
+  "samples": [
+    {
+      "aggregate_decode_steps_per_second": 41382.993788024665,
+      "aggregate_prefill_tokens_per_second": 61921.03829197008,
+      "decode_seconds": 0.001546529,
+      "greedy_checksum": [
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000565236,
+      "request_decode_completion_seconds": [
+        0.001546189
+      ],
+      "request_prefill_seconds": [
+        0.000565086
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 44713.251820143734,
+      "aggregate_prefill_tokens_per_second": 67644.35304940744,
+      "decode_seconds": 0.001431343,
+      "greedy_checksum": [
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000517412,
+      "request_decode_completion_seconds": [
+        0.001430932
+      ],
+      "request_prefill_seconds": [
+        0.000517222
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 38702.21787897333,
+      "aggregate_prefill_tokens_per_second": 67864.96810346498,
+      "decode_seconds": 0.001653652,
+      "greedy_checksum": [
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.00051573,
+      "request_decode_completion_seconds": [
+        0.001653222
+      ],
+      "request_prefill_seconds": [
+        0.000515589
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 37597.14308708967,
+      "aggregate_prefill_tokens_per_second": 42729.042930479845,
+      "decode_seconds": 0.001702257,
+      "greedy_checksum": [
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000819115,
+      "request_decode_completion_seconds": [
+        0.001701846
+      ],
+      "request_prefill_seconds": [
+        0.000818844
+      ]
+    },
+    {
+      "aggregate_decode_steps_per_second": 27461.92982704562,
+      "aggregate_prefill_tokens_per_second": 69586.51691648227,
+      "decode_seconds": 0.002330499,
+      "greedy_checksum": [
+        9172658670259733477
+      ],
+      "prefill_seconds": 0.000502971,
+      "request_decode_completion_seconds": [
+        0.002329979
+      ],
+      "request_prefill_seconds": [
+        0.00050276
+      ]
+    }
+  ],
+  "tokenize_seconds_excluded": 0.000448317,
+  "warmup_iterations_excluded": 1,
+  "worker_threads": 4
+}

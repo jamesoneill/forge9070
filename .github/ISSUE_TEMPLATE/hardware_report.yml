@@ -1,0 +1,55 @@
+name: Hardware or performance report
+description: Share reproducible device, model or throughput observations.
+title: "[Hardware]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report what actually ran. Keep device discovery, synthetic tests and full-model inference distinct.
+        Do not include API keys, private prompts, personal paths or model files.
+  - type: input
+    id: revision
+    attributes:
+      label: Forge version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence_type
+    attributes:
+      label: Kind of observation
+      options:
+        - Device discovery only
+        - CPU inference
+        - Software Vulkan inference
+        - Physical GPU inference with a synthetic fixture
+        - Physical GPU inference with a pretrained model
+    validations:
+      required: true
+  - type: textarea
+    id: machine
+    attributes:
+      label: Machine and runtime
+      description: GPU, VRAM, CPU, available host RAM, OS, driver, native/WSL/Windows-interoperability route and backend.
+    validations:
+      required: true
+  - type: textarea
+    id: workload
+    attributes:
+      label: Model, workload and command
+      description: Include model repository/revision, quantization, complete shard set, context/output lengths, concurrency, cache/warmup settings and the redacted command.
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Observed results and measurement method
+      description: Separate prefill, decode, per-request latency and aggregate throughput where measured. State run count, warm/cold conditions, errors and unmeasured values.
+    validations:
+      required: true
+  - type: textarea
+    id: correctness
+    attributes:
+      label: Correctness or quality checks
+      description: Describe the numerical or output checks, comparison baseline and their limits. State explicitly if no quality comparison was performed.
+    validations:
+      required: true

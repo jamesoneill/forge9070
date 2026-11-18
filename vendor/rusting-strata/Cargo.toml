@@ -1,0 +1,41 @@
+[package]
+name = "rusting_strata"
+version = "1.2.4"
+edition = "2024"
+license-file = "LICENSE.md"
+
+[[bin]]
+name = "rustingstrata"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+memmap2 = "0.9"
+rayon = "1"
+half = "2"
+tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+cudarc = { version = "0.19", default-features = false, features = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13010"] }
+# Same version cudarc already pulls in; loads NVRTC by our own name list (src/cuda/nvrtc.rs).
+libloading = "0.9"
+ash = "0.38"
+ureq = { version = "3", default-features = false, features = ["rustls", "platform-verifier", "socks-proxy"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+base64 = "0.22"
+# Forge9070 verifies Hugging Face LFS digests and namespaces immutable model snapshots.
+sha2 = "0.10"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Platform ABI constants for direct expert I/O.
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+debug = 1
+codegen-units = 1
+lto = "thin"
+
+[profile.test]
+opt-level = 3

@@ -1,0 +1,56 @@
+[
+  {
+    "name": "native_cli",
+    "command": [
+      "python3",
+      "scripts/validate-forge-engine.py",
+      "--binary",
+      "target/release/forge-engine",
+      "--frontend",
+      "target/release/forge9070",
+      "--output",
+      "artifacts/forge-engine-cli-0.9.0.json"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.17403161199763417,
+    "environment": {},
+    "stdout": "{\n  \"status\": \"passed\",\n  \"checks_passed\": 16,\n  \"checks\": [\n    \"Capabilities identify implemented independent backends separately from unverified target-GPU performance\",\n    \"Independent loader validates the actual committed GGUF and reports inspection without compute\",\n    \"Actual MoE CPU generation produces complete output and distinguishes output tokens from decode steps\",\n    \"Standard-input Unicode prompt uses the complete reversible byte tokenizer\",\n    \"Backend selection is explicit and never silently falls back to Strata\",\n    \"Prompt plus requested output must fit the configured context before generation\",\n    \"Empty prompts and zero output reservations are rejected\",\n    \"Relabeling a Qwen3 fixture as qwen4exp fails mandatory architecture-metadata validation\",\n    \"Truncated GGUF tensor payload is rejected by the independent loader\",\n    \"Four independent CPU sequences execute within two worker threads with reproducible token checksums\",\n    \"Benchmark excludes warmup/load/tokenization and derives rates from paired measured durations and executed steps\",\n    \"Saved benchmark JSON exactly matches the reported samples\",\n    \"Invalid concurrency and warmup settings fail explicitly\",\n    \"Benchmark report output equal to the input checkpoint is rejected with all model bytes preserved\",\n    \"Benchmark report output hard-linked to the input checkpoint is rejected without modifying either path\",\n    \"Forge9070 engine subcommand selects the independent engine and executes generation\"\n  ],\n  \"checks_skipped\": 0,\n  \"skipped\": [],\n  \"scope\": \"Actual standalone CPU CLI and synthetic-model execution; not HTTP, GPU or pretrained-model quality\",\n  \"gpu_tested\": false,\n  \"qwen38_tested\": false,\n  \"checksums_do_not_replace_numerical_parity\": true\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "native_api",
+    "command": [
+      "python3",
+      "scripts/validate-native-api.py",
+      "--binary",
+      "target/release/forge-engine",
+      "--output",
+      "artifacts/native-api-0.9.0.json"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.4373113609981374,
+    "environment": {},
+    "stdout": "{\n  \"version\": \"0.9.0\",\n  \"status\": \"passed\",\n  \"checks_passed\": 28,\n  \"checks\": [\n    \"Bearer authentication is enforced\",\n    \"Catalogue exposes supported complete models and excludes malformed files\",\n    \"Native model execution returns exact nonstreaming output and usage\",\n    \"Exact executed prefix is reused; the final sampled but unexecuted token is excluded\",\n    \"Changed conversation history resets state without reusing unrelated context\",\n    \"Context preview uses the actual model template and tokenizer\",\n    \"SSE has stable response identity, exact output and requested usage=False\",\n    \"SSE has stable response identity, exact output and requested usage=True\",\n    \"Stop strings are withheld from the response\",\n    \"Model mismatch, unsupported decoding controls, images and oversize reservations fail before inference\",\n    \"Actual prompt-plus-output overflow is rejected by preview and generation before admission\",\n    \"Model mutations require JSON transport\",\n    \"Failed model replacement restores the previous model and reopens admission\",\n    \"Idle model switching selects a different independently loaded model\",\n    \"Generated XML tool call becomes an OpenAI function call with an ID and JSON arguments\",\n    \"Assistant tool calls and matching tool results survive the next template turn\",\n    \"SSE function-call delta includes its index, ID and arguments\",\n    \"Literal reasoning/tool tags in code remain text when no matching protocol is active\",\n    \"Incremental SSE preserves Unicode and literal code across generated tokens\",\n    \"A stop crossing generated-token boundaries is withheld without truncating prior Unicode\",\n    \"Completed and rejected requests leave no admission permits behind\",\n    \"Capacity 1 removes a disconnected queued request before admission\",\n    \"Capacity1 executes real independent requests, queues overflow and admits waiting work after cancellation\",\n    \"Capacity1 cancellation releases active and queued resources\",\n    \"Capacity 4 removes a disconnected queued request before admission\",\n    \"Capacity4 executes real independent requests, queues overflow and admits waiting work after cancellation\",\n    \"Capacity4 cancellation releases active and queued resources\",\n    \"Waiting request deadline returns504 and removes its queue entry\"\n  ],\n  \"elapsed_seconds\": 1.2819869509985438,\n  \"backend\": \"independent CPU runtime\",\n  \"gpu_tested\": false,\n  \"real_model_quality_tested\": false,\n  \"external_coding_client_tested\": false,\n  \"scope\": \"Actual HTTP/SSE/model execution, sequence reuse, model switching and1/4active admission with cancellation/timeout; synthetic fixtures only\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "native_gpu_api",
+    "command": [
+      "python3",
+      "scripts/validate-native-gpu-api.py",
+      "--binary",
+      "target/release/forge-engine",
+      "--output",
+      "artifacts/native-gpu-api-0.9.0.json"
+    ],
+    "exit_code": 1,
+    "elapsed_seconds": 31.208383567995043,
+    "environment": {
+      "FORGE_VULKAN_TEST": "1",
+      "VK_DRIVER_FILES": "<temporary-directory>/forge9070-vulkan-sdk/root/usr/share/vulkan/icd.d/lvp_icd.json",
+      "LD_LIBRARY_PATH": "<temporary-directory>/forge9070-vulkan-sdk/root/usr/lib/x86_64-linux-gnu"
+    },
+    "stdout": "",
+    "stderr": "Forge native API listening on http://127.0.0.1:51949 | model tiny-qwen38.gguf | Vulkan | 4 active / 1 queued\n\nTraceback (most recent call last):\n  File \"<workspace>/<project>/scripts/validate-native-gpu-api.py\", line 57, in <module>\n    if __name__=='__main__':main()\n                            ^^^^^^\n  File \"<workspace>/<project>/scripts/validate-native-gpu-api.py\", line 36, in main\n    actual=[future.result(timeout=90) for future in futures]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py\", line 456, in result\n    return self.__get_result()\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py\", line 401, in __get_result\n    raise self._exception\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py\", line 59, in run\n    result = self.fn(*self.args, **self.kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/<project>/scripts/validate-native-gpu-api.py\", line 32, in run\n    return helpers.json_call(request,'/v1/chat/completions',body)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/<project>/scripts/validate-native-api.py\", line 79, in json_call\n    status,_,raw=request(path,data);return status,json.loads(raw)\n                 ^^^^^^^^^^^^^^^^^^\n  File \"<workspace>/<project>/scripts/validate-native-api.py\", line 57, in request\n    r=c.getresponse();return r.status,dict(r.getheaders()),r.read().decode()\n      ^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1478, in getresponse\n    response.begin()\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 343, in begin\n    version, status, reason = self._read_status()\n                              ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 304, in _read_status\n    line = str(self.fp.readline(_MAXLINE + 1), \"iso-8859-1\")\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 720, in readinto\n    return self._sock.recv_into(b)\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTimeoutError: timed out\n"
+  }
+]

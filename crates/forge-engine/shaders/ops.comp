@@ -1,0 +1,193 @@
+// Independent Forge compute kernels. MIT; no imported inference-engine shader.
+// Quant layouts follow the published GGML F32/F16/BF16/Q4_0/Q8_0 encodings.
+#version 450
+#extension GL_GOOGLE_include_directive : require
+layout(local_size_x=128, local_size_y=1, local_size_z=1) in;
+layout(set=0,binding=0,std430) readonly buffer Weights { uint w[]; };
+layout(set=0,binding=1,std430) buffer First { float a[]; };
+layout(set=0,binding=2,std430) buffer Second { float b[]; };
+layout(set=0,binding=3,std430) buffer Output { float c[]; };
+layout(set=0,binding=4,std430) buffer State { float d[]; };
+layout(set=0,binding=5,std430) buffer Selection { float e[]; };
+layout(set=0,binding=6,std430) buffer Status { uint status[]; };
+layout(push_constant) uniform Parameters {
+    uint op; uint n0; uint n1; uint n2;
+    uint n3; uint n4; uint n5; uint n6;
+    float f0; float f1; uint off0; uint off1;
+    uint off2; uint off3; uint groups_x; uint flags;
+} p;
+shared float reduction[128];
+
+float checked(float value) {
+    if (isnan(value) || isinf(value)) atomicOr(status[0],1u);
+    return value;
+}
+float invalid_value() { atomicOr(status[0],1u); return uintBitsToFloat(0x7fc00000u); }
+uint byte_at(uint byte_offset) { return (w[byte_offset >> 2] >> ((byte_offset & 3u)*8u)) & 255u; }
+uint half_word(uint byte_offset) { return byte_at(byte_offset) | (byte_at(byte_offset+1u)<<8); }
+float half_at(uint byte_offset) { return unpackHalf2x16(half_word(byte_offset)).x; }
+#include "quant.glsl"
+float value_at(uint base, uint index, uint ty) {
+    if (ty==0u) return uintBitsToFloat(w[(base>>2)+index]);
+    if (ty==1u) return half_at(base+index*2u);
+    if (ty==30u) return uintBitsToFloat(half_word(base+index*2u)<<16);
+    if (ty==2u) {
+        uint block=base+(index/32u)*18u;
+        uint within=index%32u;
+        uint packed=byte_at(block+2u+(within%16u));
+        int q=int(within<16u ? packed&15u : packed>>4)-8;
+        return half_at(block)*float(q);
+    }
+    if (ty==8u) {
+        uint block=base+(index/32u)*34u;
+        int q=int(byte_at(block+2u+index%32u));
+        if (q>=128) q-=256;
+        return half_at(block)*float(q);
+    }
+    return extended_value_at(base,index,ty);
+}
+float sum_group(float value) {
+    uint lane=gl_LocalInvocationID.x;
+    reduction[lane]=value;
+    barrier();
+    for(uint stride=64u;stride>0u;stride>>=1u) {
+        if(lane<stride) reduction[lane]+=reduction[lane+stride];
+        barrier();
+    }
+    return reduction[0];
+}
+float max_group(float value) {
+    uint lane=gl_LocalInvocationID.x;
+    reduction[lane]=value;
+    barrier();
+    for(uint stride=64u;stride>0u;stride>>=1u) {
+        if(lane<stride) reduction[lane]=max(reduction[lane],reduction[lane+stride]);
+        barrier();
+    }
+    return reduction[0];
+}
+uint flat_group() { return gl_WorkGroupID.x+gl_WorkGroupID.y*p.groups_x; }
+#include "qwen38_ops.glsl"
+void main() {
+    if(p.op>=100u){qwen_operation();return;}
+    uint lane=gl_LocalInvocationID.x;
+    uint element=flat_group()*128u+lane;
+    if(p.op==0u) { // Direct quantized GEMV, optionally selected experts.
+        uint row=flat_group();
+        if(row>=p.n1) return;
+        uint slot=gl_WorkGroupID.z;
+        uint expert=0u;
+        if((p.flags&1u)!=0u) {
+            float chosen=e[slot*2u];
+            if(isnan(chosen)||chosen<0.0||chosen>=float(p.n4)) {
+                if(lane==0u)c[p.off2+slot*p.n1+row]=invalid_value();
+                return;
+            }
+            expert=uint(chosen);
+        }
+        uint base=p.off0+(expert*p.n1+row)*p.n3;
+        uint input_offset=p.off1+(((p.flags&2u)!=0u)?slot*p.n0:0u);
+        float partial=0.0;
+        for(uint col=lane;col<p.n0;col+=128u) partial+=value_at(base,col,p.n2)*a[input_offset+col];
+        float total=sum_group(partial);
+        if(lane==0u)c[p.off2+slot*p.n1+row]=checked(total);
+    } else if(p.op==1u) { // Learned RMS norm, one workgroup per head.
+        uint head=flat_group();
+        if(head>=p.n1)return;
+        uint start=head*p.n0;
+        float partial=0.0;
+        for(uint i=lane;i<p.n0;i+=128u) partial+=a[start+i]*a[start+i];
+        float inverse=checked(inversesqrt(checked(sum_group(partial))/float(p.n0)+p.f0));
+        // All reads contributing to the norm are finished before in-place writes.
+        barrier();
+        for(uint i=lane;i<p.n0;i+=128u)c[start+i]=checked(a[start+i]*inverse*uintBitsToFloat(w[((p.flags&1u)!=0u)?start+i:i]));
+    } else if(p.op==2u) { // NeoX rotary pairs; in-place is safe per pair.
+        uint half_dim=(p.n3>0u?p.n3:p.n0)/2u;
+        if(element>=p.n1*half_dim)return;
+        uint head=element/half_dim;
+        uint index=element%half_dim;
+        float angle=float(p.n2)*pow(p.f0,-float(index)/float(half_dim));
+        float cosine=cos(angle), sine=sin(angle);
+        uint start=head*p.n0;
+        float lower=a[start+index], upper=a[start+index+half_dim];
+        c[start+index]=checked(lower*cosine-upper*sine);
+        c[start+index+half_dim]=checked(lower*sine+upper*cosine);
+    } else if(p.op==3u) { // Append one initialized key/value row.
+        if(element>=p.n0)return;
+        c[p.n1*p.n0+element]=checked(a[element]);
+        d[p.n1*p.n0+element]=checked(b[element]);
+    } else if(p.op==4u) { // Attention scores: independent head/token dot products.
+        uint token=gl_WorkGroupID.x, head=gl_WorkGroupID.y;
+        if(token>=p.n0||head>=p.n1)return;
+        uint kv_head=head/(p.n1/p.n2);
+        uint key_start=(token*p.n2+kv_head)*p.n3;
+        float partial=0.0;
+        for(uint i=lane;i<p.n3;i+=128u)partial+=a[head*p.n3+i]*b[key_start+i];
+        float score=sum_group(partial)*inversesqrt(float(p.n3));
+        if(lane==0u)c[head*p.n4+token]=checked(score);
+    } else if(p.op==5u) { // Stable softmax and weighted value sum, one head per group.
+        uint head=flat_group();
+        if(head>=p.n1)return;
+        float maximum=-3.402823466e38;
+        for(uint token=lane;token<p.n0;token+=128u)maximum=max(maximum,a[head*p.n4+token]);
+        maximum=max_group(maximum);
+        barrier();
+        float partial=0.0;
+        for(uint token=lane;token<p.n0;token+=128u)partial+=exp(a[head*p.n4+token]-maximum);
+        float denominator=sum_group(partial);
+        barrier();
+        uint kv_head=head/(p.n1/p.n2);
+        for(uint i=lane;i<p.n3;i+=128u) {
+            float total=0.0;
+            for(uint token=0u;token<p.n0;token++) {
+                float probability=exp(a[head*p.n4+token]-maximum)/denominator;
+                total+=probability*b[(token*p.n2+kv_head)*p.n3+i];
+            }
+            c[head*p.n3+i]=checked(total);
+        }
+    } else if(p.op==6u) { // SwiGLU; gate/up may contain several selected experts.
+        if(element>=p.n0)return;
+        float gate=a[p.off0+element];
+        float sigmoid=gate>=0.0 ? 1.0/(1.0+exp(-gate)) : exp(gate)/(1.0+exp(gate));
+        c[p.off2+element]=checked((gate*sigmoid)*b[p.off1+element]);
+    } else if(p.op==7u) { // Residual addition; output may alias either operand.
+        if(element>=p.n0)return;
+        c[element]=checked(a[element]+b[element]);
+    } else if(p.op==8u) { // Exact softmax top-k, deterministic lower-ID ties.
+        float maximum=-3.402823466e38;
+        for(uint i=lane;i<p.n0;i+=128u) maximum=max(maximum,checked(a[i]));
+        maximum=max_group(maximum);
+        barrier();
+        float partial=0.0;
+        for(uint i=lane;i<p.n0;i+=128u)partial+=exp(a[i]-maximum);
+        float denominator=sum_group(partial);
+        barrier();
+        for(uint i=lane;i<p.n0;i+=128u)c[i]=checked(exp(a[i]-maximum)/denominator);
+        memoryBarrierBuffer(); barrier();
+        if(lane==0u) {
+            float selected_sum=0.0;
+            for(uint slot=0u;slot<p.n1;slot++) {
+                uint best=0u;
+                float score=-1.0;
+                for(uint i=0u;i<p.n0;i++)if(c[i]>score){best=i;score=c[i];}
+                e[slot*2u]=float(best);
+                e[slot*2u+1u]=score;
+                c[best]=-1.0;
+                selected_sum+=score;
+            }
+            float factor=p.f0/(((p.flags&1u)!=0u)?selected_sum:1.0);
+            for(uint slot=0u;slot<p.n1;slot++)e[slot*2u+1u]=checked(e[slot*2u+1u]*factor);
+        }
+    } else if(p.op==9u) { // One quantized embedding row, without host transfer.
+        if(element>=p.n0)return;
+        c[element]=checked(value_at(p.n1*p.n3,element,p.n2));
+    } else if(p.op==10u) { // Combine all selected experts, preserving every contribution.
+        if(element>=p.n0)return;
+        float total=0.0;
+        for(uint slot=0u;slot<p.n1;slot++)total+=a[slot*p.n0+element]*e[slot*2u+1u];
+        c[element]=checked(total);
+    } else if(p.op==12u) { // Bounded F32 copy; offsets are element counts.
+        if(element>=p.n0)return;
+        c[p.off2+element]=checked(a[p.off0+element]);
+    }
+}

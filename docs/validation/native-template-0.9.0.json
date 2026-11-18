@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "template_sha256": "af16f654968d47d09a6c604e00370b12dbc21f76456f59c9e98b82e84d9f6375",
+  "reference": "Python Jinja2 3.1.6 with Transformers default tojson",
+  "canonical_json_map_order": true,
+  "cases": [
+    "plain_nonreasoning",
+    "plain_reasoning",
+    "system_and_history",
+    "tools_initial",
+    "tool_result",
+    "parallel_tool_results"
+  ],
+  "elapsed_seconds": 8.439652641005523,
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "test",
+    "-p",
+    "forge-engine",
+    "--lib",
+    "protocol::tests::external_template_byte_parity",
+    "--locked",
+    "--offline",
+    "--",
+    "--ignored",
+    "--nocapture"
+  ],
+  "exit_code": 0,
+  "stdout": "\nrunning 1 test\ntest protocol::tests::external_template_byte_parity ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 67 filtered out; finished in 0.00s\n\n",
+  "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   <workspace>/<project>/vendor/rusting-strata/Cargo.toml\nworkspace: <workspace>/<project>/Cargo.toml\n   Compiling forge-engine v0.2.0 (<workspace>/<project>/crates/forge-engine)\nwarning: methods `transient_weight` and `prepare_weight` are never used\n   --> crates/forge-engine/src/vulkan/hybrid.rs:40:19\n    |\n 32 | impl GpuMatvecExecutor {\n    | ---------------------- methods in this implementation\n...\n 40 |     pub(crate) fn transient_weight(&self,tensor:&Tensor<'_>)->Result<Option<Arc<Buffer>>>{\n    |                   ^^^^^^^^^^^^^^^^\n...\n126 |     pub(crate) fn prepare_weight(&self,tensor:&Tensor<'_>,pinned:bool)->Result<Option<Arc<Buffer>>>{\n    |                   ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `forge-engine` (lib test) generated 1 warning\n    Finished `test` profile [optimized + debuginfo] target(s) in 8.40s\n     Running unittests src/lib.rs (target/debug/build/forge-engine/04ed63881701d98d/out/forge_engine-04ed63881701d98d)\n",
+  "scope": "Prompt render byte parity; text and tool histories only, no inference or image support"
+}

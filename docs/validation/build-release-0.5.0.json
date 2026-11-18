@@ -1,0 +1,18 @@
+{
+  "version": "0.5.0",
+  "checked_at_utc": "2026-11-16T23:35:32.230205+00:00",
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 145.741,
+  "stdout": "",
+  "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   <workspace>/<project>/vendor/rusting-strata/Cargo.toml\nworkspace: <workspace>/<project>/Cargo.toml\n   Compiling rusting_strata v1.2.4 (<workspace>/<project>/vendor/rusting-strata)\n   Compiling forge9070 v0.5.0 (<workspace>/<project>)\n    Finished `release` profile [optimized] target(s) in 2m 25s\n",
+  "platform": "Linux x86_64",
+  "windows_binary_built": false,
+  "gpu_inference_executed": false
+}

@@ -1,0 +1,378 @@
+{
+  "status": "passed",
+  "checks_passed": 16,
+  "checks": [
+    "Capabilities explicitly identify the independent CPU engine and unsupported GPU/Qwen3.8/API paths",
+    "Independent loader validates the actual committed GGUF and reports inspection without compute",
+    "Actual MoE CPU generation produces complete output and distinguishes output tokens from decode steps",
+    "Standard-input Unicode prompt uses the complete reversible byte tokenizer",
+    "CPU execution requires explicit selection and never silently falls back to Strata",
+    "Prompt plus requested output must fit the configured context before generation",
+    "Empty prompts and zero output reservations are rejected",
+    "Qwen3.8-style architecture metadata is explicitly rejected rather than relabeled as supported",
+    "Truncated GGUF tensor payload is rejected by the independent loader",
+    "Four independent CPU sequences execute within two worker threads with reproducible token checksums",
+    "Benchmark excludes warmup/load/tokenization and derives rates from paired measured durations and executed steps",
+    "Saved benchmark JSON exactly matches the reported samples",
+    "Invalid concurrency and warmup settings fail explicitly",
+    "Benchmark report output equal to the input checkpoint is rejected with all model bytes preserved",
+    "Benchmark report output hard-linked to the input checkpoint is rejected without modifying either path",
+    "Forge9070 engine subcommand selects the independent engine and executes generation"
+  ],
+  "checks_skipped": 0,
+  "skipped": [],
+  "scope": "Actual standalone CPU CLI and synthetic-model execution; not HTTP, GPU or pretrained-model quality",
+  "gpu_tested": false,
+  "qwen38_tested": false,
+  "checksums_do_not_replace_numerical_parity": true,
+  "executions": [
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "capabilities"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01130883000587346,
+      "stdout": "{\n  \"architectures\": [\n    \"qwen3\",\n    \"qwen3moe\"\n  ],\n  \"backends\": [\n    \"cpu\"\n  ],\n  \"engine\": \"forge-native-cpu\",\n  \"fallback\": \"none\",\n  \"gguf_shards\": false,\n  \"gpu_performance_verified\": false,\n  \"http_server\": false,\n  \"independent_runtime\": true,\n  \"qwen3_8\": false,\n  \"requires_explicit_cpu\": true,\n  \"rusting_strata_dependency\": false,\n  \"stage\": \"cpu_correctness_and_performance_reference\",\n  \"state\": \"immutable_mapped_model_and_independent_sequences\",\n  \"tool_calling_api\": false,\n  \"version\": \"0.1.0\",\n  \"vulkan\": false,\n  \"weight_formats\": [\n    \"F32\",\n    \"F16\",\n    \"BF16\",\n    \"Q4_0\",\n    \"Q8_0\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0034224749979330227,
+      "stdout": "{\n  \"compute_submitted\": false,\n  \"config\": {\n    \"architecture\": \"qwen3moe\",\n    \"block_count\": 1,\n    \"context_length\": 64,\n    \"embedding_length\": 32,\n    \"expert_count\": 4,\n    \"expert_feed_forward_length\": 64,\n    \"expert_weights_scale\": 1.0,\n    \"experts_per_token\": 2,\n    \"feed_forward_length\": 64,\n    \"head_count\": 1,\n    \"head_count_kv\": 1,\n    \"head_dim\": 32,\n    \"normalize_expert_weights\": true,\n    \"rms_epsilon\": 9.999999974752427e-7,\n    \"rope_base\": 10000.0,\n    \"rope_dimension_count\": 32,\n    \"training_context_length\": 512,\n    \"vocab_size\": 261\n  },\n  \"engine\": \"forge-native-cpu\",\n  \"fallback\": \"none\",\n  \"gpu_support\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.000811425,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"weight_file_bytes\": 188256\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.027283440002065618,
+      "stdout": "{\n  \"backend\": \"cpu\",\n  \"decode_seconds\": 0.000137858,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 21761.522726283565,\n  \"engine\": \"forge-native-cpu\",\n  \"engine_version\": \"0.1.0\",\n  \"fallback\": \"none\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.005388153,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.000249006,\n  \"prompt_tokens\": 5,\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000340194\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "-",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0068721329953405075,
+      "stdout": "{\n  \"backend\": \"cpu\",\n  \"decode_seconds\": 0.000104628,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 28673.012960201857,\n  \"engine\": \"forge-native-cpu\",\n  \"engine_version\": \"0.1.0\",\n  \"fallback\": \"none\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.000544412,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.000597913,\n  \"prompt_tokens\": 23,\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000144628\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.007034075999399647,
+      "stdout": "",
+      "stderr": "Error: The independent Forge engine currently executes on CPU only. Add --cpu explicitly. GPU/Qwen3.8 support is not implemented; there is no Strata fallback. Use existing Forge commands for the compatibility backend.\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "8",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.002790873004414607,
+      "stdout": "",
+      "stderr": "Error: prompt (5 tokens) plus output/decode reservation (4) exceeds context 8\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.004478470000321977,
+      "stdout": "",
+      "stderr": "Error: prompt must contain at least one token\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "0",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.005104273994220421,
+      "stdout": "",
+      "stderr": "Error: output/decode count must be positive\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/unsupported-qwen38.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.002010584998060949,
+      "stdout": "",
+      "stderr": "Error: independent Forge CPU engine supports qwen3 and qwen3moe only; \"qwen4exp\" is unsupported (Qwen3.8/qwen4exp, HC/PLE/QSA and GPU inference remain on the explicit reference path)\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/truncated.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0014197619966580532,
+      "stdout": "",
+      "stderr": "Error: tensor blk.0.ffn_down_exps.weight is truncated: requires byte 188256, file has 188252\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/benchmark.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.010106804998940788,
+      "stdout": "{\n  \"backend\": \"cpu\",\n  \"concurrent_requests\": 4,\n  \"decode_steps_per_request\": 8,\n  \"engine\": \"forge-native-cpu\",\n  \"engine_version\": \"0.1.0\",\n  \"identical_greedy_checksums\": true,\n  \"load_seconds_excluded\": 0.000402237,\n  \"measurement_notes\": [\n    \"CPU only; no inference about RX9070XT performance\",\n    \"Fixed decode-step workload continues through EOS for repeatability\",\n    \"Concurrent requests share one immutable model and one CPU worker budget\",\n    \"Request completion durations include scheduling within the measured phase\",\n    \"Timing excludes weight loading, tokenization and warmup\",\n    \"Tiny synthetic checkpoints measure harness behavior, not useful-model throughput\"\n  ],\n  \"median_aggregate_decode_steps_per_second\": 77866.06379745487,\n  \"median_aggregate_prefill_tokens_per_second\": 98622.40133606204,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"model_config\": {\n    \"architecture\": \"qwen3moe\",\n    \"block_count\": 1,\n    \"context_length\": 64,\n    \"embedding_length\": 32,\n    \"expert_count\": 4,\n    \"expert_feed_forward_length\": 64,\n    \"expert_weights_scale\": 1.0,\n    \"experts_per_token\": 2,\n    \"feed_forward_length\": 64,\n    \"head_count\": 1,\n    \"head_count_kv\": 1,\n    \"head_dim\": 32,\n    \"normalize_expert_weights\": true,\n    \"rms_epsilon\": 9.999999974752427e-7,\n    \"rope_base\": 10000.0,\n    \"rope_dimension_count\": 32,\n    \"training_context_length\": 512,\n    \"vocab_size\": 261\n  },\n  \"model_file_bytes\": 188256,\n  \"p95_request_decode_completion_seconds\": 0.000397115,\n  \"prompt_tokens_per_request\": 5,\n  \"repetitions\": 2,\n  \"samples\": [\n    {\n      \"aggregate_decode_steps_per_second\": 74931.80035358443,\n      \"aggregate_prefill_tokens_per_second\": 89776.27751642907,\n      \"decode_seconds\": 0.000427055,\n      \"greedy_checksum\": [\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933\n      ],\n      \"prefill_seconds\": 0.000222776,\n      \"request_decode_completion_seconds\": [\n        0.000177368,\n        0.000353384,\n        0.000176692,\n        0.000397115\n      ],\n      \"request_prefill_seconds\": [\n        0.000087252,\n        0.00018532,\n        0.000092895,\n        0.000210282\n      ]\n    },\n    {\n      \"aggregate_decode_steps_per_second\": 80800.32724132533,\n      \"aggregate_prefill_tokens_per_second\": 107468.52515569502,\n      \"decode_seconds\": 0.000396038,\n      \"greedy_checksum\": [\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933\n      ],\n      \"prefill_seconds\": 0.000186101,\n      \"request_decode_completion_seconds\": [\n        0.000203267,\n        0.000387475,\n        0.000192345,\n        0.000393789\n      ],\n      \"request_prefill_seconds\": [\n        0.000087632,\n        0.000166872,\n        0.000093807,\n        0.000174118\n      ]\n    }\n  ],\n  \"tokenize_seconds_excluded\": 0.00007945,\n  \"warmup_iterations_excluded\": 1,\n  \"worker_threads\": 2\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "5",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/benchmark.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.006860664994746912,
+      "stdout": "",
+      "stderr": "Error: --requests must be in 1..=4\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "0",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/benchmark.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0048929149998002686,
+      "stdout": "",
+      "stderr": "Error: --warmup must be in 1..=20\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/protected-model.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/protected-model.gguf"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.006814606000261847,
+      "stdout": "",
+      "stderr": "Error: --json-out must not overwrite the loaded model (including links to that file)\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/protected-model.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-wzng6fi9/linked-report.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.005039957002736628,
+      "stdout": "",
+      "stderr": "Error: --json-out must not overwrite the loaded model (including links to that file)\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "engine",
+        "capabilities"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.013855302997399122,
+      "stdout": "{\n  \"architectures\": [\n    \"qwen3\",\n    \"qwen3moe\"\n  ],\n  \"backends\": [\n    \"cpu\"\n  ],\n  \"engine\": \"forge-native-cpu\",\n  \"fallback\": \"none\",\n  \"gguf_shards\": false,\n  \"gpu_performance_verified\": false,\n  \"http_server\": false,\n  \"independent_runtime\": true,\n  \"qwen3_8\": false,\n  \"requires_explicit_cpu\": true,\n  \"rusting_strata_dependency\": false,\n  \"stage\": \"cpu_correctness_and_performance_reference\",\n  \"state\": \"immutable_mapped_model_and_independent_sequences\",\n  \"tool_calling_api\": false,\n  \"version\": \"0.1.0\",\n  \"vulkan\": false,\n  \"weight_formats\": [\n    \"F32\",\n    \"F16\",\n    \"BF16\",\n    \"Q4_0\",\n    \"Q8_0\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.00790945699554868,
+      "stdout": "{\n  \"backend\": \"cpu\",\n  \"decode_seconds\": 0.0001724,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 17401.39211136891,\n  \"engine\": \"forge-native-cpu\",\n  \"engine_version\": \"0.1.0\",\n  \"fallback\": \"none\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.002393603,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.000135925,\n  \"prompt_tokens\": 5,\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000687838\n}\n",
+      "stderr": ""
+    }
+  ]
+}

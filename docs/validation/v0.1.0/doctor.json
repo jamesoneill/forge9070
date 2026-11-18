@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "operating_system": "linux",
+  "architecture": "x86_64",
+  "native_windows": false,
+  "wsl": false,
+  "kernel_release": "6.18.57",
+  "dxg_present": false,
+  "radv_device_coherent_memory": null,
+  "rocm_metadata": [],
+  "vulkan_loader_version": "1.4.309",
+  "vulkan_error": "create a Vulkan discovery instance: Unable to find a Vulkan driver",
+  "adapters": [],
+  "compute_status": "not_tested: discovery only; no compute was submitted",
+  "notes": [
+    "ROCm/HIP was not initialized. Metadata does not establish GPU support; the run path uses Vulkan.",
+    "Discovery does not verify kernel execution, model compatibility, or inference speed.",
+    "Memory budgets are changing driver estimates, not reserved memory or a safe cache-allocation promise.",
+    "radv_device_coherent_memory is unset. This doctor leaves it unchanged; the upstream backend sets it to true before initialization, so its coherent-memory discovery may differ."
+  ]
+}

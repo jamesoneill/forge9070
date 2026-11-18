@@ -1,0 +1,378 @@
+{
+  "status": "passed",
+  "checks_passed": 16,
+  "checks": [
+    "Capabilities identify implemented independent backends separately from unverified target-GPU performance",
+    "Independent loader validates the actual committed GGUF and reports inspection without compute",
+    "Actual MoE CPU generation produces complete output and distinguishes output tokens from decode steps",
+    "Standard-input Unicode prompt uses the complete reversible byte tokenizer",
+    "Backend selection is explicit and never silently falls back to Strata",
+    "Prompt plus requested output must fit the configured context before generation",
+    "Empty prompts and zero output reservations are rejected",
+    "Relabeling a Qwen3 fixture as qwen4exp fails mandatory architecture-metadata validation",
+    "Truncated GGUF tensor payload is rejected by the independent loader",
+    "Four independent CPU sequences execute within two worker threads with reproducible token checksums",
+    "Benchmark excludes warmup/load/tokenization and derives rates from paired measured durations and executed steps",
+    "Saved benchmark JSON exactly matches the reported samples",
+    "Invalid concurrency and warmup settings fail explicitly",
+    "Benchmark report output equal to the input checkpoint is rejected with all model bytes preserved",
+    "Benchmark report output hard-linked to the input checkpoint is rejected without modifying either path",
+    "Forge9070 engine subcommand selects the independent engine and executes generation"
+  ],
+  "checks_skipped": 0,
+  "skipped": [],
+  "scope": "Actual standalone CPU CLI and synthetic-model execution; not HTTP, GPU or pretrained-model quality",
+  "gpu_tested": false,
+  "qwen38_tested": false,
+  "checksums_do_not_replace_numerical_parity": true,
+  "executions": [
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "capabilities"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0019620730017777532,
+      "stdout": "{\n  \"architectures\": [\n    \"qwen3\",\n    \"qwen3moe\",\n    \"qwen4exp\"\n  ],\n  \"backends\": [\n    \"cpu\",\n    \"vulkan\",\n    \"hybrid\"\n  ],\n  \"concurrency\": {\n    \"active_maximum\": 4,\n    \"bounded_fifo_queue\": true,\n    \"continuous_batching\": false,\n    \"default_active\": 1\n  },\n  \"configuration_ui\": true,\n  \"engine\": \"forge-native\",\n  \"fallback\": \"no_implicit_backend_or_external_runtime_fallback\",\n  \"gguf_shards\": true,\n  \"gpu_performance_verified\": false,\n  \"hardware_performance_claim\": \"none\",\n  \"http_architecture_policy\": \"validated_moe_only\",\n  \"http_server\": true,\n  \"independent_runtime\": true,\n  \"model_discovery\": \"bounded_read_only_complete_gguf_moe_scan\",\n  \"moe_loading\": {\n    \"bounded_gpu_expert_cache_for_qwen4exp\": true,\n    \"direct_io_with_reported_buffered_fallback\": true,\n    \"lazy_ple_rows\": true,\n    \"owned_bounded_host_cache\": true,\n    \"prefill_protects_decode_cache\": true,\n    \"selected_experts_omitted\": 0,\n    \"transfer_compute_overlap\": false\n  },\n  \"qwen3_8\": true,\n  \"qwen_vulkan_budget_policy\": \"retain_every_selected_expert; explicit_counted_CPU_expert_execution_if_device_working_set_cannot_fit\",\n  \"requires_explicit_backend\": true,\n  \"rusting_strata_dependency\": false,\n  \"settings_persistence\": \"explicit_json_file\",\n  \"stage\": \"native_gpu_and_coding_api_target_hardware_acceptance_pending\",\n  \"startup_without_model\": true,\n  \"state\": \"immutable_mapped_model_and_independent_sequences\",\n  \"tool_calling_api\": true,\n  \"version\": \"0.2.1\",\n  \"vulkan\": true,\n  \"weight_formats\": [\n    \"F32\",\n    \"F16\",\n    \"BF16\",\n    \"Q4_0\",\n    \"Q8_0\",\n    \"Q2_0\",\n    \"Q4_K\",\n    \"Q5_K\",\n    \"Q6_K\",\n    \"IQ2_S\",\n    \"IQ3_XXS\",\n    \"IQ3_S\",\n    \"IQ4_NL\",\n    \"IQ4_XS\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.003715250000823289,
+      "stdout": "{\n  \"compute_submitted\": false,\n  \"config\": {\n    \"architecture\": \"qwen3moe\",\n    \"block_count\": 1,\n    \"context_length\": 64,\n    \"embedding_length\": 32,\n    \"expert_count\": 4,\n    \"expert_feed_forward_length\": 64,\n    \"expert_weights_scale\": 1.0,\n    \"experts_per_token\": 2,\n    \"feed_forward_length\": 64,\n    \"head_count\": 1,\n    \"head_count_kv\": 1,\n    \"head_dim\": 32,\n    \"normalize_expert_weights\": true,\n    \"rms_epsilon\": 9.999999974752427e-7,\n    \"rope_base\": 10000.0,\n    \"rope_dimension_count\": 32,\n    \"training_context_length\": 512,\n    \"vocab_size\": 261\n  },\n  \"engine\": \"forge-native\",\n  \"fallback\": \"none\",\n  \"gpu_execution_tested\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.000196857,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"qwen38\": null,\n  \"shards\": [\n    \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\"\n  ],\n  \"validation\": \"checkpoint_metadata_tensor_geometry_and_supported_quantization\",\n  \"weight_file_bytes\": 188256\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.006928843002242502,
+      "stdout": "{\n  \"decode_seconds\": 0.00011909,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 25191.03199261063,\n  \"engine\": \"forge-native\",\n  \"engine_version\": \"0.2.1\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.003656482,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.00016546,\n  \"prompt_tokens\": 5,\n  \"runtime\": {\n    \"config\": {\n      \"architecture\": \"qwen3moe\",\n      \"block_count\": 1,\n      \"context_length\": 64,\n      \"embedding_length\": 32,\n      \"expert_count\": 4,\n      \"expert_feed_forward_length\": 64,\n      \"expert_weights_scale\": 1.0,\n      \"experts_per_token\": 2,\n      \"feed_forward_length\": 64,\n      \"head_count\": 1,\n      \"head_count_kv\": 1,\n      \"head_dim\": 32,\n      \"normalize_expert_weights\": true,\n      \"rms_epsilon\": 9.999999974752427e-7,\n      \"rope_base\": 10000.0,\n      \"rope_dimension_count\": 32,\n      \"training_context_length\": 512,\n      \"vocab_size\": 261\n    },\n    \"engine\": \"forge-native\",\n    \"execution\": {\n      \"backend\": \"cpu\",\n      \"fallback\": \"none\"\n    },\n    \"expert_cache\": {\n      \"buffered_expert_loads\": 0,\n      \"capacity_bytes\": 98304,\n      \"direct_expert_loads\": 12,\n      \"direct_fallbacks\": 0,\n      \"evictions\": 0,\n      \"hits\": 48,\n      \"io_scratch_max_bytes\": 65536,\n      \"mapped_bypasses\": 0,\n      \"misses\": 0,\n      \"payload_bytes_read\": 98304,\n      \"pinned_bytes\": 0,\n      \"prefill_hits\": 30,\n      \"prefill_misses\": 0,\n      \"read_errors\": 0,\n      \"resident_bytes\": 98304,\n      \"resident_entries\": 12\n    },\n    \"expert_warmup\": {\n      \"elapsed_seconds\": 0.002327795,\n      \"experts_considered\": 4,\n      \"experts_ready\": 4,\n      \"experts_skipped_budget\": 0,\n      \"matrices_loaded\": 12,\n      \"payload_bytes_loaded\": 98304\n    },\n    \"host_memory_plan\": {\n      \"available_bytes\": 8276815872,\n      \"dense_page_allowance_bytes\": 84352,\n      \"expert_cache_capacity_bytes\": 98304,\n      \"lazy_embedding_payload_bytes\": 0,\n      \"os_margin_bytes\": 4294967296,\n      \"policy\": \"automatic_owned_expert_cache_after_dense_state_and_os_reserves\",\n      \"routed_expert_payload_bytes\": 98304,\n      \"state_reserve_bytes\": 67141632,\n      \"state_slots\": 1\n    },\n    \"kv_precision\": \"F32\",\n    \"mapped_weight_bytes\": 188256,\n    \"shards\": [\n      \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\"\n    ],\n    \"version\": \"0.2.1\"\n  },\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000174784\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "-",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.004895681995549239,
+      "stdout": "{\n  \"decode_seconds\": 0.000123426,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 24306.061931845805,\n  \"engine\": \"forge-native\",\n  \"engine_version\": \"0.2.1\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.001784194,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.000632925,\n  \"prompt_tokens\": 23,\n  \"runtime\": {\n    \"config\": {\n      \"architecture\": \"qwen3moe\",\n      \"block_count\": 1,\n      \"context_length\": 64,\n      \"embedding_length\": 32,\n      \"expert_count\": 4,\n      \"expert_feed_forward_length\": 64,\n      \"expert_weights_scale\": 1.0,\n      \"experts_per_token\": 2,\n      \"feed_forward_length\": 64,\n      \"head_count\": 1,\n      \"head_count_kv\": 1,\n      \"head_dim\": 32,\n      \"normalize_expert_weights\": true,\n      \"rms_epsilon\": 9.999999974752427e-7,\n      \"rope_base\": 10000.0,\n      \"rope_dimension_count\": 32,\n      \"training_context_length\": 512,\n      \"vocab_size\": 261\n    },\n    \"engine\": \"forge-native\",\n    \"execution\": {\n      \"backend\": \"cpu\",\n      \"fallback\": \"none\"\n    },\n    \"expert_cache\": {\n      \"buffered_expert_loads\": 0,\n      \"capacity_bytes\": 98304,\n      \"direct_expert_loads\": 12,\n      \"direct_fallbacks\": 0,\n      \"evictions\": 0,\n      \"hits\": 156,\n      \"io_scratch_max_bytes\": 65536,\n      \"mapped_bypasses\": 0,\n      \"misses\": 0,\n      \"payload_bytes_read\": 98304,\n      \"pinned_bytes\": 0,\n      \"prefill_hits\": 138,\n      \"prefill_misses\": 0,\n      \"read_errors\": 0,\n      \"resident_bytes\": 98304,\n      \"resident_entries\": 12\n    },\n    \"expert_warmup\": {\n      \"elapsed_seconds\": 0.001219551,\n      \"experts_considered\": 4,\n      \"experts_ready\": 4,\n      \"experts_skipped_budget\": 0,\n      \"matrices_loaded\": 12,\n      \"payload_bytes_loaded\": 98304\n    },\n    \"host_memory_plan\": {\n      \"available_bytes\": 8271446016,\n      \"dense_page_allowance_bytes\": 84352,\n      \"expert_cache_capacity_bytes\": 98304,\n      \"lazy_embedding_payload_bytes\": 0,\n      \"os_margin_bytes\": 4294967296,\n      \"policy\": \"automatic_owned_expert_cache_after_dense_state_and_os_reserves\",\n      \"routed_expert_payload_bytes\": 98304,\n      \"state_reserve_bytes\": 67141632,\n      \"state_slots\": 1\n    },\n    \"kv_precision\": \"F32\",\n    \"mapped_weight_bytes\": 188256,\n    \"shards\": [\n      \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\"\n    ],\n    \"version\": \"0.2.1\"\n  },\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000197949\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.001707754003291484,
+      "stdout": "",
+      "stderr": "Error: Select --backend cpu, vulkan or hybrid (or --cpu). There is no implicit backend fallback.\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "8",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.005071998995845206,
+      "stdout": "",
+      "stderr": "Error: prompt (5 tokens) plus output/decode reservation (4) exceeds context 8\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.004435868999280501,
+      "stdout": "",
+      "stderr": "Error: prompt must contain at least one token\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "0",
+        "--json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0016797460048110224,
+      "stdout": "",
+      "stderr": "Error: output/decode count must be positive\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/unsupported-qwen38.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0013264430017443374,
+      "stdout": "",
+      "stderr": "Error: qwen4exp.block_count: required nonnegative integer\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "inspect",
+        "--model",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/truncated.gguf",
+        "--ctx",
+        "64"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.002029734998359345,
+      "stdout": "",
+      "stderr": "Error: parse GGUF <temporary-directory>/forge-native-cli-sn36vh4h/truncated.gguf\n\nCaused by:\n    tensor blk.0.ffn_down_exps.weight is truncated: requires byte 188256, file has 188252\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/benchmark.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.007884826001827605,
+      "stdout": "{\n  \"concurrent_requests\": 4,\n  \"decode_steps_per_request\": 8,\n  \"engine\": \"forge-native\",\n  \"engine_version\": \"0.2.1\",\n  \"identical_greedy_checksums\": true,\n  \"load_seconds_excluded\": 0.001696782,\n  \"measurement_notes\": [\n    \"Backend and actual adapter are recorded; software Vulkan is never a hardware performance result\",\n    \"Fixed decode-step workload continues through EOS for repeatability\",\n    \"Concurrent requests share immutable weights, a bounded worker pool, and independent state\",\n    \"Request completion durations include scheduling within the measured phase\",\n    \"Timing excludes weight loading, tokenization and warmup\",\n    \"Tiny synthetic checkpoints measure harness behavior, not useful-model throughput\"\n  ],\n  \"median_aggregate_decode_steps_per_second\": 69682.4174330561,\n  \"median_aggregate_prefill_tokens_per_second\": 90578.733655839,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"model_config\": {\n    \"architecture\": \"qwen3moe\",\n    \"block_count\": 1,\n    \"context_length\": 64,\n    \"embedding_length\": 32,\n    \"expert_count\": 4,\n    \"expert_feed_forward_length\": 64,\n    \"expert_weights_scale\": 1.0,\n    \"experts_per_token\": 2,\n    \"feed_forward_length\": 64,\n    \"head_count\": 1,\n    \"head_count_kv\": 1,\n    \"head_dim\": 32,\n    \"normalize_expert_weights\": true,\n    \"rms_epsilon\": 9.999999974752427e-7,\n    \"rope_base\": 10000.0,\n    \"rope_dimension_count\": 32,\n    \"training_context_length\": 512,\n    \"vocab_size\": 261\n  },\n  \"model_file_bytes\": 188256,\n  \"p95_request_decode_completion_seconds\": 0.000496349,\n  \"prompt_tokens_per_request\": 5,\n  \"repetitions\": 2,\n  \"runtime\": {\n    \"config\": {\n      \"architecture\": \"qwen3moe\",\n      \"block_count\": 1,\n      \"context_length\": 64,\n      \"embedding_length\": 32,\n      \"expert_count\": 4,\n      \"expert_feed_forward_length\": 64,\n      \"expert_weights_scale\": 1.0,\n      \"experts_per_token\": 2,\n      \"feed_forward_length\": 64,\n      \"head_count\": 1,\n      \"head_count_kv\": 1,\n      \"head_dim\": 32,\n      \"normalize_expert_weights\": true,\n      \"rms_epsilon\": 9.999999974752427e-7,\n      \"rope_base\": 10000.0,\n      \"rope_dimension_count\": 32,\n      \"training_context_length\": 512,\n      \"vocab_size\": 261\n    },\n    \"engine\": \"forge-native\",\n    \"execution\": {\n      \"backend\": \"cpu\",\n      \"fallback\": \"none\"\n    },\n    \"expert_cache\": {\n      \"buffered_expert_loads\": 0,\n      \"capacity_bytes\": 98304,\n      \"direct_expert_loads\": 12,\n      \"direct_fallbacks\": 0,\n      \"evictions\": 0,\n      \"hits\": 936,\n      \"io_scratch_max_bytes\": 65536,\n      \"mapped_bypasses\": 0,\n      \"misses\": 0,\n      \"payload_bytes_read\": 98304,\n      \"pinned_bytes\": 0,\n      \"prefill_hits\": 360,\n      \"prefill_misses\": 0,\n      \"read_errors\": 0,\n      \"resident_bytes\": 98304,\n      \"resident_entries\": 12\n    },\n    \"expert_warmup\": {\n      \"elapsed_seconds\": 0.001270429,\n      \"experts_considered\": 4,\n      \"experts_ready\": 4,\n      \"experts_skipped_budget\": 0,\n      \"matrices_loaded\": 12,\n      \"payload_bytes_loaded\": 98304\n    },\n    \"host_memory_plan\": {\n      \"available_bytes\": 8258371584,\n      \"dense_page_allowance_bytes\": 84352,\n      \"expert_cache_capacity_bytes\": 98304,\n      \"lazy_embedding_payload_bytes\": 0,\n      \"os_margin_bytes\": 4294967296,\n      \"policy\": \"automatic_owned_expert_cache_after_dense_state_and_os_reserves\",\n      \"routed_expert_payload_bytes\": 98304,\n      \"state_reserve_bytes\": 268566528,\n      \"state_slots\": 4\n    },\n    \"kv_precision\": \"F32\",\n    \"mapped_weight_bytes\": 188256,\n    \"shards\": [\n      \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\"\n    ],\n    \"version\": \"0.2.1\"\n  },\n  \"samples\": [\n    {\n      \"aggregate_decode_steps_per_second\": 75074.37054832444,\n      \"aggregate_prefill_tokens_per_second\": 86916.0868639372,\n      \"decode_seconds\": 0.000426244,\n      \"greedy_checksum\": [\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933\n      ],\n      \"prefill_seconds\": 0.000230107,\n      \"request_decode_completion_seconds\": [\n        0.000207844,\n        0.000424822,\n        0.000210413,\n        0.000424456\n      ],\n      \"request_prefill_seconds\": [\n        0.000100852,\n        0.000222285,\n        0.000121468,\n        0.0002286\n      ]\n    },\n    {\n      \"aggregate_decode_steps_per_second\": 64290.464317787766,\n      \"aggregate_prefill_tokens_per_second\": 94241.3804477408,\n      \"decode_seconds\": 0.000497741,\n      \"greedy_checksum\": [\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933,\n        3064734786292905933\n      ],\n      \"prefill_seconds\": 0.000212221,\n      \"request_decode_completion_seconds\": [\n        0.000294364,\n        0.000496349,\n        0.000263032,\n        0.000470685\n      ],\n      \"request_prefill_seconds\": [\n        0.000098269,\n        0.000190858,\n        0.000106616,\n        0.000199987\n      ]\n    }\n  ],\n  \"tokenize_seconds_excluded\": 0.000074843,\n  \"warmup_iterations_excluded\": 1,\n  \"worker_threads\": 2\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "5",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/benchmark.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0018404490037937649,
+      "stdout": "",
+      "stderr": "Error: --requests must be in 1..=4\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "0",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/benchmark.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.002347314002690837,
+      "stdout": "",
+      "stderr": "Error: --warmup must be in 1..=20\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/protected-model.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/protected-model.gguf"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.0019308359987917356,
+      "stdout": "",
+      "stderr": "Error: --json-out must not overwrite the loaded model (including links to that file)\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge-engine",
+        "--threads",
+        "2",
+        "bench",
+        "--cpu",
+        "--model",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/protected-model.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--decode-steps",
+        "8",
+        "--reps",
+        "2",
+        "--warmup",
+        "1",
+        "--requests",
+        "4",
+        "--json-out",
+        "<temporary-directory>/forge-native-cli-sn36vh4h/linked-report.json"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.001750463001371827,
+      "stdout": "",
+      "stderr": "Error: --json-out must not overwrite the loaded model (including links to that file)\n"
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "engine",
+        "capabilities"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.004422828998940531,
+      "stdout": "{\n  \"architectures\": [\n    \"qwen3\",\n    \"qwen3moe\",\n    \"qwen4exp\"\n  ],\n  \"backends\": [\n    \"cpu\",\n    \"vulkan\",\n    \"hybrid\"\n  ],\n  \"concurrency\": {\n    \"active_maximum\": 4,\n    \"bounded_fifo_queue\": true,\n    \"continuous_batching\": false,\n    \"default_active\": 1\n  },\n  \"configuration_ui\": true,\n  \"engine\": \"forge-native\",\n  \"fallback\": \"no_implicit_backend_or_external_runtime_fallback\",\n  \"gguf_shards\": true,\n  \"gpu_performance_verified\": false,\n  \"hardware_performance_claim\": \"none\",\n  \"http_architecture_policy\": \"validated_moe_only\",\n  \"http_server\": true,\n  \"independent_runtime\": true,\n  \"model_discovery\": \"bounded_read_only_complete_gguf_moe_scan\",\n  \"moe_loading\": {\n    \"bounded_gpu_expert_cache_for_qwen4exp\": true,\n    \"direct_io_with_reported_buffered_fallback\": true,\n    \"lazy_ple_rows\": true,\n    \"owned_bounded_host_cache\": true,\n    \"prefill_protects_decode_cache\": true,\n    \"selected_experts_omitted\": 0,\n    \"transfer_compute_overlap\": false\n  },\n  \"qwen3_8\": true,\n  \"qwen_vulkan_budget_policy\": \"retain_every_selected_expert; explicit_counted_CPU_expert_execution_if_device_working_set_cannot_fit\",\n  \"requires_explicit_backend\": true,\n  \"rusting_strata_dependency\": false,\n  \"settings_persistence\": \"explicit_json_file\",\n  \"stage\": \"native_gpu_and_coding_api_target_hardware_acceptance_pending\",\n  \"startup_without_model\": true,\n  \"state\": \"immutable_mapped_model_and_independent_sequences\",\n  \"tool_calling_api\": true,\n  \"version\": \"0.2.1\",\n  \"vulkan\": true,\n  \"weight_formats\": [\n    \"F32\",\n    \"F16\",\n    \"BF16\",\n    \"Q4_0\",\n    \"Q8_0\",\n    \"Q2_0\",\n    \"Q4_K\",\n    \"Q5_K\",\n    \"Q6_K\",\n    \"IQ2_S\",\n    \"IQ3_XXS\",\n    \"IQ3_S\",\n    \"IQ4_NL\",\n    \"IQ4_XS\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "engine",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "64",
+        "--prompt",
+        "hello",
+        "--max-tokens",
+        "4",
+        "--json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.00675721400330076,
+      "stdout": "{\n  \"decode_seconds\": 0.000070787,\n  \"decode_steps\": 3,\n  \"decode_steps_per_second\": 42380.66311610889,\n  \"engine\": \"forge-native\",\n  \"engine_version\": \"0.2.1\",\n  \"finish_reason\": \"length\",\n  \"generated_tokens\": 4,\n  \"gpu_performance_verified\": false,\n  \"kv_precision\": \"F32\",\n  \"load_seconds\": 0.001956755,\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"prefill_seconds\": 0.000097538,\n  \"prompt_tokens\": 5,\n  \"runtime\": {\n    \"config\": {\n      \"architecture\": \"qwen3moe\",\n      \"block_count\": 1,\n      \"context_length\": 64,\n      \"embedding_length\": 32,\n      \"expert_count\": 4,\n      \"expert_feed_forward_length\": 64,\n      \"expert_weights_scale\": 1.0,\n      \"experts_per_token\": 2,\n      \"feed_forward_length\": 64,\n      \"head_count\": 1,\n      \"head_count_kv\": 1,\n      \"head_dim\": 32,\n      \"normalize_expert_weights\": true,\n      \"rms_epsilon\": 9.999999974752427e-7,\n      \"rope_base\": 10000.0,\n      \"rope_dimension_count\": 32,\n      \"training_context_length\": 512,\n      \"vocab_size\": 261\n    },\n    \"engine\": \"forge-native\",\n    \"execution\": {\n      \"backend\": \"cpu\",\n      \"fallback\": \"none\"\n    },\n    \"expert_cache\": {\n      \"buffered_expert_loads\": 0,\n      \"capacity_bytes\": 98304,\n      \"direct_expert_loads\": 12,\n      \"direct_fallbacks\": 0,\n      \"evictions\": 0,\n      \"hits\": 48,\n      \"io_scratch_max_bytes\": 65536,\n      \"mapped_bypasses\": 0,\n      \"misses\": 0,\n      \"payload_bytes_read\": 98304,\n      \"pinned_bytes\": 0,\n      \"prefill_hits\": 30,\n      \"prefill_misses\": 0,\n      \"read_errors\": 0,\n      \"resident_bytes\": 98304,\n      \"resident_entries\": 12\n    },\n    \"expert_warmup\": {\n      \"elapsed_seconds\": 0.001333413,\n      \"experts_considered\": 4,\n      \"experts_ready\": 4,\n      \"experts_skipped_budget\": 0,\n      \"matrices_loaded\": 12,\n      \"payload_bytes_loaded\": 98304\n    },\n    \"host_memory_plan\": {\n      \"available_bytes\": 8256737280,\n      \"dense_page_allowance_bytes\": 84352,\n      \"expert_cache_capacity_bytes\": 98304,\n      \"lazy_embedding_payload_bytes\": 0,\n      \"os_margin_bytes\": 4294967296,\n      \"policy\": \"automatic_owned_expert_cache_after_dense_state_and_os_reserves\",\n      \"routed_expert_payload_bytes\": 98304,\n      \"state_reserve_bytes\": 67141632,\n      \"state_slots\": 1\n    },\n    \"kv_precision\": \"F32\",\n    \"mapped_weight_bytes\": 188256,\n    \"shards\": [\n      \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\"\n    ],\n    \"version\": \"0.2.1\"\n  },\n  \"text\": \"AAAA\",\n  \"token_ids\": [\n    65,\n    65,\n    65,\n    65\n  ],\n  \"tokenize_seconds\": 0.000099581\n}\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "project": "Forge9070 0.4.1",
+  "date": "2026-11-16",
+  "environment": {
+    "os": "Linux x86_64",
+    "kernel": "6.18.57",
+    "rust": "1.100.0",
+    "wsl": false,
+    "rx_9070_xt_available": false,
+    "windows_execution_available": false
+  },
+  "builds": {
+    "development": {
+      "passed": true,
+      "seconds": 9.96
+    },
+    "release": {
+      "passed": true,
+      "seconds": 133.84,
+      "artifact": "artifacts/build-release-0.4.1.json"
+    }
+  },
+  "rust_unit_tests": {
+    "passed": 179,
+    "failed": 0,
+    "engine_library": 157,
+    "frontend": 22,
+    "new_regressions": 7,
+    "artifact": "artifacts/rust-tests-0.4.1.json"
+  },
+  "release_cli_checks": {
+    "passed": 4,
+    "failed": 0,
+    "artifact": "artifacts/release-cli-0.4.1.json"
+  },
+  "live_hf_metadata_checks": {
+    "selected_original": "passed, all four shards",
+    "selected_uncensored": "passed, all four shards",
+    "artifact": "artifacts/qwen38-header-summary.json"
+  },
+  "previous_release_record": "artifacts/v0.4.0/VALIDATION.md",
+  "limits": [
+    "No full Qwen3.8 checkpoint downloaded or loaded",
+    "No RX 9070 XT execution, performance or numerical fidelity evaluation",
+    "No Windows build or WSL interoperability run",
+    "Metadata acceptance is not a memory-fit or answer-quality certificate",
+    "Previous integration/executable test reports remain historical and were not rerun for this patch"
+  ]
+}

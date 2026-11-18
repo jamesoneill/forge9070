@@ -1,0 +1,1152 @@
+{
+  "checked_at_utc": "2026-11-17T20:42:20.159593+00:00",
+  "scope": "Native configuration HTTP API and optional headless Chromium, synthetic CPU model, loopback only. No real-model quality, Windows, WSL GPU, or hardware performance claims.",
+  "seconds": 0.214,
+  "passed": 50,
+  "skipped": 1,
+  "failure": null,
+  "records": [
+    {
+      "name": "built-executable",
+      "passed": true,
+      "detail": {
+        "version": "forge-engine 0.2.1",
+        "sha256": "b1c1cf6733c22679b5013e2f0156e131cbf54d9cd40b295d213c86f97e527312"
+      }
+    },
+    {
+      "name": "unloaded-public-ui-without-gpu-initialization",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "ui-security-headers",
+      "passed": true,
+      "detail": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "16075",
+        "connection": "close",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+      }
+    },
+    {
+      "name": "public-asset-app.js",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "content_type": "application/javascript; charset=utf-8"
+      }
+    },
+    {
+      "name": "public-asset-style.css",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "content_type": "text/css; charset=utf-8"
+      }
+    },
+    {
+      "name": "api-auth-/api/config",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "api-auth-/api/hardware",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "api-auth-/v1/status",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "api-auth-/v1/models",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "api-auth-/health",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no-model-health-is-not-ready",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "configuration-with-no-model-or-secret",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": null,
+        "models_dir": null,
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "settings": {
+          "backend": "vulkan",
+          "ctx": 8192,
+          "device": null,
+          "expert_ram_mib": null,
+          "expert_warmup": true,
+          "max_queued": 32,
+          "max_tokens": 2048,
+          "parallel": 1,
+          "queue_timeout_secs": 120,
+          "ram_margin_mib": 4096,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 59303,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "foreign-host-rejected",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "foreign-origin-rejected",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "matching-origin-accepted",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "scan-requires-json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "apply-requires-json",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "scan-does-not-create-missing-directory",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "scan-validates-complete-supported-moe-files",
+      "passed": true,
+      "detail": {
+        "models": [
+          {
+            "architecture": "qwen3moe",
+            "bytes": 188416,
+            "id": "<img src=x onerror=window.forgeXss=1>.gguf",
+            "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/<img src=x onerror=window.forgeXss=1>.gguf",
+            "shards": 1
+          },
+          {
+            "architecture": "qwen3moe",
+            "bytes": 188416,
+            "id": "fixture.gguf",
+            "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf",
+            "shards": 1
+          }
+        ],
+        "rejected": [
+          {
+            "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/partial-00001-of-00002.gguf",
+            "reason": "open GGUF <temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/partial-00002-of-00002.gguf: No such file or directory (os error 2)"
+          },
+          {
+            "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/invalid.gguf",
+            "reason": "GGUF file is truncated or exceeds address space"
+          },
+          {
+            "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/dense.gguf",
+            "reason": "native coding service accepts supported sparse MoE models; this checkpoint is dense"
+          }
+        ],
+        "root": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "safetensors_files": 1,
+        "scanned_entries": 7,
+        "skipped_symlinks": 1,
+        "truncated": false,
+        "warnings": [
+          "Safetensors files were found. This native service requires a supported GGUF checkpoint; select all shards of a compatible GGUF download.",
+          "Skipped 1 symbolic links. Hugging Face cache snapshots may use links; place the complete GGUF files in a regular model folder to scan them here."
+        ]
+      }
+    },
+    {
+      "name": "scan-explains-dense-corrupt-and-missing-shards",
+      "passed": true,
+      "detail": {
+        "partial-00001-of-00002.gguf": "open GGUF <temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/partial-00002-of-00002.gguf: No such file or directory (os error 2)",
+        "invalid.gguf": "GGUF file is truncated or exceeds address space",
+        "dense.gguf": "native coding service accepts supported sparse MoE models; this checkpoint is dense"
+      }
+    },
+    {
+      "name": "scan-reports-non-gguf-weights",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "name": "scan-does-not-follow-directory-symlinks",
+      "passed": true,
+      "detail": {
+        "<img src=x onerror=window.forgeXss=1>.gguf": {
+          "architecture": "qwen3moe",
+          "bytes": 188416,
+          "id": "<img src=x onerror=window.forgeXss=1>.gguf",
+          "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/<img src=x onerror=window.forgeXss=1>.gguf",
+          "shards": 1
+        },
+        "fixture.gguf": {
+          "architecture": "qwen3moe",
+          "bytes": 188416,
+          "id": "fixture.gguf",
+          "path": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf",
+          "shards": 1
+        }
+      }
+    },
+    {
+      "name": "scan-does-not-load-or-save-model",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "apply-loads-model-and-reconfigures-admission",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": "fixture.gguf",
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "runtime": {
+          "config": {
+            "architecture": "qwen3moe",
+            "block_count": 1,
+            "context_length": 2048,
+            "embedding_length": 32,
+            "expert_count": 4,
+            "expert_feed_forward_length": 64,
+            "expert_weights_scale": 1.0,
+            "experts_per_token": 2,
+            "feed_forward_length": 64,
+            "head_count": 1,
+            "head_count_kv": 1,
+            "head_dim": 32,
+            "normalize_expert_weights": true,
+            "rms_epsilon": 9.999999974752427e-07,
+            "rope_base": 10000.0,
+            "rope_dimension_count": 32,
+            "training_context_length": 4096,
+            "vocab_size": 261
+          },
+          "engine": "forge-native",
+          "execution": {
+            "backend": "cpu",
+            "fallback": "none"
+          },
+          "expert_cache": {
+            "buffered_expert_loads": 0,
+            "capacity_bytes": 98304,
+            "direct_expert_loads": 12,
+            "direct_fallbacks": 0,
+            "evictions": 0,
+            "hits": 0,
+            "io_scratch_max_bytes": 65536,
+            "mapped_bypasses": 0,
+            "misses": 0,
+            "payload_bytes_read": 98304,
+            "pinned_bytes": 0,
+            "prefill_hits": 0,
+            "prefill_misses": 0,
+            "read_errors": 0,
+            "resident_bytes": 98304,
+            "resident_entries": 12
+          },
+          "expert_warmup": {
+            "elapsed_seconds": 0.000241435,
+            "experts_considered": 4,
+            "experts_ready": 4,
+            "experts_skipped_budget": 0,
+            "matrices_loaded": 12,
+            "payload_bytes_loaded": 98304
+          },
+          "host_memory_plan": {
+            "available_bytes": 8285421568,
+            "dense_page_allowance_bytes": 84352,
+            "expert_cache_capacity_bytes": 98304,
+            "lazy_embedding_payload_bytes": 0,
+            "os_margin_bytes": 0,
+            "policy": "explicit_bounded_owned_expert_cache",
+            "routed_expert_payload_bytes": 98304,
+            "state_reserve_bytes": 136314880,
+            "state_slots": 2
+          },
+          "kv_precision": "F32",
+          "mapped_weight_bytes": 188416,
+          "shards": [
+            "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf"
+          ],
+          "version": "0.2.1"
+        },
+        "settings": {
+          "backend": "cpu",
+          "ctx": 2048,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 64,
+          "parallel": 2,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 59303,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "runtime-uses-requested-settings",
+      "passed": true,
+      "detail": {
+        "admission": {
+          "active": 0,
+          "active_high_water": 0,
+          "allocation": "state on demand; reusable per-model sequence pool",
+          "capacity": 2,
+          "model_changing": false,
+          "policy": "fifo",
+          "queue_limit": 5,
+          "queue_timeout_secs": 9,
+          "queued": 0
+        },
+        "connections": 1,
+        "idle_sequences": 0,
+        "model": "fixture.gguf",
+        "runtime": {
+          "config": {
+            "architecture": "qwen3moe",
+            "block_count": 1,
+            "context_length": 2048,
+            "embedding_length": 32,
+            "expert_count": 4,
+            "expert_feed_forward_length": 64,
+            "expert_weights_scale": 1.0,
+            "experts_per_token": 2,
+            "feed_forward_length": 64,
+            "head_count": 1,
+            "head_count_kv": 1,
+            "head_dim": 32,
+            "normalize_expert_weights": true,
+            "rms_epsilon": 9.999999974752427e-07,
+            "rope_base": 10000.0,
+            "rope_dimension_count": 32,
+            "training_context_length": 4096,
+            "vocab_size": 261
+          },
+          "engine": "forge-native",
+          "execution": {
+            "backend": "cpu",
+            "fallback": "none"
+          },
+          "expert_cache": {
+            "buffered_expert_loads": 0,
+            "capacity_bytes": 98304,
+            "direct_expert_loads": 12,
+            "direct_fallbacks": 0,
+            "evictions": 0,
+            "hits": 0,
+            "io_scratch_max_bytes": 65536,
+            "mapped_bypasses": 0,
+            "misses": 0,
+            "payload_bytes_read": 98304,
+            "pinned_bytes": 0,
+            "prefill_hits": 0,
+            "prefill_misses": 0,
+            "read_errors": 0,
+            "resident_bytes": 98304,
+            "resident_entries": 12
+          },
+          "expert_warmup": {
+            "elapsed_seconds": 0.000241435,
+            "experts_considered": 4,
+            "experts_ready": 4,
+            "experts_skipped_budget": 0,
+            "matrices_loaded": 12,
+            "payload_bytes_loaded": 98304
+          },
+          "host_memory_plan": {
+            "available_bytes": 8285421568,
+            "dense_page_allowance_bytes": 84352,
+            "expert_cache_capacity_bytes": 98304,
+            "lazy_embedding_payload_bytes": 0,
+            "os_margin_bytes": 0,
+            "policy": "explicit_bounded_owned_expert_cache",
+            "routed_expert_payload_bytes": 98304,
+            "state_reserve_bytes": 136314880,
+            "state_slots": 2
+          },
+          "kv_precision": "F32",
+          "mapped_weight_bytes": 188416,
+          "shards": [
+            "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf"
+          ],
+          "version": "0.2.1"
+        }
+      }
+    },
+    {
+      "name": "successful-apply-persists-without-secrets",
+      "passed": true,
+      "detail": {
+        "directory": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "model": "fixture.gguf",
+        "settings": {
+          "backend": "cpu",
+          "device": null,
+          "ctx": 2048,
+          "max_tokens": 64,
+          "parallel": 2,
+          "max_queued": 5,
+          "queue_timeout_secs": 9,
+          "vram_mib": 0,
+          "expert_ram_mib": 16,
+          "ram_margin_mib": 0,
+          "expert_warmup": true
+        }
+      }
+    },
+    {
+      "name": "applied-model-executes-real-generation",
+      "passed": true,
+      "detail": {
+        "choices": [
+          {
+            "finish_reason": "length",
+            "index": 0,
+            "message": {
+              "content": "AAAA",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1794948140,
+        "id": "chatcmpl-native-1794948140-1",
+        "model": "fixture.gguf",
+        "object": "chat.completion",
+        "timings": {
+          "cached_prompt_tokens": 0,
+          "decode_seconds": 0.000199552,
+          "prefill_seconds": 0.000910375
+        },
+        "usage": {
+          "completion_tokens": 4,
+          "prompt_tokens": 20,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 24
+        }
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-parallel",
+      "passed": true,
+      "detail": {
+        "parallel": 0
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-parallel",
+      "passed": true,
+      "detail": {
+        "parallel": 5
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-ctx",
+      "passed": true,
+      "detail": {
+        "ctx": 0
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-max_tokens",
+      "passed": true,
+      "detail": {
+        "max_tokens": 2048
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-max_queued",
+      "passed": true,
+      "detail": {
+        "max_queued": 4097
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-queue_timeout_secs",
+      "passed": true,
+      "detail": {
+        "queue_timeout_secs": 0
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-backend",
+      "passed": true,
+      "detail": {
+        "backend": "pretend"
+      }
+    },
+    {
+      "name": "invalid-settings-rejected-expert_ram_mib",
+      "passed": true,
+      "detail": {
+        "expert_ram_mib": -1
+      }
+    },
+    {
+      "name": "rejected-settings-preserve-running-profile",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "missing-model-does-not-replace-runtime",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "model-selection-cannot-escape-selected-root",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed-configuration-keeps-generation-working",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "settings-write-failure-does-not-commit-runtime",
+      "passed": true,
+      "detail": {
+        "error": {
+          "code": null,
+          "message": "settings-file must be a regular, non-symlink file",
+          "type": "invalid_request_error"
+        }
+      }
+    },
+    {
+      "name": "prepare-real-busy-configuration-check",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": "expanded.gguf",
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "runtime": {
+          "config": {
+            "architecture": "qwen3moe",
+            "block_count": 4,
+            "context_length": 32768,
+            "embedding_length": 32,
+            "expert_count": 4,
+            "expert_feed_forward_length": 64,
+            "expert_weights_scale": 1.0,
+            "experts_per_token": 2,
+            "feed_forward_length": 64,
+            "head_count": 1,
+            "head_count_kv": 1,
+            "head_dim": 32,
+            "normalize_expert_weights": true,
+            "rms_epsilon": 9.999999974752427e-07,
+            "rope_base": 10000.0,
+            "rope_dimension_count": 32,
+            "training_context_length": 32768,
+            "vocab_size": 261
+          },
+          "engine": "forge-native",
+          "execution": {
+            "backend": "cpu",
+            "fallback": "none"
+          },
+          "expert_cache": {
+            "buffered_expert_loads": 0,
+            "capacity_bytes": 393216,
+            "direct_expert_loads": 48,
+            "direct_fallbacks": 0,
+            "evictions": 0,
+            "hits": 0,
+            "io_scratch_max_bytes": 65536,
+            "mapped_bypasses": 0,
+            "misses": 0,
+            "payload_bytes_read": 393216,
+            "pinned_bytes": 0,
+            "prefill_hits": 0,
+            "prefill_misses": 0,
+            "read_errors": 0,
+            "resident_bytes": 393216,
+            "resident_entries": 48
+          },
+          "expert_warmup": {
+            "elapsed_seconds": 0.000307044,
+            "experts_considered": 16,
+            "experts_ready": 16,
+            "experts_skipped_budget": 0,
+            "matrices_loaded": 48,
+            "payload_bytes_loaded": 393216
+          },
+          "host_memory_plan": {
+            "available_bytes": 8284184576,
+            "dense_page_allowance_bytes": 136576,
+            "expert_cache_capacity_bytes": 393216,
+            "lazy_embedding_payload_bytes": 0,
+            "os_margin_bytes": 0,
+            "policy": "explicit_bounded_owned_expert_cache",
+            "routed_expert_payload_bytes": 393216,
+            "state_reserve_bytes": 134217728,
+            "state_slots": 1
+          },
+          "kv_precision": "F32",
+          "mapped_weight_bytes": 537792,
+          "shards": [
+            "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/expanded.gguf"
+          ],
+          "version": "0.2.1"
+        },
+        "settings": {
+          "backend": "cpu",
+          "ctx": 32768,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 16384,
+          "parallel": 1,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 59303,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "active-generation-blocks-configuration-without-saving",
+      "passed": true,
+      "detail": {
+        "error": {
+          "code": null,
+          "message": "configuration changes require an idle server; wait for active and queued requests to finish",
+          "type": "invalid_request_error"
+        }
+      }
+    },
+    {
+      "name": "idle-apply-updates-context-and-queue-capacity",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": "fixture.gguf",
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "runtime": {
+          "config": {
+            "architecture": "qwen3moe",
+            "block_count": 1,
+            "context_length": 1024,
+            "embedding_length": 32,
+            "expert_count": 4,
+            "expert_feed_forward_length": 64,
+            "expert_weights_scale": 1.0,
+            "experts_per_token": 2,
+            "feed_forward_length": 64,
+            "head_count": 1,
+            "head_count_kv": 1,
+            "head_dim": 32,
+            "normalize_expert_weights": true,
+            "rms_epsilon": 9.999999974752427e-07,
+            "rope_base": 10000.0,
+            "rope_dimension_count": 32,
+            "training_context_length": 4096,
+            "vocab_size": 261
+          },
+          "engine": "forge-native",
+          "execution": {
+            "backend": "cpu",
+            "fallback": "none"
+          },
+          "expert_cache": {
+            "buffered_expert_loads": 0,
+            "capacity_bytes": 98304,
+            "direct_expert_loads": 12,
+            "direct_fallbacks": 0,
+            "evictions": 0,
+            "hits": 0,
+            "io_scratch_max_bytes": 65536,
+            "mapped_bypasses": 0,
+            "misses": 0,
+            "payload_bytes_read": 98304,
+            "pinned_bytes": 0,
+            "prefill_hits": 0,
+            "prefill_misses": 0,
+            "read_errors": 0,
+            "resident_bytes": 98304,
+            "resident_entries": 12
+          },
+          "expert_warmup": {
+            "elapsed_seconds": 4.8153e-05,
+            "experts_considered": 4,
+            "experts_ready": 4,
+            "experts_skipped_budget": 0,
+            "matrices_loaded": 12,
+            "payload_bytes_loaded": 98304
+          },
+          "host_memory_plan": {
+            "available_bytes": 8284184576,
+            "dense_page_allowance_bytes": 84352,
+            "expert_cache_capacity_bytes": 98304,
+            "lazy_embedding_payload_bytes": 0,
+            "os_margin_bytes": 0,
+            "policy": "explicit_bounded_owned_expert_cache",
+            "routed_expert_payload_bytes": 98304,
+            "state_reserve_bytes": 270532608,
+            "state_slots": 4
+          },
+          "kv_precision": "F32",
+          "mapped_weight_bytes": 188416,
+          "shards": [
+            "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf"
+          ],
+          "version": "0.2.1"
+        },
+        "settings": {
+          "backend": "cpu",
+          "ctx": 1024,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 7,
+          "max_tokens": 32,
+          "parallel": 4,
+          "queue_timeout_secs": 3,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 59303,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "unload-retains-settings-and-frees-model",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": null,
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "runtime": null,
+        "settings": {
+          "backend": "cpu",
+          "ctx": 1024,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 7,
+          "max_tokens": 32,
+          "parallel": 4,
+          "queue_timeout_secs": 3,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 59303,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "generation-rejected-cleanly-without-model",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved-settings-restore-after-process-restart",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": null,
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "settings": {
+          "backend": "cpu",
+          "ctx": 1024,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 7,
+          "max_tokens": 32,
+          "parallel": 4,
+          "queue_timeout_secs": 3,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 49129,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "browser-checks",
+      "passed": null,
+      "skipped": true,
+      "detail": "Not requested; API-only run."
+    },
+    {
+      "name": "prepare-profile-for-loaded-restart",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": "fixture.gguf",
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "runtime": {
+          "config": {
+            "architecture": "qwen3moe",
+            "block_count": 1,
+            "context_length": 2048,
+            "embedding_length": 32,
+            "expert_count": 4,
+            "expert_feed_forward_length": 64,
+            "expert_weights_scale": 1.0,
+            "experts_per_token": 2,
+            "feed_forward_length": 64,
+            "head_count": 1,
+            "head_count_kv": 1,
+            "head_dim": 32,
+            "normalize_expert_weights": true,
+            "rms_epsilon": 9.999999974752427e-07,
+            "rope_base": 10000.0,
+            "rope_dimension_count": 32,
+            "training_context_length": 4096,
+            "vocab_size": 261
+          },
+          "engine": "forge-native",
+          "execution": {
+            "backend": "cpu",
+            "fallback": "none"
+          },
+          "expert_cache": {
+            "buffered_expert_loads": 0,
+            "capacity_bytes": 98304,
+            "direct_expert_loads": 12,
+            "direct_fallbacks": 0,
+            "evictions": 0,
+            "hits": 0,
+            "io_scratch_max_bytes": 65536,
+            "mapped_bypasses": 0,
+            "misses": 0,
+            "payload_bytes_read": 98304,
+            "pinned_bytes": 0,
+            "prefill_hits": 0,
+            "prefill_misses": 0,
+            "read_errors": 0,
+            "resident_bytes": 98304,
+            "resident_entries": 12
+          },
+          "expert_warmup": {
+            "elapsed_seconds": 0.000228996,
+            "experts_considered": 4,
+            "experts_ready": 4,
+            "experts_skipped_budget": 0,
+            "matrices_loaded": 12,
+            "payload_bytes_loaded": 98304
+          },
+          "host_memory_plan": {
+            "available_bytes": 8283951104,
+            "dense_page_allowance_bytes": 84352,
+            "expert_cache_capacity_bytes": 98304,
+            "lazy_embedding_payload_bytes": 0,
+            "os_margin_bytes": 0,
+            "policy": "explicit_bounded_owned_expert_cache",
+            "routed_expert_payload_bytes": 98304,
+            "state_reserve_bytes": 136314880,
+            "state_slots": 2
+          },
+          "kv_precision": "F32",
+          "mapped_weight_bytes": 188416,
+          "shards": [
+            "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces/fixture.gguf"
+          ],
+          "version": "0.2.1"
+        },
+        "settings": {
+          "backend": "cpu",
+          "ctx": 2048,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 64,
+          "parallel": 2,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 49129,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "saved-model-loads-after-process-restart",
+      "passed": true,
+      "detail": {
+        "desired_model": null,
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": "fixture.gguf",
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "settings": {
+          "backend": "cpu",
+          "ctx": 2048,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 64,
+          "parallel": 2,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 52405,
+          "threads": 2
+        },
+        "startup_error": null,
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "missing-saved-checkpoint-keeps-recovery-ui-accessible",
+      "passed": true,
+      "detail": {
+        "desired_model": "fixture.gguf",
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": null,
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "settings": {
+          "backend": "cpu",
+          "ctx": 2048,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 64,
+          "parallel": 2,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 44985,
+          "threads": 2
+        },
+        "startup_error": "Saved model could not be loaded: model fixture.gguf is unavailable: No such file or directory (os error 2). The service is running without a model so you can repair the configuration. The saved profile has not been changed.",
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    },
+    {
+      "name": "missing-saved-model-folder-keeps-recovery-ui-accessible",
+      "passed": true,
+      "detail": {
+        "desired_model": "fixture.gguf",
+        "engine": "forge-native",
+        "in_wsl": false,
+        "model": null,
+        "models_dir": "<temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces",
+        "persistence": "Successful changes are saved to the configured settings file.",
+        "platform": "linux",
+        "settings": {
+          "backend": "cpu",
+          "ctx": 2048,
+          "device": null,
+          "expert_ram_mib": 16,
+          "expert_warmup": true,
+          "max_queued": 5,
+          "max_tokens": 64,
+          "parallel": 2,
+          "queue_timeout_secs": 9,
+          "ram_margin_mib": 0,
+          "vram_mib": 0
+        },
+        "settings_file": "<temporary-directory>/forge-native-ui-fgrb_86b/native-service.json",
+        "startup": {
+          "api_key_required": true,
+          "host": "127.0.0.1",
+          "max_connections": 128,
+          "port": 54689,
+          "threads": 2
+        },
+        "startup_error": "Saved model could not be loaded: model directory <temporary-directory>/forge-native-ui-fgrb_86b/Models with spaces is unavailable; Windows drives use F:\\ in a Windows process and /mnt/f in native WSL: No such file or directory (os error 2). The service is running without a model so you can repair the configuration. The saved profile has not been changed.",
+        "suggested_model_dirs": [
+          {
+            "label": "Forge download folder",
+            "path": "<build-home>/.local/share/forge9070/models"
+          }
+        ],
+        "version": "0.2.1"
+      }
+    }
+  ]
+}

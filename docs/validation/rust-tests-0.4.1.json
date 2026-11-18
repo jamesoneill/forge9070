@@ -1,0 +1,52 @@
+{
+  "version": "0.4.1",
+  "scope": "Final modified source; unit and in-process fixture tests only",
+  "commands": [
+    {
+      "command": [
+        "<build-home>/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "rusting_strata",
+        "--lib"
+      ],
+      "passed": 157,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "<build-home>/.cargo/bin/cargo",
+        "test",
+        "--locked",
+        "-p",
+        "forge9070",
+        "--bin",
+        "forge9070"
+      ],
+      "passed": 22,
+      "failed": 0,
+      "exit_code": 0
+    }
+  ],
+  "passed": 179,
+  "failed": 0,
+  "new_regressions": 7,
+  "coverage": [
+    "HF selected-file listing and immutable revision",
+    "HF Transformers alias still requires actual sparse GGUF headers",
+    "Metadata-only first shard with unpadded EOF",
+    "Complete split maps every tensor to original payload bytes",
+    "Missing or empty split sets",
+    "Malformed alignment, header or trailing payload",
+    "Combined tensor-count and tensor-payload bounds"
+  ],
+  "limits": [
+    "No full Qwen3.8 weights loaded",
+    "No GPU model execution",
+    "Some upstream GPU tests skip work when no suitable GPU exists",
+    "Prior integration and performance records are historical, not rerun for 0.4.1"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "schema": "forge9070.qwen38-context-estimates.v1",
+  "version": "0.6.0",
+  "source": "Pinned RustingStrata allocation and snapshot code, qwen4exp 48-layer model metadata",
+  "configuration": {
+    "attention_layers": 12,
+    "delta_layers": 36,
+    "kv_heads": 2,
+    "head_dim": 256,
+    "kv_bytes_per_element": 2,
+    "slots": 1,
+    "mtp": 0
+  },
+  "formula": {
+    "f16_kv_bytes_per_context_token": 24576,
+    "qsa_pooled_keys_bytes_per_context_token": 1536,
+    "parked_prefix_fixed_bytes": 118423552,
+    "parked_prefix_bytes_per_token": 26116
+  },
+  "rows": [
+    {
+      "context_tokens": 4096,
+      "f16_kv_bytes": 100663296,
+      "qsa_pooled_keys_bytes": 6291456,
+      "parked_prefix_payload_bytes": 225394688
+    },
+    {
+      "context_tokens": 16384,
+      "f16_kv_bytes": 402653184,
+      "qsa_pooled_keys_bytes": 25165824,
+      "parked_prefix_payload_bytes": 546308096
+    },
+    {
+      "context_tokens": 32768,
+      "f16_kv_bytes": 805306368,
+      "qsa_pooled_keys_bytes": 50331648,
+      "parked_prefix_payload_bytes": 974192640
+    },
+    {
+      "context_tokens": 65536,
+      "f16_kv_bytes": 1610612736,
+      "qsa_pooled_keys_bytes": 100663296,
+      "parked_prefix_payload_bytes": 1829961728
+    },
+    {
+      "context_tokens": 131072,
+      "f16_kv_bytes": 3221225472,
+      "qsa_pooled_keys_bytes": 201326592,
+      "parked_prefix_payload_bytes": 3541499904
+    }
+  ],
+  "scope": "Source-derived allocated/payload estimates, not hardware measurement or a complete VRAM/RSS estimate. Excludes dense weights, expert slots, prefill scratch, driver margin and separate system-prefix saved state. Parked payload at full context is a sizing upper example; generation needs free context."
+}

@@ -1,0 +1,191 @@
+{
+  "status": "passed",
+  "command": [
+    "./target/debug/forge9070",
+    "models",
+    "files",
+    "unsloth/Qwen3.5-35B-A3B-GGUF",
+    "--json"
+  ],
+  "elapsed_seconds": 180.2,
+  "complete_checkpoint_downloaded": false,
+  "metadata": {
+    "repo": "unsloth/Qwen3.5-35B-A3B-GGUF",
+    "revision": "main",
+    "commit": "bc014a17be43adabd7066b7a86075ff935c6a4e2",
+    "models": [
+      {
+        "file": "BF16/Qwen3.5-35B-A3B-BF16-00001-of-00002.gguf",
+        "size": 69376637824,
+        "shards": 2,
+        "sha256": "a1c3f36db01985d678bd46e976b62398d3814fcc2b26aee7cc78c857466b8bee",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen35moe",
+          "layers": 40,
+          "experts_per_layer": 256,
+          "active_experts_per_token": 8,
+          "shards": 2,
+          "tensors": 733,
+          "tensor_weight_bytes": 69365647872,
+          "quantization_histogram": {
+            "BF16": 432,
+            "F32": 301
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q3_K_M.gguf",
+        "size": 16356375168,
+        "shards": 1,
+        "sha256": "5607c8fcc8b04ada7d1a1152b9a5b6c1e67e6768232c16f6b03d9719d5ab1b2d",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen35moe",
+          "layers": 40,
+          "experts_per_layer": 256,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 733,
+          "tensor_weight_bytes": 16345385472,
+          "quantization_histogram": {
+            "F32": 301,
+            "IQ3_XXS": 80,
+            "IQ4_XS": 40,
+            "Q6_K": 2,
+            "Q8_0": 310
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q3_K_S.gguf",
+        "size": 15265856128,
+        "shards": 1,
+        "sha256": "315cce210c0406ae05c4e482ceba154c9225fa0bb4c9e779465209dec08e625d",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen35moe",
+          "layers": 40,
+          "experts_per_layer": 256,
+          "active_experts_per_token": 8,
+          "shards": 1,
+          "tensors": 733,
+          "tensor_weight_bytes": 15254866432,
+          "quantization_histogram": {
+            "F32": 301,
+            "IQ3_S": 40,
+            "IQ3_XXS": 80,
+            "Q6_K": 2,
+            "Q8_0": 310
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths; GPU memory fit, numerical correctness and speed require actual loading and a hardware benchmark."
+        }
+      }
+    ],
+    "license": "apache-2.0",
+    "gated": false,
+    "policy": "sparse_moe_only",
+    "excluded": [
+      {
+        "file": "Qwen3.5-35B-A3B-MXFP4_MOE.gguf",
+        "reason": "model rejected by sparse_moe_only policy: blk.0.ffn_gate_exps.weight: unsupported quantization type 39; blk.0.ffn_up_exps.weight: unsupported quantization type 39; blk.1.ffn_gate_exps.weight: unsupported quantization type 39; blk.1.ffn_up_exps.weight: unsupported quantization type 39; blk.11.ffn_gate_exps.weight: unsupported quantization type 39; blk.11.ffn_up_exps.weight: unsupported quantization type 39; blk.12.ffn_gate_exps.weight: unsupported quantization type 39; blk.12.ffn_up_exps.weight: unsupported quantization type 39; blk.13.ffn_gate_exps.weight: unsupported quantization type 39; blk.13.ffn_up_exps.weight: unsupported quantization type 39; blk.14.ffn_gate_exps.weight: unsupported quantization type 39; blk.14.ffn_up_exps.weight: unsupported quantization type 39; blk.15.ffn_gate_exps.weight: unsupported quantization type 39; blk.15.ffn_up_exps.weight: unsupported quantization type 39; blk.16.ffn_gate_exps.weight: unsupported quantization type 39; blk.16.ffn_up_exps.weight: unsupported quantization type 39; blk.17.ffn_gate_exps.weight: unsupported quantization type 39; blk.17.ffn_up_exps.weight: unsupported quantization type 39; blk.18.ffn_gate_exps.weight: unsupported quantization type 39; blk.18.ffn_up_exps.weight: unsupported quantization type 39; blk.19.ffn_gate_exps.weight: unsupported quantization type 39; blk.19.ffn_up_exps.weight: unsupported quantization type 39; blk.2.ffn_gate_exps.weight: unsupported quantization type 39; blk.2.ffn_up_exps.weight: unsupported quantization type 39; blk.20.ffn_gate_exps.weight: unsupported quantization type 39; blk.20.ffn_up_exps.weight: unsupported quantization type 39; blk.21.ffn_gate_exps.weight: unsupported quantization type 39; blk.21.ffn_up_exps.weight: unsupported quantization type 39; blk.22.ffn_gate_exps.weight: unsupported quantization type 39; blk.22.ffn_up_exps.weight: unsupported quantization type 39; blk.23.ffn_gate_exps.weight: unsupported quantization type 39; blk.23.ffn_up_exps.weight: unsupported quantization type 39; blk.24.ffn_gate_exps.weight: unsupported quantization type 39; blk.24.ffn_up_exps.weight: unsupported quantization type 39; blk.25.ffn_gate_exps.weight: unsupported quantization type 39; blk.25.ffn_up_exps.weight: unsupported quantization type 39; blk.26.ffn_gate_exps.weight: unsupported quantization type 39; blk.26.ffn_up_exps.weight: unsupported quantization type 39; blk.27.ffn_gate_exps.weight: unsupported quantization type 39; blk.27.ffn_up_exps.weight: unsupported quantization type 39"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q4_K_M.gguf",
+        "reason": "verify GGUF header Qwen3.5-35B-A3B-Q4_K_M.gguf: timeout: global"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q4_K_S.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q5_K_M.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q5_K_S.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q6_K.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-Q8_0.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ2_M.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ2_XXS.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ3_S.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ3_XXS.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ4_NL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-IQ4_XS.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q2_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q3_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q4_K_L.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q5_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q6_K_S.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q6_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      },
+      {
+        "file": "Qwen3.5-35B-A3B-UD-Q8_K_XL.gguf",
+        "reason": "compatibility verification time budget exhausted; use a more specific repository/query"
+      }
+    ]
+  },
+  "source_state": "Earlier 0.3 development build, before read batching and the final FFN-buffer/MTP geometry guards. Final frozen-source search is recorded in compat-hf-live-search.json.",
+  "verification_limits": {
+    "complete_checkpoint_downloaded": false,
+    "inference_performed": false,
+    "note": "Timeout/budget exclusions are unverified choices, not proof of incompatible architecture or quantization.",
+    "timeout_or_budget_exclusions": 20,
+    "explicit_unsupported_quantization_exclusions": 1
+  }
+}

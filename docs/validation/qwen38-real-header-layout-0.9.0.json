@@ -1,0 +1,37 @@
+{
+  "scope": "Bounded public GGUF tensor-layout validation against independent loader expected shapes; no tensor payload or inference validation",
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+  "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+  "checked_at_utc": "2026-11-17T19:20:04.469570+00:00",
+  "bounded_header_bytes_per_shard": 16777216,
+  "shards": 2,
+  "tensor_count": 1224,
+  "consumed_tensor_count": 1224,
+  "ple_layers": [
+    1
+  ],
+  "errors": [],
+  "inference_tested": false,
+  "quantization_ids": [
+    0,
+    1,
+    8,
+    12,
+    13,
+    14,
+    18,
+    20,
+    21,
+    22,
+    23,
+    30,
+    42
+  ],
+  "full_checkpoint_downloaded": false,
+  "tensor_payload_interpreted": false,
+  "transfer_note": "HTTP Range fetched at most 16MiB per shard. Prefixes included bytes after the parsed header; only metadata and descriptors were interpreted.",
+  "parsed_header_bytes": [
+    11024355,
+    173
+  ]
+}

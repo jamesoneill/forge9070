@@ -1,0 +1,62 @@
+{
+  "version": "0.4.1",
+  "passed": 4,
+  "total": 4,
+  "checks": [
+    {
+      "name": "version",
+      "command": [
+        "./target/release/forge9070",
+        "--version"
+      ],
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "forge9070 0.4.1\n",
+      "stderr": ""
+    },
+    {
+      "name": "selected-file-help",
+      "command": [
+        "./target/release/forge9070",
+        "models",
+        "files",
+        "--help"
+      ],
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "List downloadable GGUF choices and resolve a branch/tag to an immutable revision\n\nUsage: forge9070 models files [OPTIONS] <REPO>\n\nArguments:\n  <REPO>  \n\nOptions:\n      --revision <REVISION>  [default: main]\n      --file <FILE>          Verify only this exact GGUF choice and its shards; does not download weights\n      --json                 \n  -h, --help                 Print help\n",
+      "stderr": ""
+    },
+    {
+      "name": "reject-unsafe-file-before-network",
+      "command": [
+        "./target/release/forge9070",
+        "models",
+        "files",
+        "no/network",
+        "--file",
+        "../escape.gguf",
+        "--json"
+      ],
+      "passed": true,
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: selected file must be a valid relative .gguf path; raw .gguf.part files are not GGUF shards\n"
+    },
+    {
+      "name": "tiny-moe-inspection",
+      "command": [
+        "./target/release/forge9070",
+        "inspect",
+        "--model",
+        "tests/fixtures/tiny-qwen3moe.gguf",
+        "--json"
+      ],
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "{\n  \"path\": \"tests/fixtures/tiny-qwen3moe.gguf\",\n  \"policy\": \"sparse_moe_only\",\n  \"architecture\": \"qwen3moe\",\n  \"layers\": 1,\n  \"experts_per_layer\": 4,\n  \"active_experts_per_token\": 2,\n  \"shards\": 1,\n  \"tensors\": 15,\n  \"tensor_weight_bytes\": 182656,\n  \"quantization_histogram\": {\n    \"F32\": 15\n  },\n  \"compression\": {\n    \"tensor_elements\": 45664,\n    \"sub4bit_tensors\": 0,\n    \"sub4bit_elements\": 0,\n    \"sub4bit_formats\": [],\n    \"routed_expert_tensors\": 3,\n    \"routed_expert_elements\": 24576,\n    \"sub4bit_routed_expert_tensors\": 0,\n    \"sub4bit_routed_expert_elements\": 0,\n    \"unknown_type_tensors\": 0\n  },\n  \"supported_metadata\": true,\n  \"issues\": [],\n  \"caveat\": \"Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation.\"\n}\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Release command interface and bounded inspection only; no inference."
+}

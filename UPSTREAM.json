@@ -1,0 +1,39 @@
+{
+  "project": "RustingStrata",
+  "author": "Vasyl Trefilov",
+  "url": "https://github.com/RustingStudio/RustingStrata",
+  "revision": "f821c4435ea553eb8a49f542313da52caab75b90",
+  "version": "1.2.4",
+  "archive_sha256": "37788d7952553984691cb56fec1553034a4e235d281ca7f5a51a403747f3f78d",
+  "license": "RustingStrata License 1.0",
+  "modifications": [
+    "Exposed upstream CLI through a public native Rust run_from library function; retained original binary as thin entry point",
+    "Added Forge9070 frontend, RX 9070 XT Vulkan profile, read-only doctor, GGUF metadata preflight, Windows/Linux scripts and synthetic CPU/API tests",
+    "Added Hugging Face repository search, immutable revisions, namespaced streaming/resumable downloads, checksum checks and provenance",
+    "Added recursive model catalog, explicit load/unload, stale OpenAI model ID rejection, browser HF manager and model-switch regression tests",
+    "Added WSL native CPU/Vulkan launchers and explicit Windows executable interoperability launcher with documented runtime distinctions",
+    "Replaced leaked synthesized weight buffers and unsafe owned LoRA views with model-owned tensor storage and borrow-scoped views",
+    "Restricted user-facing catalog/download/load paths to sparse MoE models whose actual GGUF headers, shard geometry and tensor formats pass one shared policy",
+    "Exposed model-checked MTP and up to four GPU request slots, added bounded remote metadata workers and a concurrency throughput benchmark",
+    "Added optional output-changing expert-tail omission for uncached main-model decode/verification assignments; exact default, prefill and draft head retained",
+    "Added hardware tuning entry point and per-checkpoint routing/calibration cache identity with configuration matching",
+    "Changed the fidelity profile to retain every selected expert, default to F16 KV and one request slot; expert-tail omission is rejected by the Forge frontend",
+    "Fixed greedy GPU position-buffer preparation and made CPU sampling reject mixed non-finite logits",
+    "Changed calibration to warm decode measurements with baseline-token parity gates and explicit workload/configuration reporting",
+    "Added actual-tensor low-bit compression reporting and explicit model-file selection rather than size-only recommendations",
+    "Reject non-neutral unsupported OpenAI sampling options and capture execution settings during concurrent API benchmarks",
+    "Added bounded owned expert-RAM caches, native direct-read attempts with counted buffered fallback, lazy PLE and prefill protection",
+    "Added code-context packing, explicit request budgets, bounded admission and coding-client API support",
+    "Added the independent MIT-licensed forge-engine crate with native Rust CPU and Vulkan implementations, model format validation, templates and synthetic numerical tests",
+    "Added native configuration UI, complete-shard model discovery, persistent settings and Windows/WSL launchers",
+    "Prepared public repository documentation, original branding, contributor templates and native build/release workflows; engine runtime behavior unchanged",
+    "Corrected native wildcard-listener Host validation to use the accepted socket interface, with authentication and foreign-Host regression coverage",
+    "Hardened CI and release provenance; omitted 21 optional upstream benchmark captures/logs and made optional reference-runner paths configurable; retained build/test fixtures and licences"
+  ],
+  "forge_version": "0.9.1",
+  "avalon_reference": {
+    "url": "https://github.com/freriadoc/Avalon",
+    "revision": "762a3dae8d78ff18acb38e351dfa940328485fd8",
+    "scope": "Source audit and independently implemented bounded expert-RAM and GPU caches, available-memory budgeting, lazy PLE rows, protected expert leases and prefill cache protection. Every selected expert is retained. No HIP kernel port, custom IQ3_KS, transfer/compute overlap or elastic KV-cache reuse is claimed."
+  }
+}

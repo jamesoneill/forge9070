@@ -1,0 +1,11 @@
+{
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "kernel": "6.18.57",
+  "logical_cpus": 9,
+  "available_cpu_affinity": 9,
+  "compiler": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "gpu_for_validation": "Explicit llvmpipe software Vulkan only",
+  "target_rx9070xt_present": false,
+  "checked_at_utc": "2026-11-17T20:00:37.506635+00:00"
+}
