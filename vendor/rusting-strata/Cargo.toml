@@ -25,7 +25,7 @@ ureq = { version = "3", default-features = false, features = ["rustls", "platfor
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 base64 = "0.22"
 # Forge9070 verifies Hugging Face LFS digests and namespaces immutable model snapshots.
-sha2 = "0.10"
+sha2 = "0.11"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Platform ABI constants for direct expert I/O.
