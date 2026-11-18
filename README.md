@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="docs/assets/forge9070-banner.png" alt="Forge9070 — local inference, built in Rust" width="100%">
+  <img src="docs/assets/forge9070-logo.svg" alt="Forge9070 logo" width="96" height="96">
 </p>
+
+<h1 align="center">Forge9070</h1>
 
 <p align="center">
   <strong>Local models. Your hardware. A Rust engine you can inspect.</strong>

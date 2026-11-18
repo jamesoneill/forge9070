@@ -1,8 +1,9 @@
 # Original artwork prompt record
 
 These project assets were generated with the built-in image-generation tool.
-The final outputs are copied into this repository. No API-key-based fallback
-or external stock artwork was used. The SVG is a separate geometric rendering
+The raster outputs are pending publication; their filenames and status are
+listed in the [brand guide](../BRAND.md). No API-key-based fallback or external
+stock artwork was used. The published SVG is a separate geometric rendering
 of the original mark for small, crisp applications.
 
 ## Logo refinement

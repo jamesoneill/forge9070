@@ -6,12 +6,16 @@ compute. It does not incorporate AMD, Rust, Qwen or Avalon corporate marks.
 
 ## Assets
 
-| File | Use |
+| File | Use and publication status |
 | --- | --- |
 | [Vector logo](assets/forge9070-logo.svg) | Sharp, scalable mark for documentation and small icons |
-| [Transparent PNG logo](assets/forge9070-logo.png) | Raster applications and presentation layouts |
-| [README banner](assets/forge9070-banner.png) | Repository introduction and wide announcement artwork |
-| [Social preview](assets/forge9070-social.jpg) | Repository social-sharing image; compact JPEG export |
+| `assets/forge9070-logo.png` | Pending publication: transparent logo for raster applications and presentation layouts |
+| `assets/forge9070-banner.png` | Pending publication: repository introduction and wide announcement artwork |
+| `assets/forge9070-social.jpg` | Pending publication: compact JPEG social preview |
+| `assets/forge9070-social.png` | Pending publication: PNG social preview |
+
+The README uses the published SVG mark with the project title and tagline as
+live text. The four raster files will be linked here when they are published.
 
 Preserve the mark's proportions. Keep at least one spark-width of clear space
 around it. Use the vector at small sizes. Place the full-color logo on charcoal
@@ -37,7 +41,7 @@ status in text rather than decorative badges alone.
 The raster logo and banner were created for this project with the built-in
 image-generation tool. The SVG is a clean geometric interpretation of that
 mark. [The prompt record](assets/brand-prompts.md) describes the generation
-briefs. The original project artwork is provided under the
+briefs. Published original project artwork is provided under the
 [included MIT terms](assets/LICENSE-MIT); third-party names and marks retain
 their own terms. Artwork does not imply hardware vendor endorsement or
 validated model performance.

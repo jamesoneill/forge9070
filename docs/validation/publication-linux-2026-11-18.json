@@ -1,0 +1,105 @@
+{
+  "schema": "forge9070-publication-validation-v1",
+  "date": "2026-11-18",
+  "project_version": "0.9.1",
+  "engine_version": "0.2.1",
+  "rust_source_base_commit": "b2812cc96eb31e21e055b657e23327409e330f46",
+  "environment": {
+    "os": "Linux",
+    "rust_toolchain": "1.100.0",
+    "cargo_locked": true,
+    "rustflags": "-C target-cpu=x86-64"
+  },
+  "restored_public_upstream": {
+    "repository": "https://github.com/RustingStudio/RustingStrata",
+    "revision": "f821c4435ea553eb8a49f542313da52caab75b90",
+    "verified_binary_files": 88,
+    "sha256_and_git_blob_hashes_verified": true
+  },
+  "regenerated_synthetic_fixtures": [
+    {
+      "path": "tests/fixtures/tiny-qwen3.gguf",
+      "bytes": 113696,
+      "sha": "968f64bd4a8689d53ab7e5ca78803535500fd2be",
+      "sha256": "590d4f40f753f947cdd7e2750d178d092116f441e94701e010138625a478cf69"
+    },
+    {
+      "path": "tests/fixtures/tiny-qwen3moe.gguf",
+      "bytes": 188256,
+      "sha": "8f8f2f4407c4c2eb82462a3fffbb88f8c1778571",
+      "sha256": "a5c3df3b15a2d24017176a8d5ff742c5d8ca537aef599933bf2d6147392deba7"
+    },
+    {
+      "path": "tests/fixtures/tiny-qwen38.gguf",
+      "bytes": 423808,
+      "sha": "7933bd9d7f2cf8969ac1a375b4ee80b5c36e8268",
+      "sha256": "5a1b2d1d014100404d39f461dc8853e6919d5710422529aa8ca563cd2b29d837"
+    }
+  ],
+  "results": {
+    "native_rust": {
+      "passed": 75,
+      "failed": 0,
+      "ignored": 4
+    },
+    "engine_parity": {
+      "passed": 8,
+      "failed": 0
+    },
+    "quantization_parity": {
+      "passed": 3,
+      "failed": 0
+    },
+    "qwen38_parity": {
+      "passed": 7,
+      "failed": 0,
+      "ignored": 3
+    },
+    "qwen38_fixture_export_rerun": {
+      "passed": 1,
+      "failed": 0
+    },
+    "release_build": {
+      "status": "passed",
+      "targets": [
+        "forge-engine",
+        "forge9070"
+      ]
+    },
+    "cli": {
+      "passed": 16,
+      "skipped": 0
+    },
+    "http_streaming_queues": {
+      "passed": 28
+    },
+    "configuration_api": {
+      "passed": 53,
+      "browser_groups_skipped": 1
+    },
+    "release_gate_regressions": {
+      "passed": 13
+    },
+    "ui_helper_regressions": {
+      "passed": 13
+    }
+  },
+  "linux_release_binaries": [
+    {
+      "name": "forge-engine",
+      "size_bytes": 8385936,
+      "sha256": "1525822a7707f1ff77d9b84d639bd59013bf7bfa244d941cb47a4e280725cc20"
+    },
+    {
+      "name": "forge9070",
+      "size_bytes": 21774160,
+      "sha256": "f7ffe7f6b62cb8e3ef2cb081e8cf0a5cbab4ca7cd10b0c1b2aee3908448e904b"
+    }
+  ],
+  "limitations": [
+    "Six Vulkan-gated tests and one external-template-reference test were not executed in these local suites.",
+    "Browser rendering and interaction were not exercised by the local configuration API run.",
+    "These results do not establish Windows or WSL GPU execution, RX 9070 XT performance, or pretrained-model quality.",
+    "Read the current GitHub Actions run separately for hosted CI status."
+  ]
+}

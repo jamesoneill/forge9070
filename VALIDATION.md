@@ -28,13 +28,35 @@ matched their recorded hashes. The existing UI helper suite passed 13 checks,
 the WSL argument harness passed six stub-based checks, and 13 new release
 authorization/archive-integrity regression tests passed.
 
-No Rust toolchain was available in the publication workspace. Fresh Rust builds,
-Windows checks, Chromium interaction and software-Vulkan execution are delegated
-to the expanded [CI workflow](.github/workflows/ci.yml); their live result must be
-read from [GitHub Actions](https://github.com/jamesoneill/forge9070/actions/workflows/ci.yml).
-These configured gates are not a claim that they have already passed. The
-historical 17 November results below remain unchanged. Target-hardware and
-pretrained-model acceptance still need the checks described at the end of this file.
+The README masthead uses the committed SVG mark and live text. Four raster
+brand assets remain pending publication; the [brand guide](docs/BRAND.md)
+records their filenames and status without presenting download links.
+
+The initial publication pass did not have a Rust toolchain. During the
+18 November continuation, Rust 1.100.0 was installed in an isolated workspace
+and the current source was rebuilt with the locked dependency set and portable
+`-C target-cpu=x86-64` settings. Both release entry points built successfully.
+
+Fresh continuation checks passed. The [continuation record](docs/validation/publication-linux-2026-11-18.json)
+includes fixture and executable hashes and records the unexecuted gates:
+
+| Check | Result |
+| --- | --- |
+| Native library and binary tests | 75 passed; 4 explicitly gated tests ignored |
+| Engine, quantization and Qwen3.8 parity suites | 18 passed; 3 Vulkan-gated tests ignored |
+| CLI and frontend dispatch | 16 checks passed |
+| HTTP, SSE, admission, queueing and cancellation | 28 checks passed |
+| Configuration and discovery API | 53 checks passed; browser group not run |
+| Synthetic model regeneration | All three fixtures reproduced byte for byte from the published generators |
+| Required vendored binary files | 88 files verified against the pinned public upstream Git revision |
+
+These are Linux CPU results with synthetic, untrained models. Windows checks,
+Chromium interaction and software-Vulkan execution remain delegated to the
+expanded [CI workflow](.github/workflows/ci.yml); read their live result from
+[GitHub Actions](https://github.com/jamesoneill/forge9070/actions/workflows/ci.yml).
+Configured gates are not a claim that they have already passed. The historical
+17 November reports below remain unchanged. Target-hardware and pretrained-model
+acceptance still need the checks described at the end of this file.
 
 ## Checks executed for this update
 
