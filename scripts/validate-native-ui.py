@@ -286,9 +286,11 @@ def main() -> None:
 
             with service(binary, config_file) as (origin, request, json_request):
                 status, restored = json_request('/api/config')
+                # Windows canonicalization expands short names and adds the
+                # extended-path prefix. Verify the directory, not its spelling.
                 check('saved-settings-restore-after-process-restart', status == 200
                       and restored['model'] is None and restored['settings'] == changed_settings
-                      and Path(restored['models_dir']) == models, restored)
+                      and Path(restored['models_dir']).samefile(models), restored)
                 if args.browser:
                     browser_checks(origin, request, json_request, models, suspicious_name, args, check)
                 else:
