@@ -1,0 +1,161 @@
+{
+  "version": "0.9.0",
+  "independent_engine_version": "0.2.0",
+  "checked_at_utc": "2026-11-17T20:11:04.328315+00:00",
+  "status": "native_cpu_and_software_vulkan_gates_passed_target_hardware_acceptance_pending",
+  "release_scope": {
+    "architectures": [
+      "qwen3",
+      "qwen3moe",
+      "qwen4exp"
+    ],
+    "backends": [
+      "cpu",
+      "vulkan",
+      "hybrid"
+    ],
+    "concurrency": {
+      "active_maximum": 4,
+      "bounded_fifo_queue": true,
+      "continuous_batching": false,
+      "default_active": 1
+    },
+    "engine": "forge-native",
+    "fallback": "no_implicit_backend_or_external_runtime_fallback",
+    "gguf_shards": true,
+    "gpu_performance_verified": false,
+    "hardware_performance_claim": "none",
+    "http_architecture_policy": "validated_moe_only",
+    "http_server": true,
+    "independent_runtime": true,
+    "moe_loading": {
+      "bounded_gpu_expert_cache_for_qwen4exp": true,
+      "direct_io_with_reported_buffered_fallback": true,
+      "lazy_ple_rows": true,
+      "owned_bounded_host_cache": true,
+      "prefill_protects_decode_cache": true,
+      "selected_experts_omitted": 0,
+      "transfer_compute_overlap": false
+    },
+    "qwen3_8": true,
+    "qwen_vulkan_budget_policy": "retain_every_selected_expert; explicit_counted_CPU_expert_execution_if_device_working_set_cannot_fit",
+    "requires_explicit_backend": true,
+    "rusting_strata_dependency": false,
+    "stage": "native_gpu_and_coding_api_target_hardware_acceptance_pending",
+    "state": "immutable_mapped_model_and_independent_sequences",
+    "tool_calling_api": true,
+    "version": "0.2.0",
+    "vulkan": true,
+    "weight_formats": [
+      "F32",
+      "F16",
+      "BF16",
+      "Q4_0",
+      "Q8_0",
+      "Q2_0",
+      "Q4_K",
+      "Q5_K",
+      "Q6_K",
+      "IQ2_S",
+      "IQ3_XXS",
+      "IQ3_S",
+      "IQ4_NL",
+      "IQ4_XS"
+    ]
+  },
+  "rust": {
+    "reported_passed": 391,
+    "failed": 0,
+    "separately_gated_ignored_in_normal_run": 7,
+    "independent_units": 73,
+    "ordinary_numerical_parity": 8,
+    "all_format_quant_parity": 3,
+    "qwen38_cpu_parity": 7,
+    "record": "native-core-tests-0.9.0.json",
+    "inherited_gpu_tests": "Some inherited compatibility tests return early without GPU/CUDA; the 391 count is not 391 GPU tests"
+  },
+  "release_build": {
+    "passed": true,
+    "elapsed_seconds": 99.5894936170007,
+    "record": "build-release-0.9.0.json",
+    "platform": "Linux x86_64"
+  },
+  "native_cli": {
+    "checks_passed": 16,
+    "checks_skipped": 0,
+    "record": "forge-engine-cli-0.9.0.json"
+  },
+  "native_http": {
+    "checks_passed": 28,
+    "backend": "CPU with real synthetic execution",
+    "record": "native-api-0.9.0.json"
+  },
+  "native_gpu_http": {
+    "cases": 4,
+    "simultaneously_active_observed": 4,
+    "completed_tokens": 116,
+    "gpu_expert_executions": 928,
+    "cpu_expert_fallbacks": 0,
+    "selected_experts_omitted": 0,
+    "record": "native-gpu-api-0.9.0.json",
+    "elapsed_seconds_software_diagnostic": 117.94148940299783,
+    "note": "Initial 30-second client deadline timed out; explicit 120-second diagnostic passed. This is not hardware latency/throughput evidence."
+  },
+  "vulkan_gates": {
+    "packed_formats": 14,
+    "engine_tests_passed": 3,
+    "qwen_resident_tests_passed": 2,
+    "projection_bridge_test_passed": 1,
+    "khronos_validation_errors": 0,
+    "software_only": true,
+    "records": [
+      "native-vulkan-validation-0.9.0.json",
+      "qwen38-vulkan-resident-parity-0.9.0.json",
+      "qwen38-vulkan-projection-parity-0.9.0.json"
+    ],
+    "warm_submission_check": "4-layer Qwen fixture uses 5 queue submissions per warm token",
+    "budget_pressure_check": "32 CPU expert contributions retained, zero omitted at 8 MiB controlled budget",
+    "context_check": "128K allocation and 20-token prefix on tiny original fixture; not full-size model memory or long-context quality"
+  },
+  "template": {
+    "cases_passed": 6,
+    "official_template_sha256": "af16f654968d47d09a6c604e00370b12dbc21f76456f59c9e98b82e84d9f6375",
+    "record": "native-template-0.9.0.json",
+    "source": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/raw/main/chat_template.jinja"
+  },
+  "checkpoint_headers": {
+    "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "shards": 2,
+    "tensor_descriptors_checked": 1224,
+    "errors": 0,
+    "full_checkpoint_downloaded": false,
+    "record": "qwen38-real-header-layout-0.9.0.json"
+  },
+  "hardware": {
+    "rx9070xt_inference_tested": false,
+    "windows_build_tested": false,
+    "native_wsl_vulkan_tested": false,
+    "pretrained_quality_tested": false,
+    "full_pretrained_qwen38_inference_tested": false,
+    "external_coding_client_tested": false,
+    "real_model_tokens_per_second_claimed": false
+  },
+  "known_limits": [
+    "F32KV and recurrent state consume more memory than quantized caches",
+    "No asynchronous CPU/GPU expert or transfer overlap",
+    "No MTP or continuous batching",
+    "No IQ3_K/IQ3_KS custom layouts",
+    "No elastic borrowing of unused KV allocation",
+    "Tool/reasoning SSE buffered until complete parsing",
+    "Active ceiling 1..4 is not a memory-fit or speed guarantee",
+    "Existing root compatibility commands still use attributed Strata; standalone forge-engine does not"
+  ],
+  "regressions_fixed": [
+    "GPU normalization squared-sum overflow now rejects and requires state reset",
+    "Independent bounded Unicode stream decoder avoids tokenizers 0.20 DecodeStream underflow; exhaustive 1/2-byte-pattern parity",
+    "Template uses Transformers-compatible UTF8 JSON spelling/spacing",
+    "Literal tool/reasoning examples remain code text",
+    "Model-switch failure reloads prior model; queued cancellations release permits"
+  ]
+}

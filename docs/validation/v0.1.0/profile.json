@@ -1,0 +1,21 @@
+{
+  "architecture": "RDNA 4 / gfx1201",
+  "backend": "vulkan",
+  "context_tokens": 4096,
+  "cpu_fallback": "explicit --cpu only",
+  "expert_cache": "engine allocates from remaining GPU budget; cold experts run on CPU",
+  "gpu": "AMD Radeon RX 9070 XT",
+  "kv_format": "q8",
+  "limits": "RAM settings are engine estimates, not operating-system hard limits; large models still need substantial host RAM",
+  "mtp_drafts": 0,
+  "name": "RX 9070 XT conservative starting settings",
+  "nominal_vram_mib": 16384,
+  "parallel_requests": 1,
+  "preferred_environment": "native Windows (or native Linux with working AMD Vulkan)",
+  "prefill_chunk_tokens": 256,
+  "prompt_cache_ram_mib": 512,
+  "ram_margin_mib": 4096,
+  "rocm_required": false,
+  "status": "chosen defaults; not benchmark-calibrated on your hardware",
+  "vram_margin_mib": 2048
+}

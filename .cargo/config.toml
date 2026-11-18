@@ -1,0 +1,6 @@
+[target.'cfg(target_arch = "x86_64")']
+# Build on the computer that will run the executable. The hybrid expert path
+# benefits from the host CPU's vector instructions. Do not redistribute this
+# executable to an older CPU without rebuilding for that CPU.
+rustflags = ["-C", "target-cpu=native"]
+

@@ -1,0 +1,59 @@
+{
+  "scope": "Actual software Vulkan packed projection, ordinary resident full-state, selected-expert budget-retention and synthetic 128K context allocation/prefix gates",
+  "started_at_utc": "2026-11-17T19:56:04.429633+00:00",
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "test",
+    "-p",
+    "forge-engine",
+    "--lib",
+    "vulkan::",
+    "--locked",
+    "--offline",
+    "--",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "environment": {
+    "FORGE_VULKAN_TEST": "1",
+    "VK_DRIVER_FILES": "<temporary-directory>/forge9070-vulkan-sdk/root/usr/share/vulkan/icd.d/lvp_icd.json",
+    "VK_LAYER_PATH": "<temporary-directory>/forge9070-vulkan-sdk/root/usr/share/vulkan/explicit_layer.d",
+    "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation",
+    "LD_LIBRARY_PATH": "<temporary-directory>/forge9070-vulkan-sdk/root/usr/lib/x86_64-linux-gnu",
+    "VK_LOADER_DEBUG": "layer",
+    "VK_LAYER_ENABLES": "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT"
+  },
+  "source_sha256_at_start": {
+    "crates/forge-engine/shaders/ops.comp": "e0f747f3c82e280d36357d4d93c90868b2671724967c8b30f9450c40348ff168",
+    "crates/forge-engine/shaders/quant.glsl": "8a3197f23b9fa09ee5eadbf75b59035dfb84632973b8cc3c600bf1c597371f14",
+    "crates/forge-engine/shaders/quant_tables.glsl": "6592e433f59853b32536974f611edadb8b239be04ea6c5192aeb72a0fe66300f",
+    "crates/forge-engine/shaders/qwen38_ops.glsl": "4976f930c25c321bccd1769ac250e396dde0f159a33cd7b7f2d8eceaf264c638",
+    "crates/forge-engine/src/vulkan/context.rs": "e931a35623bef43bed7d5b6dc93f51dd6ea38f04a2d89d281a0dc97feec8b55e",
+    "crates/forge-engine/src/vulkan/facade.rs": "dc8b8a06dbb79c37e4f591f7e8c1650c610e44d98aaf368b14b2b50f3d7435df",
+    "crates/forge-engine/src/vulkan/hybrid.rs": "5dcc350f6eea4f34b2763da331ba80870c3e131c6397d1ce6224d763ecab110c",
+    "crates/forge-engine/src/vulkan/mod.rs": "a953da9b26512e40d16f20ecc97fa834ac653f933ee5dfc939477b0bdab2d071",
+    "crates/forge-engine/src/vulkan/ops.spv": "865bc7a3039d95a623e529aac9800237a3477ef34924ce62195c1ec4651fa36f",
+    "crates/forge-engine/src/vulkan/qwen38.rs": "16870c044952edd988f663ba7ff2a7192098ed02241dbaab327de504fdae2631",
+    "crates/forge-engine/src/vulkan/resident.rs": "8120545335d25428452947826637ee58ba56bcd61bfb7eaeb31a86ac879b46e0",
+    "crates/forge-engine/src/vulkan/tests.rs": "3058c23d36f8b4f08047f210f5b4962619cb274046a8376dabbe7d47aa899dea",
+    "tests/fixtures/tiny-qwen38.gguf": "5a1b2d1d014100404d39f461dc8853e6919d5710422529aa8ca563cd2b29d837"
+  },
+  "software_vulkan": true,
+  "real_gpu_tested": false,
+  "pretrained_model_tested": false,
+  "performance_claimed": false,
+  "long_context_quality_tested": false,
+  "status": "passed",
+  "exit_code": 0,
+  "finished_at_utc": "2026-11-17T19:56:21.285970+00:00",
+  "elapsed_seconds": 16.850666652004293,
+  "validation_layer_inserted": true,
+  "synchronization_validation_requested": true,
+  "validation_error_lines": [],
+  "test_summaries": [
+    "synthetic 128K context: 20-token full-logit/hidden prefix parity, 7 selected-cell score capacity, 39447056 live allocation bytes; no long-context quality claim",
+    "budget-retention: 32 exact CPU expert fallbacks; cold GPU token 9 submissions; owned allocation limit 8388608 bytes",
+    "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 8.00s"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "forge-engine",
+    "-p",
+    "forge9070"
+  ],
+  "checked_at_utc": "2026-11-17T20:41:16.201416+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 62.603575280998484,
+  "platform": "Linux x86_64",
+  "log": "build-release-0.9.1.log"
+}

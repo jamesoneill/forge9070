@@ -1,0 +1,12 @@
+{
+  "checked_at_utc": "2026-11-17T00:07:01.185964+00:00",
+  "command": [
+    "node",
+    "--check",
+    "(actual inline application script via stdin)"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "html_sha256": "0aa6d3ee9cfd013841d5b0e69538b541802e23ea1f1e1ece6794bb709c32a962"
+}

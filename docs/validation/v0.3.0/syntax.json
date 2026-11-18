@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "javascript_blocks": 1,
+  "shell_files": [
+    "scripts/build-linux.sh",
+    "scripts/serve-wsl-windows.sh",
+    "scripts/serve-wsl.sh",
+    "scripts/setup-wsl.sh"
+  ]
+}

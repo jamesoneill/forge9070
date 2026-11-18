@@ -1,0 +1,224 @@
+{
+  "checked_at_utc": "2026-11-16T23:20:37.077783+00:00",
+  "scope": "Read-only public metadata/header inspection and source audit; no full weights, inference, GPU tests, or model-quality evaluation. ISTA header manually parsed; actual Forge acceptance still to be run by root.",
+  "avalon": {
+    "source_commit": "762a3dae8d78ff18acb38e351dfa940328485fd8",
+    "repo_id": "freriadoc/Qwen3.8-Flash-Next-Avalon-GGUF",
+    "revision": "372fe3a4e572c5ba75a90e579de0695633d083a8",
+    "source_url": "https://huggingface.co/freriadoc/Qwen3.8-Flash-Next-Avalon-GGUF",
+    "main_shards": 33,
+    "main_files": {
+      "bytes": 94846260864,
+      "GiB": 88.33246386051178,
+      "GB": 94.846260864
+    },
+    "mtp_sidecar": {
+      "path": "MTP/mtp-Qwen3.8-Flash-Next-shared-IQ3K-IQ4NL-FR65k.gguf",
+      "bytes": 1484237088,
+      "GiB": 1.3823035061359406,
+      "GB": 1.484237088
+    },
+    "ranking_bytes": 177192,
+    "expert_layers": 48,
+    "experts_per_layer": 512,
+    "packed_experts": {
+      "bytes": 50967085056,
+      "GiB": 47.466796875,
+      "GB": 50.967085056
+    },
+    "expert_payload": {
+      "bytes": 50960793600,
+      "GiB": 47.4609375,
+      "GB": 50.9607936
+    },
+    "expert_padding_bytes": 6291456,
+    "expert_bytes_by_type": {
+      "44": 11586764800,
+      "43": 7208960000,
+      "22": 10747904000,
+      "23": 891289600,
+      "20": 18402508800,
+      "42": 2123366400
+    },
+    "ple": {
+      "name": "per_layer_token_embd.weight",
+      "dims": [
+        160,
+        320001536
+      ],
+      "ggml_type": 7,
+      "quant": "Q5_1",
+      "bytes": 38400184320,
+      "GiB": 35.76295852661133,
+      "GB": 38.40018432
+    },
+    "custom_types": {
+      "43": {
+        "name": "IQ3_K",
+        "block_elements": 256,
+        "block_bytes": 110,
+        "same_as_ik_iq3_k": true
+      },
+      "44": {
+        "name": "IQ3_KS",
+        "block_elements": 256,
+        "block_bytes": 104,
+        "scale": "per 256-element block; incompatible with ik per-row IQ3_KS"
+      }
+    },
+    "packed_layout": "I8 blk.N.ffn_exps_packed; avalon.experts_packed.blk.N is 14 UINT64 values: stride,n_expert, then up/gate/down each type,ne0,ne1,offset. Standard expert tensors are absent and synthesized as strided views.",
+    "bounds_read": [
+      {
+        "shard": 1,
+        "range": "bytes=0-16777215",
+        "header_end": 10953580
+      },
+      {
+        "shard": 2,
+        "range": "bytes=0-65535",
+        "header_end": 173
+      }
+    ],
+    "current_forge_support": "No IQ3_K/IQ3_KS decoder or packed-expert loader; matching byte sizes with Q3_K/IQ3_S do not imply compatibility. No quant port performed."
+  },
+  "standard_ista_iq3_s": {
+    "repo_id": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "url": "https://huggingface.co/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "gated": false,
+    "files": [
+      {
+        "path": "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+        "bytes": 54817524224,
+        "GiB": 51.05279779434204,
+        "GB": 54.817524224
+      },
+      {
+        "path": "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+        "bytes": 28800138432,
+        "GiB": 26.82221907377243,
+        "GB": 28.800138432
+      }
+    ],
+    "total": {
+      "bytes": 83617662656,
+      "GiB": 77.87501686811447,
+      "GB": 83.617662656
+    },
+    "architecture": "qwen4exp",
+    "layers": 48,
+    "experts_per_layer": 512,
+    "active_experts": 10,
+    "routed_expert_tensors": 144,
+    "routed_expert_bytes": {
+      "bytes": 50292326400,
+      "GiB": 46.83837890625,
+      "GB": 50.2923264
+    },
+    "other_weight_bytes": {
+      "bytes": 4514173440,
+      "GiB": 4.204151630401611,
+      "GB": 4.51417344
+    },
+    "ple_payload": {
+      "bytes": 28800138240,
+      "GiB": 26.822218894958496,
+      "GB": 28.80013824
+    },
+    "first_shard_quant_tensor_histogram": {
+      "14": 129,
+      "30": 484,
+      "0": 292,
+      "23": 45,
+      "12": 47,
+      "20": 86,
+      "18": 34,
+      "13": 35,
+      "42": 9,
+      "22": 40,
+      "1": 1,
+      "21": 20,
+      "8": 1
+    },
+    "expert_bytes_by_type": {
+      "20": 18402508800,
+      "18": 10918297600,
+      "42": 2123366400,
+      "22": 10747904000,
+      "21": 7208960000,
+      "23": 891289600
+    },
+    "first_shard_header_end": 11024355,
+    "metadata_notes": "PLE and QSA compression arrays match supported qwen4exp structure, all observed tensor types have current Forge decoders. This manual audit does not establish actual Forge metadata acceptance or inference correctness.",
+    "relation_to_avalon": "The GSQ-RCO IQ3_S pack is the published expert source Avalon uses, before its custom IQ3_K/IQ3_KS replacements."
+  },
+  "standard_unsloth_ud_iq4_xs": {
+    "repo_id": "unsloth/Qwen3.8-Flash-Next-GGUF",
+    "revision": "f5d175de2cf7f720d45d6064019a81fcf056e986",
+    "total": {
+      "bytes": 93672359738,
+      "GiB": 87.23918324150145,
+      "GB": 93.672359738
+    },
+    "routed_expert_bytes": {
+      "bytes": 60384870400,
+      "GiB": 56.23779296875,
+      "GB": 60.3848704
+    },
+    "other_weight_bytes": {
+      "bytes": 4476326400,
+      "GiB": 4.168903827667236,
+      "GB": 4.4763264
+    },
+    "ple_payload": {
+      "bytes": 28800138240,
+      "GiB": 26.822218894958496,
+      "GB": 28.80013824
+    },
+    "header_ranges": "1MiB prefix each for shards2,3,4; header ends74979,2855,173.",
+    "expert_bytes_by_type": {
+      "6": 19031654400,
+      "18": 17983078400,
+      "23": 15151923200,
+      "20": 6134169600,
+      "42": 471859200,
+      "22": 1612185600
+    }
+  },
+  "feasibility": "62GB host capacity does not imply that full disk weights must fit. Expert working set and sparse PLE mapping are separate. ISTA IQ3_S offers ~46.84GiB full expert payload before runtime/OS allocations; Unsloth UD-IQ4_XS uses~56.24GiB. Actual cache budget must use available host/cgroup/WSL memory and headroom. Partial owned cache can function below these totals, but no token rate is guaranteed.",
+  "release_validation": {
+    "version": "0.5.0",
+    "checked_at_utc": "2026-11-16T23:39:10.458122+00:00",
+    "complete_shard_headers_accepted": [
+      {
+        "record": "artifacts/qwen38-header-checks/ista-gsq-rco-iq3-s-v050.json",
+        "repository": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+        "commit": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+        "file": "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+        "file_bytes": 83617662656,
+        "shards": 2,
+        "weight_memory": {
+          "routed_expert_bytes": 50292326400,
+          "lazy_embedding_bytes": 28800138240,
+          "other_weight_bytes": 4514173440
+        },
+        "elapsed_seconds": 23.014
+      },
+      {
+        "record": "artifacts/qwen38-header-checks/uncensored-tor-ud-iq4-xs-v050.json",
+        "repository": "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+        "commit": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+        "file": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+        "file_bytes": 93672359738,
+        "shards": 4,
+        "weight_memory": {
+          "routed_expert_bytes": 60384870400,
+          "lazy_embedding_bytes": 28800138240,
+          "other_weight_bytes": 4476326400
+        },
+        "elapsed_seconds": 34.267
+      }
+    ],
+    "actual_model_execution": false
+  }
+}

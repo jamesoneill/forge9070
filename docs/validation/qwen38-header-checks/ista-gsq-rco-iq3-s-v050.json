@@ -1,0 +1,86 @@
+{
+  "version": "0.5.0",
+  "checked_at_utc": "2026-11-16T23:37:10.427770+00:00",
+  "command": [
+    "./target/release/forge9070",
+    "models",
+    "files",
+    "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "--revision",
+    "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "--file",
+    "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "--json"
+  ],
+  "elapsed_seconds": 23.014,
+  "exit_code": 0,
+  "stderr": "",
+  "response": {
+    "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "commit": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "models": [
+      {
+        "file": "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+        "size": 83617662656,
+        "shards": 2,
+        "sha256": "4c1eb2ceb4915e1192f4f386021897bde56a97f40a0bb78bb86465e0f7d2aca3",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen4exp",
+          "layers": 48,
+          "experts_per_layer": 512,
+          "active_experts_per_token": 10,
+          "shards": 2,
+          "tensors": 1224,
+          "tensor_weight_bytes": 83606638080,
+          "weight_memory": {
+            "routed_expert_bytes": 50292326400,
+            "lazy_embedding_bytes": 28800138240,
+            "other_weight_bytes": 4514173440
+          },
+          "quantization_histogram": {
+            "BF16": 484,
+            "F16": 1,
+            "F32": 292,
+            "IQ2_S": 40,
+            "IQ3_S": 20,
+            "IQ3_XXS": 34,
+            "IQ4_NL": 87,
+            "IQ4_XS": 45,
+            "Q2_0": 9,
+            "Q4_K": 47,
+            "Q5_K": 35,
+            "Q6_K": 129,
+            "Q8_0": 1
+          },
+          "compression": {
+            "tensor_elements": 176943899520,
+            "sub4bit_tensors": 103,
+            "sub4bit_elements": 86402662400,
+            "sub4bit_formats": [
+              "IQ2_S",
+              "IQ3_S",
+              "IQ3_XXS",
+              "Q2_0"
+            ],
+            "routed_expert_tensors": 144,
+            "routed_expert_elements": 120795955200,
+            "sub4bit_routed_expert_tensors": 103,
+            "sub4bit_routed_expert_elements": 86402662400,
+            "unknown_type_tensors": 0
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation."
+        }
+      }
+    ],
+    "license": "apache-2.0",
+    "gated": false,
+    "policy": "sparse_moe_only",
+    "excluded": []
+  },
+  "full_weights_downloaded": false,
+  "gpu_inference_executed": false
+}

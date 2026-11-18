@@ -1,0 +1,29 @@
+{
+  "version": "0.4.1",
+  "checks": [
+    {
+      "repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
+      "commit": "f5d175de2cf7f720d45d6064019a81fcf056e986",
+      "file": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+      "bytes": 93672359738,
+      "shards": 4,
+      "tensors": 1224,
+      "seconds": 54.02,
+      "artifact": "artifacts/qwen38-header-checks/original-unsloth-ud-iq4-xs.json"
+    },
+    {
+      "repo": "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "commit": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+      "file": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+      "bytes": 93672359738,
+      "shards": 4,
+      "tensors": 1224,
+      "seconds": 46.73,
+      "artifact": "artifacts/qwen38-header-checks/uncensored-tor-ud-iq4-xs.json"
+    }
+  ],
+  "total_bytes_for_both": 187344719476,
+  "full_model_downloaded": false,
+  "inference_tested": false,
+  "gpu_performance_measured": false
+}

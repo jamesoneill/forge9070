@@ -1,0 +1,152 @@
+{
+  "checked_at_utc": "2026-11-17T00:06:26.110Z",
+  "node_version": "v24.22.1",
+  "source": "<workspace>/<project>/vendor/rusting-strata/src/web/index.html",
+  "source_sha256": "0aa6d3ee9cfd013841d5b0e69538b541802e23ea1f1e1ece6794bb709c32a962",
+  "extracted_blocks": [
+    "numberLabel",
+    "setControl",
+    "requestMessages",
+    "engineFields",
+    "engineOpts",
+    "showOpts",
+    "presetHandler"
+  ],
+  "scope": "Actual UI JavaScript helper unit validation using Node VM and minimal element/store stubs. No DOM, browser rendering, layout, events, HTTP, GPU, or model-quality validation.",
+  "passed": 7,
+  "failure": null,
+  "records": [
+    {
+      "name": "requestMessages-keeps-earlier-reasoning-and-open-code-whitespace",
+      "passed": true,
+      "detail": [
+        {
+          "role": "user",
+          "content": "Write Rust."
+        },
+        {
+          "role": "assistant",
+          "content": "Earlier.",
+          "reasoning_content": "Earlier fixture reasoning."
+        },
+        {
+          "role": "user",
+          "content": "Continue."
+        },
+        {
+          "role": "assistant",
+          "content": "```rust\nfn answer() {\n    \t",
+          "reasoning_content": "Current fixture reasoning."
+        }
+      ]
+    },
+    {
+      "name": "showOpts-inherits-server-defaults-without-writing-user-overrides",
+      "passed": true,
+      "detail": {
+        "output": 8192,
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 20,
+        "think": true,
+        "ctx": 32768,
+        "ctx_min": 128,
+        "ctx_max": 131072,
+        "output_max": 8192
+      }
+    },
+    {
+      "name": "showOpts-preserves-stored-sampling-and-pending-context-edits",
+      "passed": true,
+      "detail": {
+        "output": 12,
+        "temperature": 0.25,
+        "top_p": 0.8,
+        "top_k": 7,
+        "think": false,
+        "ctx": 16384,
+        "ctx_min": 128,
+        "ctx_max": 131072,
+        "output_max": 8192
+      }
+    },
+    {
+      "name": "showOpts-sets-model-context-and-output-cap-bounds",
+      "passed": true,
+      "detail": {
+        "belowForgeCap": {
+          "output": 4095,
+          "temperature": 1,
+          "top_p": 0.95,
+          "top_k": 20,
+          "think": true,
+          "ctx": 4096,
+          "ctx_min": 128,
+          "ctx_max": 8192,
+          "output_max": 4095
+        },
+        "aboveForgeCap": {
+          "output": 8192,
+          "temperature": 1,
+          "top_p": 0.95,
+          "top_k": 20,
+          "think": true,
+          "ctx": 65536,
+          "ctx_min": 128,
+          "ctx_max": 131072,
+          "output_max": 8192
+        },
+        "limitation": "Checks assigned bounds, not browser range-value sanitization."
+      }
+    },
+    {
+      "name": "code-preset-refuses-immutable-output-cap-without-staging-changes",
+      "passed": true,
+      "detail": {
+        "message": "This preset reserves 8192 output tokens, but the server cap is 64. Restart serve with --preset code-long or --max-tokens 8192, then stage the preset.",
+        "staged": {},
+        "serverCap": 64
+      }
+    },
+    {
+      "name": "code-preset-refuses-unavailable-gpu-and-short-model-context",
+      "passed": true,
+      "detail": {
+        "cpu": "Code presets require a GPU server; start Forge with --preset code.",
+        "context": "This model allows at most 512 context tokens; choose a supported smaller context."
+      }
+    },
+    {
+      "name": "code-presets-stage-declared-options-only-on-explicit-action",
+      "passed": true,
+      "detail": [
+        {
+          "preset": "code",
+          "staged": {
+            "ctx": 16384,
+            "mtp": 0,
+            "kv": "f16",
+            "cache_ram": 1024,
+            "chunk": 256,
+            "parallel": 1,
+            "ram_margin": 6144
+          },
+          "output": 4096
+        },
+        {
+          "preset": "code-long",
+          "staged": {
+            "ctx": 32768,
+            "mtp": 0,
+            "kv": "f16",
+            "cache_ram": 1024,
+            "chunk": 256,
+            "parallel": 1,
+            "ram_margin": 6144
+          },
+          "output": 8192
+        }
+      ]
+    }
+  ]
+}

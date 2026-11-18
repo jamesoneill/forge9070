@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "checks": [
+    "CLI local catalog finds nested repositories and preserves spaces",
+    "Dense models are excluded from the compatible MoE catalog",
+    "Actual native Linux launcher starts an unloaded CPU server",
+    "CLI switches between catalog IDs and actual inference continues",
+    "Direct CLI load cannot bypass MoE policy and preserves the active model",
+    "Unsupported CPU parallel settings are rejected before unloading",
+    "Explicit stale model ID is rejected rather than answered by a different model",
+    "CLI unload releases the model while leaving management available",
+    "CLI reload succeeds after unload"
+  ],
+  "actual_linux_launcher": true,
+  "wsl_kernel_tested": false,
+  "windows_interop_tested": false,
+  "gpu_compute_tested": false
+}

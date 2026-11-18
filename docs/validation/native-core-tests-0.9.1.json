@@ -1,0 +1,19 @@
+{
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "forge-engine",
+    "--lib",
+    "--bins"
+  ],
+  "checked_at_utc": "2026-11-17T20:41:56.655848+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 12.917060170002514,
+  "passed": 75,
+  "failed": 0,
+  "ignored": 4,
+  "scope": "native library and binary unit tests; GPU and external-template gates remain separate 0.9.0 evidence"
+}

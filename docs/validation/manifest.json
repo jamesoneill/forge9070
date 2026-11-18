@@ -1,0 +1,1214 @@
+{
+  "source_archive": "Forge9070-0.9.1-rx9070xt-source.zip",
+  "source_archive_sha256": "d8b3792eacf57f31d6f3a8a2aaf44523d4f14d7c2919c68f279f7c07d59a6019",
+  "selection": "JSON and Markdown validation reports from the source archive; debug-named files, logs, error dumps, dependency listings and binary payloads excluded.",
+  "redaction": "Absolute transient project/workspace, build-home and temporary-directory paths normalized to documented placeholders. Hardware-owner wording generalized. Markdown links rebased; historical documents identified. Test outcomes, timings, numerical values, source hashes and limitations retained.",
+  "files": [
+    {
+      "path": "api-coding-client-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/api-coding-client-0.7.0.json",
+      "source_sha256": "511a97986e24eff30f098725c8092e853a2a1433a3c244a06f1c25cd9f7bb1a5",
+      "published_sha256": "511a97986e24eff30f098725c8092e853a2a1433a3c244a06f1c25cd9f7bb1a5",
+      "source_bytes": 2134,
+      "published_bytes": 2134,
+      "publication_edits": false
+    },
+    {
+      "path": "api-coding-client-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/api-coding-client-0.8.0.json",
+      "source_sha256": "72b14872efb72dfbfc602ea1ed2b97780dce7ac3b8bcbb4301972fcdd8ad91ca",
+      "published_sha256": "72b14872efb72dfbfc602ea1ed2b97780dce7ac3b8bcbb4301972fcdd8ad91ca",
+      "source_bytes": 2447,
+      "published_bytes": 2447,
+      "publication_edits": false
+    },
+    {
+      "path": "bench-release.json",
+      "source_archive_member": "forge9070/artifacts/bench-release.json",
+      "source_sha256": "7ddb40ccdf8f95e254732a0eb665a9d48fecafc9d8727a3d7cbc3393b6dd3f91",
+      "published_sha256": "7ddb40ccdf8f95e254732a0eb665a9d48fecafc9d8727a3d7cbc3393b6dd3f91",
+      "source_bytes": 812,
+      "published_bytes": 812,
+      "publication_edits": false
+    },
+    {
+      "path": "build-release-0.4.1.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.4.1.json",
+      "source_sha256": "2f24cc0fc6155db17154fc87a738eba72bdb9f8f62b7a6a06b2c96b9d82ad73e",
+      "published_sha256": "27c514de594eef61fb91320f0ddf6f893569865c3e3f26597bc520385b519422",
+      "source_bytes": 754,
+      "published_bytes": 675,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.5.0.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.5.0.json",
+      "source_sha256": "5651a7df768127062d764c6af6fd4213fcb750d95ce867263a4d345ee022e1f2",
+      "published_sha256": "17437e931fbed8dca34f2a00628b1e1c5d747383e64494a49c069812395c5710",
+      "source_bytes": 871,
+      "published_bytes": 792,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.6.0.json",
+      "source_sha256": "bc31d5c9486bfab37aadccd545ba7d79b8b8812c19863ac2fdfa0670c23431fd",
+      "published_sha256": "c2eb6fb5dd4e14bda4482448bd69c3612e360b4e7c7b509e95e3e8039f481394",
+      "source_bytes": 803,
+      "published_bytes": 724,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.7.0.json",
+      "source_sha256": "defe967ea7ec9bc77205ca7fd2e77d092eaa636444aed74cdf1747dc108aefd2",
+      "published_sha256": "28584a11269391e16a528ec4048d7f07937aa63cf6c91478b011ea40f5e360dc",
+      "source_bytes": 706,
+      "published_bytes": 627,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.8.0.json",
+      "source_sha256": "a38d8c58bd493ceb6e754a32cdd2f3992f847a81f3cbf6ac89d3f8bebe6e7ee0",
+      "published_sha256": "e4d59cd2665f94b72108aa7cfa0718f7b7c1415abb70d8b3512b0c38c162b998",
+      "source_bytes": 773,
+      "published_bytes": 694,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.9.0.json",
+      "source_sha256": "aaa2e46b77544c5ab1ad154737e35fdb783623678c1a0e76ae56179499235db5",
+      "published_sha256": "5393a5bd67bb5b6ac008c42eb3ad5eb6f57d2a4cfc731f90e0b80948cbd31e45",
+      "source_bytes": 1169,
+      "published_bytes": 1070,
+      "publication_edits": true
+    },
+    {
+      "path": "build-release-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/build-release-0.9.1.json",
+      "source_sha256": "b12f787908b67e265554f8f86bca7fc1d19b34a2f4dcc1c2b392040dd6c8fd51",
+      "published_sha256": "7698ddfa0fbef4c51d01e9a45e0b45f5aae999b3a1ace00d34ffa465f1821f8a",
+      "source_bytes": 359,
+      "published_bytes": 360,
+      "publication_edits": true
+    },
+    {
+      "path": "builds.json",
+      "source_archive_member": "forge9070/artifacts/builds.json",
+      "source_sha256": "6c35fa506b2e2d4e1d1df655981499337929cfdb9fc089ff06deafb130a8dc0b",
+      "published_sha256": "77a56ba89bcf785efece3bb031e74afba25a8fe1f1da1bb3b199a77bab67a261",
+      "source_bytes": 377,
+      "published_bytes": 379,
+      "publication_edits": true
+    },
+    {
+      "path": "code-browser-integration-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/code-browser-integration-0.6.0.json",
+      "source_sha256": "b52401b09f6d4bf3a7f115c4a65de259fc0235d8a1ad69105de63f86750387e5",
+      "published_sha256": "81e20d0b27c826649b3d86101844d7eb653e6324effa9633a37c5c7742df0bff",
+      "source_bytes": 8108,
+      "published_bytes": 8170,
+      "publication_edits": true
+    },
+    {
+      "path": "code-context-integration-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/code-context-integration-0.6.0.json",
+      "source_sha256": "a2d2860f7a293233b421efdf7409928eb1a1c48bace6b4d97154bf1626e04844",
+      "published_sha256": "8b3c7488d581640ec7d72f94f02b19448a43776d56dcf061236bb3d3f9e30443",
+      "source_bytes": 60058,
+      "published_bytes": 60124,
+      "publication_edits": true
+    },
+    {
+      "path": "code-context-integration-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/code-context-integration-0.7.0.json",
+      "source_sha256": "4ab01141afac9b97579d73ce2e28315c3aeff1ad3a395c45e3378a5cb6adcca1",
+      "published_sha256": "192f367118acc0f4ba70936b32c79033945ac623eba12a3a82527661c7fb5fc2",
+      "source_bytes": 63878,
+      "published_bytes": 63944,
+      "publication_edits": true
+    },
+    {
+      "path": "code-context-run-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/code-context-run-0.7.0.json",
+      "source_sha256": "88d171141645a5dfe913125b2737d27fc6783ec283f6473a67c5e4cfc5f813fe",
+      "published_sha256": "88d171141645a5dfe913125b2737d27fc6783ec283f6473a67c5e4cfc5f813fe",
+      "source_bytes": 377,
+      "published_bytes": 377,
+      "publication_edits": false
+    },
+    {
+      "path": "code-ui-helpers-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/code-ui-helpers-0.6.0.json",
+      "source_sha256": "a70d037b4af1a976f0f08de1977359d0d724ad84bbc53adc1686862eae6a1e8c",
+      "published_sha256": "d5950e5897bfddd293a118ecf63374b1c65b6034aee65f6d004c5913cf4196e6",
+      "source_bytes": 4182,
+      "published_bytes": 4162,
+      "publication_edits": true
+    },
+    {
+      "path": "code-ui-helpers-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/code-ui-helpers-0.7.0.json",
+      "source_sha256": "8227056b443678ae9afffa07d0022555b0386f8d48770a46817c71250da1dbe8",
+      "published_sha256": "ad8cea24e1692a48e1de9f5722be9cac82938a4c34ac00631bb8c0c6f13ffc95",
+      "source_bytes": 8463,
+      "published_bytes": 8443,
+      "publication_edits": true
+    },
+    {
+      "path": "code-ui-syntax-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/code-ui-syntax-0.6.0.json",
+      "source_sha256": "cf13d354aaf94401677b8c6a5c2cd1a82bb539db56a6b08db4bcfca58039ab29",
+      "published_sha256": "cf13d354aaf94401677b8c6a5c2cd1a82bb539db56a6b08db4bcfca58039ab29",
+      "source_bytes": 292,
+      "published_bytes": 292,
+      "publication_edits": false
+    },
+    {
+      "path": "compat-hf-live-search.json",
+      "source_archive_member": "forge9070/artifacts/compat-hf-live-search.json",
+      "source_sha256": "097f6b50348690a77fb8c1649823ee09220b3b79551d9b4cdbedab7c420c3387",
+      "published_sha256": "097f6b50348690a77fb8c1649823ee09220b3b79551d9b4cdbedab7c420c3387",
+      "source_bytes": 2492,
+      "published_bytes": 2492,
+      "publication_edits": false
+    },
+    {
+      "path": "concurrency-regression-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/concurrency-regression-0.7.0.json",
+      "source_sha256": "d50abbc6948c28fd6c5d9af5960e6abe3deb86033295c72e0b088dfc2e2f6e6c",
+      "published_sha256": "d50abbc6948c28fd6c5d9af5960e6abe3deb86033295c72e0b088dfc2e2f6e6c",
+      "source_bytes": 1267,
+      "published_bytes": 1267,
+      "publication_edits": false
+    },
+    {
+      "path": "concurrency-release.json",
+      "source_archive_member": "forge9070/artifacts/concurrency-release.json",
+      "source_sha256": "669a1607b99d3a67add6d3801fda167b03383967249b305750e1de998939a104",
+      "published_sha256": "669a1607b99d3a67add6d3801fda167b03383967249b305750e1de998939a104",
+      "source_bytes": 1275,
+      "published_bytes": 1275,
+      "publication_edits": false
+    },
+    {
+      "path": "context-memory-estimates-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/context-memory-estimates-0.6.0.json",
+      "source_sha256": "fe45e9cff9bbfc954322515dd8f6abea53765067ba4d5144cd1559c5f1bcab19",
+      "published_sha256": "fe45e9cff9bbfc954322515dd8f6abea53765067ba4d5144cd1559c5f1bcab19",
+      "source_bytes": 1720,
+      "published_bytes": 1720,
+      "publication_edits": false
+    },
+    {
+      "path": "doctor.json",
+      "source_archive_member": "forge9070/artifacts/doctor.json",
+      "source_sha256": "e75071f1a8e984df0cb41292fd23fa8f1e935f07fbbba5c413ae679640bf5bca",
+      "published_sha256": "e75071f1a8e984df0cb41292fd23fa8f1e935f07fbbba5c413ae679640bf5bca",
+      "source_bytes": 1189,
+      "published_bytes": 1189,
+      "publication_edits": false
+    },
+    {
+      "path": "expert-ram-integration-0.5.0.json",
+      "source_archive_member": "forge9070/artifacts/expert-ram-integration-0.5.0.json",
+      "source_sha256": "8fef115d1a9af53da1c5d65172ac7e209e40ae23656a0b51a64ec926b8f487ab",
+      "published_sha256": "9ef4123242786f5810720f29f4783f6d7ab3a91b9a7fdb81a1163d89559d8653",
+      "source_bytes": 18991,
+      "published_bytes": 18699,
+      "publication_edits": true
+    },
+    {
+      "path": "expert-ram-integration-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/expert-ram-integration-0.6.0.json",
+      "source_sha256": "6a8d27626dd507ae3fb2ba5dcc3fcb65ae5054c4e60cd5e00519bfb3324115ff",
+      "published_sha256": "8422b1ec1835e543563168e8629e924c0a201af529b62d3d4003aa475bc82f38",
+      "source_bytes": 19411,
+      "published_bytes": 19119,
+      "publication_edits": true
+    },
+    {
+      "path": "forge-engine-cli-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/forge-engine-cli-0.8.0.json",
+      "source_sha256": "8ed40d7d52f5e046f39b02236edf0395b1cff2b90e36380ee3dd4829677e90f6",
+      "published_sha256": "5b1e747470142fa93a2604851d1dbd3b70b74a616c987739ec0c39a3fe348461",
+      "source_bytes": 18803,
+      "published_bytes": 18296,
+      "publication_edits": true
+    },
+    {
+      "path": "forge-engine-cli-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/forge-engine-cli-0.9.0.json",
+      "source_sha256": "0193b04153a1ec08a1427e9e4a2948f0a3e07fe6ef8ad5cd98bf43f4107fa8ae",
+      "published_sha256": "e49827e0bfca3c5c7800dbeb0a48fae08b6bbb1083d473b10551c44daa9cdf04",
+      "source_bytes": 29616,
+      "published_bytes": 29026,
+      "publication_edits": true
+    },
+    {
+      "path": "forge-engine-cli-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/forge-engine-cli-0.9.1.json",
+      "source_sha256": "825b6b24a59eb78f26efbf1e375caeeb65fbbfb8d5bc5c671ce7fbc4d083bed9",
+      "published_sha256": "9ba6f87bad4e58d16375d15ed0c45e54e77bee6d8b0c02f5a7090dc47971cae6",
+      "source_bytes": 29993,
+      "published_bytes": 29403,
+      "publication_edits": true
+    },
+    {
+      "path": "models-cli-release.json",
+      "source_archive_member": "forge9070/artifacts/models-cli-release.json",
+      "source_sha256": "cdbadc9bc226511766433508f7454d724a977d737cef9d6ec2dc406e51516ecc",
+      "published_sha256": "cdbadc9bc226511766433508f7454d724a977d737cef9d6ec2dc406e51516ecc",
+      "source_bytes": 1054,
+      "published_bytes": 1054,
+      "publication_edits": false
+    },
+    {
+      "path": "native-1-requests-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-1-requests-0.8.0.json",
+      "source_sha256": "b50d0efe3fdea028a31eaa99d9c343c86694cd3e224d142440d995f7f07e8829",
+      "published_sha256": "b50d0efe3fdea028a31eaa99d9c343c86694cd3e224d142440d995f7f07e8829",
+      "source_bytes": 3760,
+      "published_bytes": 3760,
+      "publication_edits": false
+    },
+    {
+      "path": "native-4-requests-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-4-requests-0.8.0.json",
+      "source_sha256": "bb6a5e0f41190b32680bebece73182f6d485efd39e8fdefa5771855875d50a81",
+      "published_sha256": "bb6a5e0f41190b32680bebece73182f6d485efd39e8fdefa5771855875d50a81",
+      "source_bytes": 4824,
+      "published_bytes": 4824,
+      "publication_edits": false
+    },
+    {
+      "path": "native-api-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-api-0.9.0.json",
+      "source_sha256": "335010ea252536361a7c8c4464dd7c28a8bf82178b3faa2b6d2a6e4e1fe88a4c",
+      "published_sha256": "335010ea252536361a7c8c4464dd7c28a8bf82178b3faa2b6d2a6e4e1fe88a4c",
+      "source_bytes": 2643,
+      "published_bytes": 2643,
+      "publication_edits": false
+    },
+    {
+      "path": "native-api-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-api-0.9.1.json",
+      "source_sha256": "9d34ad231f11646c0d3e76174b3b764a5398688f9703ccae61078ceabb69473d",
+      "published_sha256": "9d34ad231f11646c0d3e76174b3b764a5398688f9703ccae61078ceabb69473d",
+      "source_bytes": 2771,
+      "published_bytes": 2771,
+      "publication_edits": false
+    },
+    {
+      "path": "native-capabilities-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-capabilities-0.9.0.json",
+      "source_sha256": "0e1662d730dce2b5e10bddb0f6f8e42a3e12f7c8bd34ff5abf63ed631804d4c3",
+      "published_sha256": "0e1662d730dce2b5e10bddb0f6f8e42a3e12f7c8bd34ff5abf63ed631804d4c3",
+      "source_bytes": 1518,
+      "published_bytes": 1518,
+      "publication_edits": false
+    },
+    {
+      "path": "native-capabilities-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-capabilities-0.9.1.json",
+      "source_sha256": "f11942c49346984e3897bcdbbfbbf0727141f0e4542202645a55058775cdfcd0",
+      "published_sha256": "f11942c49346984e3897bcdbbfbbf0727141f0e4542202645a55058775cdfcd0",
+      "source_bytes": 1692,
+      "published_bytes": 1692,
+      "publication_edits": false
+    },
+    {
+      "path": "native-core-tests-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-core-tests-0.8.0.json",
+      "source_sha256": "b896c4bad27fa60a41cc1a29ea2606b8cace586c523d2a70593d39fdba727e8e",
+      "published_sha256": "642324c44f15ee03c15f37b30a4e0955746508ec71cd68294d633d29c2312b85",
+      "source_bytes": 27916,
+      "published_bytes": 27837,
+      "publication_edits": true
+    },
+    {
+      "path": "native-core-tests-0.9.0-before-stream-fix.json",
+      "source_archive_member": "forge9070/artifacts/native-core-tests-0.9.0-before-stream-fix.json",
+      "source_sha256": "4eb1a5e435147a948e5deb71b5b699489dfa254324a5f4bf420e07d5c047901d",
+      "published_sha256": "26ce8b999a747cee39b71284b0f12a6d51abe9cfd6cc780159d4268c37be6492",
+      "source_bytes": 8401,
+      "published_bytes": 8303,
+      "publication_edits": true
+    },
+    {
+      "path": "native-core-tests-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-core-tests-0.9.0.json",
+      "source_sha256": "b846fc929ea7e738e668fb7241dab3180f97b2fbcb593c5010c99ba4b0696f92",
+      "published_sha256": "92ceeb7757381925e367fbc63c4431149050239ac20aa8613a3269f7483879b8",
+      "source_bytes": 34387,
+      "published_bytes": 34308,
+      "publication_edits": true
+    },
+    {
+      "path": "native-core-tests-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-core-tests-0.9.1.json",
+      "source_sha256": "fe86ac86718b5e73c8db729af1a64291633af11ddf0398a689f657a298ff5875",
+      "published_sha256": "7b44ee54461bcb54bda06dc6ea01cbaf4b7981e3f0ca8a88e21bc7080ef5338e",
+      "source_bytes": 437,
+      "published_bytes": 438,
+      "publication_edits": true
+    },
+    {
+      "path": "native-gpu-api-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-gpu-api-0.9.0.json",
+      "source_sha256": "5b12e9dcb4e8ce928eb8d0a3c815eecc0927c77f86e7cd48992250ec70f11d22",
+      "published_sha256": "3ad1ad4051fcbd7f57623afa35c0aa5994a9b0d81dd42e504e58aee63c162b0b",
+      "source_bytes": 5207,
+      "published_bytes": 5187,
+      "publication_edits": true
+    },
+    {
+      "path": "native-gpu-api-run-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-gpu-api-run-0.9.0.json",
+      "source_sha256": "31252e4643f5900b9505d4487388545cce8d6102d497fdd75db53dc4107b82f8",
+      "published_sha256": "0eac8264758e74961027272cc29a6833d5744cc820fbb1a600dd03b94a289a78",
+      "source_bytes": 6072,
+      "published_bytes": 6052,
+      "publication_edits": true
+    },
+    {
+      "path": "native-host-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-host-0.8.0.json",
+      "source_sha256": "249a7c4c32a5a403247129e837a42dc6a0056959bc23d11d5d0855d6b9b151ff",
+      "published_sha256": "249a7c4c32a5a403247129e837a42dc6a0056959bc23d11d5d0855d6b9b151ff",
+      "source_bytes": 299,
+      "published_bytes": 299,
+      "publication_edits": false
+    },
+    {
+      "path": "native-host-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-host-0.9.0.json",
+      "source_sha256": "c4394ca6e0806e9dc5acd4544cc5ddf71727e34cdd16cdf36e7e66acd0e3a31d",
+      "published_sha256": "c4394ca6e0806e9dc5acd4544cc5ddf71727e34cdd16cdf36e7e66acd0e3a31d",
+      "source_bytes": 341,
+      "published_bytes": 341,
+      "publication_edits": false
+    },
+    {
+      "path": "native-kernels-0.8.0-before-f16c.json",
+      "source_archive_member": "forge9070/artifacts/native-kernels-0.8.0-before-f16c.json",
+      "source_sha256": "df9966225a5b1c087cc5f31b4a707c1f4f6b4473b8f528e6d287f70ef3f5cf4b",
+      "published_sha256": "df9966225a5b1c087cc5f31b4a707c1f4f6b4473b8f528e6d287f70ef3f5cf4b",
+      "source_bytes": 5119,
+      "published_bytes": 5119,
+      "publication_edits": false
+    },
+    {
+      "path": "native-kernels-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-kernels-0.8.0.json",
+      "source_sha256": "93bada3a7bb74d653cc246fa3172734939377c6e6818d00e8937f7116e32d1f5",
+      "published_sha256": "93bada3a7bb74d653cc246fa3172734939377c6e6818d00e8937f7116e32d1f5",
+      "source_bytes": 5164,
+      "published_bytes": 5164,
+      "publication_edits": false
+    },
+    {
+      "path": "native-kernels-run-0.8.0-before-f16c.json",
+      "source_archive_member": "forge9070/artifacts/native-kernels-run-0.8.0-before-f16c.json",
+      "source_sha256": "45274db1fa1a0815da7b29fbbd13e46a09abc248748d440ca37cb717390efe88",
+      "published_sha256": "45274db1fa1a0815da7b29fbbd13e46a09abc248748d440ca37cb717390efe88",
+      "source_bytes": 5807,
+      "published_bytes": 5807,
+      "publication_edits": false
+    },
+    {
+      "path": "native-kernels-run-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-kernels-run-0.8.0.json",
+      "source_sha256": "b6fb53c77e064deb27af223e4fb847177f52e700b58946742295b093ae8b415e",
+      "published_sha256": "b6fb53c77e064deb27af223e4fb847177f52e700b58946742295b093ae8b415e",
+      "source_bytes": 5853,
+      "published_bytes": 5853,
+      "publication_edits": false
+    },
+    {
+      "path": "native-release-harnesses-0.9.0-initial.json",
+      "source_archive_member": "forge9070/artifacts/native-release-harnesses-0.9.0-initial.json",
+      "source_sha256": "807fd0f5b0554005979fbde4105597ff31282509aced5d938b26c0cfb839900e",
+      "published_sha256": "275c593afdee6f9619c660a3ee5b1f3d58b9561b002b9029c0dc4c29b42ea4eb",
+      "source_bytes": 8612,
+      "published_bytes": 8546,
+      "publication_edits": true
+    },
+    {
+      "path": "native-release-harnesses-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-release-harnesses-0.9.0.json",
+      "source_sha256": "47fa7a8db390dcdd05d031ce895403868e213849f5bc7639f89ae4ffb8a07f12",
+      "published_sha256": "e622aeb072033ed1cc1add03d688844fb5267ffa34299937edf2c5b2ffc61444",
+      "source_bytes": 11572,
+      "published_bytes": 11552,
+      "publication_edits": true
+    },
+    {
+      "path": "native-source-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/native-source-0.8.0.json",
+      "source_sha256": "23eabced2c011162f425ef154da74010a04598e1f41d6cad67a60114b47897f0",
+      "published_sha256": "23eabced2c011162f425ef154da74010a04598e1f41d6cad67a60114b47897f0",
+      "source_bytes": 1523,
+      "published_bytes": 1523,
+      "publication_edits": false
+    },
+    {
+      "path": "native-source-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-source-0.9.0.json",
+      "source_sha256": "a3e94e863d114015f86d6d983d1c6b830589e122077a39de2ca8558107778836",
+      "published_sha256": "a3e94e863d114015f86d6d983d1c6b830589e122077a39de2ca8558107778836",
+      "source_bytes": 5029,
+      "published_bytes": 5029,
+      "publication_edits": false
+    },
+    {
+      "path": "native-source-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-source-0.9.1.json",
+      "source_sha256": "08882f217aeed9fbb18830e5b4533da26cdb808f28ad5e534dd20f0d8228ee9c",
+      "published_sha256": "08882f217aeed9fbb18830e5b4533da26cdb808f28ad5e534dd20f0d8228ee9c",
+      "source_bytes": 3882,
+      "published_bytes": 3882,
+      "publication_edits": false
+    },
+    {
+      "path": "native-storage-validation-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-storage-validation-0.9.0.json",
+      "source_sha256": "9d8cc1ffc2fe8c427ea2af32363b0560e93e07317bc8a3e6e331b1a975998fd2",
+      "published_sha256": "0be3df156bc845d7c6681783260cc9b4d1b7af4f264ab67f9f08e128ef79c8dc",
+      "source_bytes": 8183,
+      "published_bytes": 8188,
+      "publication_edits": true
+    },
+    {
+      "path": "native-template-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-template-0.9.0.json",
+      "source_sha256": "e4b4dafc08f6b42c1a57e2328080390a0a102be7a89cd5cf25e67205aeff8bc7",
+      "published_sha256": "f431fee844ae650dd06c8f6e5bcbc92b3764f87a3e5781c6b8e91659837aeacf",
+      "source_bytes": 2204,
+      "published_bytes": 2145,
+      "publication_edits": true
+    },
+    {
+      "path": "native-ui-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-ui-0.9.1.json",
+      "source_sha256": "39a80ff9c444dec247b99df8577a4791ffc6b4608b13503b9df728b3ede1afe9",
+      "published_sha256": "812cf9262c05f87c961a4d56b7e731fd2b0730e0585c1981eff5d2f7adc8bcc2",
+      "source_bytes": 35746,
+      "published_bytes": 36368,
+      "publication_edits": true
+    },
+    {
+      "path": "native-ui-browser-attempt-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-ui-browser-attempt-0.9.1.json",
+      "source_sha256": "9cec13983aaff8cc70bc3998acc054c07f5c6a6f8b59d550d3591aa05d163276",
+      "published_sha256": "3645151358e62979363febf0e0056c372c053157ed67f2ae602beb2c47e02418",
+      "source_bytes": 32176,
+      "published_bytes": 32658,
+      "publication_edits": true
+    },
+    {
+      "path": "native-ui-browser-preview-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-ui-browser-preview-0.9.1.json",
+      "source_sha256": "c36da22f7226aaa3f8bca77442c7ed8d543f4690ae5eb4b6aeb80bb9d17cc586",
+      "published_sha256": "c36da22f7226aaa3f8bca77442c7ed8d543f4690ae5eb4b6aeb80bb9d17cc586",
+      "source_bytes": 343,
+      "published_bytes": 343,
+      "publication_edits": false
+    },
+    {
+      "path": "native-ui-launchers-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-ui-launchers-0.9.1.json",
+      "source_sha256": "da22df39bb09d6043a02e6a1e65ffa4e461163ba8e4ca1ffa96e2991c5dcb7c0",
+      "published_sha256": "da22df39bb09d6043a02e6a1e65ffa4e461163ba8e4ca1ffa96e2991c5dcb7c0",
+      "source_bytes": 975,
+      "published_bytes": 975,
+      "publication_edits": false
+    },
+    {
+      "path": "native-ui-source-checks-0.9.1.json",
+      "source_archive_member": "forge9070/artifacts/native-ui-source-checks-0.9.1.json",
+      "source_sha256": "4c30871811e9abfa8f1dbd6b05f9e3ca92b026dcaa820a3c072478aee0524d79",
+      "published_sha256": "4c30871811e9abfa8f1dbd6b05f9e3ca92b026dcaa820a3c072478aee0524d79",
+      "source_bytes": 1489,
+      "published_bytes": 1489,
+      "publication_edits": false
+    },
+    {
+      "path": "native-vulkan-validation-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/native-vulkan-validation-0.9.0.json",
+      "source_sha256": "02b5670fbf7490d4f0ecbaec8a3f74818a14a5ce9945311b55f52f5413376160",
+      "published_sha256": "a58fa1dbb45fab1d01906a693b9b9f34f0940a5ac0f1ed67829d79922bca0a3f",
+      "source_bytes": 3319,
+      "published_bytes": 3371,
+      "publication_edits": true
+    },
+    {
+      "path": "qwen38-header-checks/ista-gsq-rco-iq3-s-v050.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/ista-gsq-rco-iq3-s-v050.json",
+      "source_sha256": "ca2d21bb89ac70904c780b17e9c77adff678adaee400a6be0cc702a48ea8d4a3",
+      "published_sha256": "ca2d21bb89ac70904c780b17e9c77adff678adaee400a6be0cc702a48ea8d4a3",
+      "source_bytes": 2812,
+      "published_bytes": 2812,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-checks/original-unsloth-ud-iq4-xs-before-empty-shard-fix.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/original-unsloth-ud-iq4-xs-before-empty-shard-fix.json",
+      "source_sha256": "08aa80cd6b3365b60bd52ae92158d8747d0710f4253acfb872b06f667e819211",
+      "published_sha256": "08aa80cd6b3365b60bd52ae92158d8747d0710f4253acfb872b06f667e819211",
+      "source_bytes": 1036,
+      "published_bytes": 1036,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-checks/original-unsloth-ud-iq4-xs.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/original-unsloth-ud-iq4-xs.json",
+      "source_sha256": "6930df01d2d8fbc7c256f9c21b437a66453abf7483cbf01fa2cf8bd4f8de3d4d",
+      "published_sha256": "6930df01d2d8fbc7c256f9c21b437a66453abf7483cbf01fa2cf8bd4f8de3d4d",
+      "source_bytes": 2558,
+      "published_bytes": 2558,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-checks/uncensored-mradermacher-iq4-xs.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/uncensored-mradermacher-iq4-xs.json",
+      "source_sha256": "c969e4d7ad369f9825e03e97844b2c82e418d136f3addffcd90ea0e72bbc1ba2",
+      "published_sha256": "c969e4d7ad369f9825e03e97844b2c82e418d136f3addffcd90ea0e72bbc1ba2",
+      "source_bytes": 2325,
+      "published_bytes": 2325,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-checks/uncensored-tor-ud-iq4-xs-v050.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/uncensored-tor-ud-iq4-xs-v050.json",
+      "source_sha256": "63d28f4c03388f36354bb7d8a6cb5d75dc611d38bb8cdd18bd70c15265f8a304",
+      "published_sha256": "63d28f4c03388f36354bb7d8a6cb5d75dc611d38bb8cdd18bd70c15265f8a304",
+      "source_bytes": 2707,
+      "published_bytes": 2707,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-checks/uncensored-tor-ud-iq4-xs.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-checks/uncensored-tor-ud-iq4-xs.json",
+      "source_sha256": "9774d38e898912b7a2b81e9217c2c1ed35629ede48549a26f2ca96e7d0c50911",
+      "published_sha256": "9774d38e898912b7a2b81e9217c2c1ed35629ede48549a26f2ca96e7d0c50911",
+      "source_bytes": 2578,
+      "published_bytes": 2578,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-header-summary.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-header-summary.json",
+      "source_sha256": "c95fff89f80fc5ac67b16dc745827d12ef6cd8bd21282449ed5528e7ebee2ee2",
+      "published_sha256": "c95fff89f80fc5ac67b16dc745827d12ef6cd8bd21282449ed5528e7ebee2ee2",
+      "source_bytes": 941,
+      "published_bytes": 941,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-memory-inventory.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-memory-inventory.json",
+      "source_sha256": "9708390705bec193140cd015d4bc478f564d514406d95fca2fb310af1986ad01",
+      "published_sha256": "9708390705bec193140cd015d4bc478f564d514406d95fca2fb310af1986ad01",
+      "source_bytes": 7367,
+      "published_bytes": 7367,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-real-header-descriptors-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-real-header-descriptors-0.9.0.json",
+      "source_sha256": "bcae84581200397253df4d40e9d8c0e5a7223826c864d629134a61fe27e86a1e",
+      "published_sha256": "bcae84581200397253df4d40e9d8c0e5a7223826c864d629134a61fe27e86a1e",
+      "source_bytes": 192680,
+      "published_bytes": 192680,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-real-header-layout-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-real-header-layout-0.9.0.json",
+      "source_sha256": "cbab2248e364958cd5e1226dc01aa87d624d09dc318b40cb425f910d84d94175",
+      "published_sha256": "cbab2248e364958cd5e1226dc01aa87d624d09dc318b40cb425f910d84d94175",
+      "source_bytes": 935,
+      "published_bytes": 935,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-source-metadata.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-source-metadata.json",
+      "source_sha256": "0863d3d9afde192ea0bcd7c446ea01b67fddf8fc397d9e8cea11516843b06d84",
+      "published_sha256": "0863d3d9afde192ea0bcd7c446ea01b67fddf8fc397d9e8cea11516843b06d84",
+      "source_bytes": 21010,
+      "published_bytes": 21010,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-synthetic-fixture-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-synthetic-fixture-0.9.0.json",
+      "source_sha256": "708c3903fb84e9c8cae3b08e249a4470c6a6e2a4cbef09ef317ceb0b0102e28c",
+      "published_sha256": "708c3903fb84e9c8cae3b08e249a4470c6a6e2a4cbef09ef317ceb0b0102e28c",
+      "source_bytes": 996,
+      "published_bytes": 996,
+      "publication_edits": false
+    },
+    {
+      "path": "qwen38-vulkan-projection-parity-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-vulkan-projection-parity-0.9.0.json",
+      "source_sha256": "2a2b1543f432c99039f8014637957dbdd74479c50f8249bd0b2695dcf511314d",
+      "published_sha256": "a6575f29edd4e19b3f0b17a7aeeaeec7449bbd237de90d4cff287f0cfca13115",
+      "source_bytes": 1000,
+      "published_bytes": 1017,
+      "publication_edits": true
+    },
+    {
+      "path": "qwen38-vulkan-resident-parity-0.9.0.json",
+      "source_archive_member": "forge9070/artifacts/qwen38-vulkan-resident-parity-0.9.0.json",
+      "source_sha256": "8ded4c959cb9a9fe16939f8e45ee168e638d616bf42ddf8adfa341d221d61728",
+      "published_sha256": "a1abcea6182cf1df21d79cc298d0c38e8193d3af0957d5195a49127dcd5b3a5e",
+      "source_bytes": 7510,
+      "published_bytes": 7528,
+      "publication_edits": true
+    },
+    {
+      "path": "release-cli-0.4.1.json",
+      "source_archive_member": "forge9070/artifacts/release-cli-0.4.1.json",
+      "source_sha256": "2af2269e448eff605e66e9766de302c91df828d862d1f616e076aa9394155f0b",
+      "published_sha256": "2af2269e448eff605e66e9766de302c91df828d862d1f616e076aa9394155f0b",
+      "source_bytes": 2770,
+      "published_bytes": 2770,
+      "publication_edits": false
+    },
+    {
+      "path": "release-source-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/release-source-0.7.0.json",
+      "source_sha256": "bf5ad1e6ac314a1a94f5435a13dd120b613c928014f43e606ab66f08fb13b547",
+      "published_sha256": "bf5ad1e6ac314a1a94f5435a13dd120b613c928014f43e606ab66f08fb13b547",
+      "source_bytes": 840,
+      "published_bytes": 840,
+      "publication_edits": false
+    },
+    {
+      "path": "rust-tests-0.4.1.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests-0.4.1.json",
+      "source_sha256": "f25578ab1baf3a32847c6fc8f1a026ca2839f7eabe10a8cc92be7658c1bf377a",
+      "published_sha256": "e6b06a277a347b475d0d8309ae3de3124522f4d7174bde3d3c3e3276515bb052",
+      "source_bytes": 1329,
+      "published_bytes": 1331,
+      "publication_edits": true
+    },
+    {
+      "path": "rust-tests-0.5.0.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests-0.5.0.json",
+      "source_sha256": "4d96b24f72d56c6d018100830fd8806500ce7e4c0b3f0b18f2f12b1ea28df0fc",
+      "published_sha256": "ea3f607a44277a14998fe42ab5580ad420fc0fddc3c2cc37904b58d6567ccd23",
+      "source_bytes": 38717,
+      "published_bytes": 38517,
+      "publication_edits": true
+    },
+    {
+      "path": "rust-tests-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests-0.6.0.json",
+      "source_sha256": "e8e1dfe1039b63bcc938d304d2dbf86b9b979fd994ab9df6c54196f1a185adfe",
+      "published_sha256": "ce151a33a0a1ea09929a888850e967d9f0a0e5c389f2cca37ed7e5426b6259ed",
+      "source_bytes": 20810,
+      "published_bytes": 20748,
+      "publication_edits": true
+    },
+    {
+      "path": "rust-tests-0.7.0-before-test-updates.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests-0.7.0-before-test-updates.json",
+      "source_sha256": "450f80597f6c8525c5434ed71e1c9aed17f7eef73efc63663c22c18fb0062ad9",
+      "published_sha256": "6f9793fddf4e2a061f1e0c5729182e07a777edd0146f1350c4e46ec3325be514",
+      "source_bytes": 25107,
+      "published_bytes": 25045,
+      "publication_edits": true
+    },
+    {
+      "path": "rust-tests-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests-0.7.0.json",
+      "source_sha256": "c7d5b06bf97f4cfee9eacb40d17a3c9db5ff133865c819a671893eff86025db2",
+      "published_sha256": "707c9f3429500e93175de917c370ab597845fd945714a55670184fddd580cd4b",
+      "source_bytes": 24300,
+      "published_bytes": 24238,
+      "publication_edits": true
+    },
+    {
+      "path": "rust-tests.json",
+      "source_archive_member": "forge9070/artifacts/rust-tests.json",
+      "source_sha256": "e17c3ed8a78b076eaf2adeae02ece27c2bf1640d9d2878408510df985beac8f9",
+      "published_sha256": "6906f1c8ba21167e4f9daa5f2553ac681aa2452c770bfdc020058706785420b4",
+      "source_bytes": 1026,
+      "published_bytes": 1027,
+      "publication_edits": true
+    },
+    {
+      "path": "scheduling-api-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/scheduling-api-0.7.0.json",
+      "source_sha256": "c255dd5b5320d51cf8d971f5a45bea4cd245051106a7ba6dbe9956ee67ff023d",
+      "published_sha256": "e98de9624780d2772c61f1ec0d8a9b0e98e76839fcb25698c0915e7d7b1c5909",
+      "source_bytes": 9090,
+      "published_bytes": 9138,
+      "publication_edits": true
+    },
+    {
+      "path": "scheduling-api-0.8.0-evidence.json",
+      "source_archive_member": "forge9070/artifacts/scheduling-api-0.8.0-evidence.json",
+      "source_sha256": "f34c24ab404ab29e726817770b6245bf08f6377a6b47794f210c0033cd05f36f",
+      "published_sha256": "7bc5490cb8dbf49336e827f0b488b007f089e4bfe1ceb3a874fe1a44eda10a41",
+      "source_bytes": 9096,
+      "published_bytes": 9144,
+      "publication_edits": true
+    },
+    {
+      "path": "scheduling-api-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/scheduling-api-0.8.0.json",
+      "source_sha256": "c1c9640f59f60e73cf4279b6af91b3f02711f315a2351096a746a279d6db4dcd",
+      "published_sha256": "79c984b6eb3bfda015bf005302d42c94f5ca067d33920c9ea16fe77948ebfc83",
+      "source_bytes": 409,
+      "published_bytes": 389,
+      "publication_edits": true
+    },
+    {
+      "path": "smoke-0.6.0.json",
+      "source_archive_member": "forge9070/artifacts/smoke-0.6.0.json",
+      "source_sha256": "012c0e743b8d5de74a80f8f2a68e2de19e2dc0351ce4e6914523b08b93bd3a84",
+      "published_sha256": "0ab80e92a39e80764f3c65c445393afa047a9caa45fe0209c6520c9900672148",
+      "source_bytes": 1073,
+      "published_bytes": 1053,
+      "publication_edits": true
+    },
+    {
+      "path": "smoke-0.7.0.json",
+      "source_archive_member": "forge9070/artifacts/smoke-0.7.0.json",
+      "source_sha256": "6b6cbac6d597a7953a822f6482bfca6fe38565b5b69337a789b42760772b45fc",
+      "published_sha256": "8e38d2809267b1317c69a48b5a4b52899f43b4a66d40ff97fbe55812db01ad5e",
+      "source_bytes": 1036,
+      "published_bytes": 1016,
+      "publication_edits": true
+    },
+    {
+      "path": "smoke-0.8.0.json",
+      "source_archive_member": "forge9070/artifacts/smoke-0.8.0.json",
+      "source_sha256": "8e5c419cd63f11c92143f2319377263b88b251664c9164d179b194ed1dd7c9eb",
+      "published_sha256": "9576ccdef880ca5da7bfe656838860dd999a311af109c752b5aa111373aa753a",
+      "source_bytes": 1037,
+      "published_bytes": 1017,
+      "publication_edits": true
+    },
+    {
+      "path": "smoke-release.json",
+      "source_archive_member": "forge9070/artifacts/smoke-release.json",
+      "source_sha256": "a5fce22002e3d47a5d9c0752bf297f22e0742bd5ad912879a1d093af3ceff6fd",
+      "published_sha256": "e61e176ab28b8f0dbbf581c57f2c049587b96e0adb98af769878055c9ce79f6a",
+      "source_bytes": 1030,
+      "published_bytes": 1010,
+      "publication_edits": true
+    },
+    {
+      "path": "syntax.json",
+      "source_archive_member": "forge9070/artifacts/syntax.json",
+      "source_sha256": "d7efeebab1bdb254d85260a8321d184e72e5b8e5f36dc9492ac40deaf7949ea6",
+      "published_sha256": "d7efeebab1bdb254d85260a8321d184e72e5b8e5f36dc9492ac40deaf7949ea6",
+      "source_bytes": 196,
+      "published_bytes": 196,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.1.0/doctor.json",
+      "source_archive_member": "forge9070/artifacts/v0.1.0/doctor.json",
+      "source_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "published_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "source_bytes": 970,
+      "published_bytes": 970,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.1.0/profile.json",
+      "source_archive_member": "forge9070/artifacts/v0.1.0/profile.json",
+      "source_sha256": "134977ee1792dd42f0dc053eb65862f220d604e976fae4f220689ca4dc6fe7ec",
+      "published_sha256": "134977ee1792dd42f0dc053eb65862f220d604e976fae4f220689ca4dc6fe7ec",
+      "source_bytes": 835,
+      "published_bytes": 835,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.1.0/smoke-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.1.0/smoke-release.json",
+      "source_sha256": "c3990c018e60f5f46c0529607a075290b45438eb6daeab440079b6be60fe5421",
+      "published_sha256": "e4d8f02283c8d643ba65f02433798640059ed3dcbd3102c49910e90135d09052",
+      "source_bytes": 716,
+      "published_bytes": 696,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.1.0/smoke.json",
+      "source_archive_member": "forge9070/artifacts/v0.1.0/smoke.json",
+      "source_sha256": "f07c9451c2a1292db52cee32a69c0813bd56b2b4909a4c716403642cefa7b7d7",
+      "published_sha256": "ad8b857ad27213c72d2850c032058c0b51d484de7e49a6ff2061c938c40b9b74",
+      "source_bytes": 665,
+      "published_bytes": 645,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.1.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.1.0/validation.json",
+      "source_sha256": "ecff7ac9a431bc03c339aeeed7553728b7f0201214fa9bbd497eca45dab641f7",
+      "published_sha256": "ecff7ac9a431bc03c339aeeed7553728b7f0201214fa9bbd497eca45dab641f7",
+      "source_bytes": 888,
+      "published_bytes": 888,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/doctor.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/doctor.json",
+      "source_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "published_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "source_bytes": 970,
+      "published_bytes": 970,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/hf-files-live.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/hf-files-live.json",
+      "source_sha256": "a991cde60a263b55e0431f4addf0542ddcdaf81988916176e393b8a1524d931b",
+      "published_sha256": "a991cde60a263b55e0431f4addf0542ddcdaf81988916176e393b8a1524d931b",
+      "source_bytes": 2398,
+      "published_bytes": 2398,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/hf-search-live.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/hf-search-live.json",
+      "source_sha256": "aef59ba5695f8cc5ac4a92031093ff1d7f2a3bee918033f5cb09c9d237047b5b",
+      "published_sha256": "aef59ba5695f8cc5ac4a92031093ff1d7f2a3bee918033f5cb09c9d237047b5b",
+      "source_bytes": 1582,
+      "published_bytes": 1582,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/models-cli-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/models-cli-release.json",
+      "source_sha256": "67247034ba9d87c6fb4aa8e13f24b1d76157735c9141234aab259b5b301675d2",
+      "published_sha256": "67247034ba9d87c6fb4aa8e13f24b1d76157735c9141234aab259b5b301675d2",
+      "source_bytes": 664,
+      "published_bytes": 664,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/models-cli.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/models-cli.json",
+      "source_sha256": "fde7a3f5b425de101585a3ff84a9aaa81e6a5c0ff2f4ec502e8448586e445905",
+      "published_sha256": "fde7a3f5b425de101585a3ff84a9aaa81e6a5c0ff2f4ec502e8448586e445905",
+      "source_bytes": 662,
+      "published_bytes": 662,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/smoke-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/smoke-release.json",
+      "source_sha256": "b80f63baf9b50fdc46ca007405eefbe268be33383306772ff53bcd79860fd65d",
+      "published_sha256": "b80f63baf9b50fdc46ca007405eefbe268be33383306772ff53bcd79860fd65d",
+      "source_bytes": 709,
+      "published_bytes": 709,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/smoke.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/smoke.json",
+      "source_sha256": "f6c1b793a61b51aa5aad107075a1b0a3240cb9cdfa58fce3b4a755cc43e7d939",
+      "published_sha256": "f6c1b793a61b51aa5aad107075a1b0a3240cb9cdfa58fce3b4a755cc43e7d939",
+      "source_bytes": 707,
+      "published_bytes": 707,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.2.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.2.0/validation.json",
+      "source_sha256": "c0726e4b761de253bb65769a7f3a039b213d5011a0e8fb05e3cbe9c3caaeef8c",
+      "published_sha256": "c0726e4b761de253bb65769a7f3a039b213d5011a0e8fb05e3cbe9c3caaeef8c",
+      "source_bytes": 1429,
+      "published_bytes": 1429,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/VALIDATION.md",
+      "source_sha256": "c4cf58f9546c66550903a770ae185a00e1c6158a43507d88818397415bfb79a9",
+      "published_sha256": "dd4f884cff2e78734ea2c6973cc2d3184e5c822ea388e778afbd84ba6a570606",
+      "source_bytes": 11778,
+      "published_bytes": 12037,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.3.0/builds.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/builds.json",
+      "source_sha256": "d2165be50da4c58c0ae27a38fc694d199bc6d4f1c7c002de0eecaacd8affe561",
+      "published_sha256": "98f9a8862e72baefff68cfe921310d4c2bd827788f9b832e384095388976d2c8",
+      "source_bytes": 377,
+      "published_bytes": 379,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.3.0/compat-hf-live-abliterated.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/compat-hf-live-abliterated.json",
+      "source_sha256": "68f931e1c2adc8f08f62bbfe251cda64dfebc0a669c3a5dc2a6f980ea28309f7",
+      "published_sha256": "68f931e1c2adc8f08f62bbfe251cda64dfebc0a669c3a5dc2a6f980ea28309f7",
+      "source_bytes": 9666,
+      "published_bytes": 9666,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/compat-hf-live-hybrid.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/compat-hf-live-hybrid.json",
+      "source_sha256": "67eab8f3aa5339de13e07a6ab8d6d8b20d7682953774992898f13d72eaa5cf82",
+      "published_sha256": "67eab8f3aa5339de13e07a6ab8d6d8b20d7682953774992898f13d72eaa5cf82",
+      "source_bytes": 9832,
+      "published_bytes": 9832,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/compat-hf-live-search.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/compat-hf-live-search.json",
+      "source_sha256": "e28acb7dcfa88bd95125e0e43fb84713ede74961b42eb0a118b4c3896c800918",
+      "published_sha256": "e28acb7dcfa88bd95125e0e43fb84713ede74961b42eb0a118b4c3896c800918",
+      "source_bytes": 1987,
+      "published_bytes": 1987,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/concurrency-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/concurrency-release.json",
+      "source_sha256": "5d0d0d5849280a5cc7d145e6b76237959d922929af5b7edfeea5da6354899333",
+      "published_sha256": "5d0d0d5849280a5cc7d145e6b76237959d922929af5b7edfeea5da6354899333",
+      "source_bytes": 899,
+      "published_bytes": 899,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/doctor.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/doctor.json",
+      "source_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "published_sha256": "e3e2beb494e2a77dc1863e615f9e5226ecbf9873feccd61a90fb8d99127d3b25",
+      "source_bytes": 970,
+      "published_bytes": 970,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/models-cli-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/models-cli-release.json",
+      "source_sha256": "cefec3d90ec57731577e1f286fa4a42a0474a4aa2f6c10eb757c56be96808c95",
+      "published_sha256": "cefec3d90ec57731577e1f286fa4a42a0474a4aa2f6c10eb757c56be96808c95",
+      "source_bytes": 793,
+      "published_bytes": 793,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/rust-tests.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/rust-tests.json",
+      "source_sha256": "7c7a7f2a454b20c4ae8003337d10c5ce11bb36c4848e7acb3bcd299c4498622f",
+      "published_sha256": "1e1d0b555c5f176730d597c9ba5f067784692f02e1dabcd37330bc252742c9b0",
+      "source_bytes": 898,
+      "published_bytes": 899,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.3.0/smoke-release.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/smoke-release.json",
+      "source_sha256": "932b9752854125fced24b82259b365e5e57ae9b6910c243211583b35ec21d34b",
+      "published_sha256": "dd9a4204f0de2fab56bd0056781cf5c027839b16add08fc1f62e340b4a4aef7f",
+      "source_bytes": 668,
+      "published_bytes": 648,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.3.0/syntax.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/syntax.json",
+      "source_sha256": "d7efeebab1bdb254d85260a8321d184e72e5b8e5f36dc9492ac40deaf7949ea6",
+      "published_sha256": "d7efeebab1bdb254d85260a8321d184e72e5b8e5f36dc9492ac40deaf7949ea6",
+      "source_bytes": 196,
+      "published_bytes": 196,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/validation.json",
+      "source_sha256": "5e1e58ce888ef13f88faa5ed38df0ef9672351ca3fc9006238205baa8ad9ba92",
+      "published_sha256": "5e1e58ce888ef13f88faa5ed38df0ef9672351ca3fc9006238205baa8ad9ba92",
+      "source_bytes": 2219,
+      "published_bytes": 2219,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.3.0/wsl-launcher-mocks.json",
+      "source_archive_member": "forge9070/artifacts/v0.3.0/wsl-launcher-mocks.json",
+      "source_sha256": "d513f9f7413b2d1cdacc1718e87cf0e585676d12e7c959d48bbd33b1e7f89167",
+      "published_sha256": "d513f9f7413b2d1cdacc1718e87cf0e585676d12e7c959d48bbd33b1e7f89167",
+      "source_bytes": 175,
+      "published_bytes": 175,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.4.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.4.0/VALIDATION.md",
+      "source_sha256": "a1f6ee58a5ee6b237013ee6df3639445c25e58a0c475490a68930e14d3f32ee1",
+      "published_sha256": "0f08d7533500df133a49957888c7016d3a3dce268f6a742380b04526c0e3031c",
+      "source_bytes": 11084,
+      "published_bytes": 11313,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.4.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.4.0/validation.json",
+      "source_sha256": "fcd5db0a617e234cf970f7ef10e0939985c186bcd7fc74bc7d28e7942c1eaa56",
+      "published_sha256": "fcd5db0a617e234cf970f7ef10e0939985c186bcd7fc74bc7d28e7942c1eaa56",
+      "source_bytes": 2679,
+      "published_bytes": 2679,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.4.1/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.4.1/VALIDATION.md",
+      "source_sha256": "cdcef2b8e0e2752fc32322850ce2f9d13ba4666d61950996263c3920bb5487a0",
+      "published_sha256": "f1c3d5da137f7f9583a7c74e7c5b5ecab854cea89aa6eb02f2d86d7beb7eb397",
+      "source_bytes": 5915,
+      "published_bytes": 6214,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.4.1/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.4.1/validation.json",
+      "source_sha256": "3bca86bf35c43047ec31333b4fc118d8cac2cf156c7392adb3c7158513d8c3a7",
+      "published_sha256": "3bca86bf35c43047ec31333b4fc118d8cac2cf156c7392adb3c7158513d8c3a7",
+      "source_bytes": 1413,
+      "published_bytes": 1413,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.5.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.5.0/VALIDATION.md",
+      "source_sha256": "66abf69e465b1b8b19d10b9c3ae1772aaa35ffff19c782cfd6a8a97dea7068e4",
+      "published_sha256": "9ba2c968bf68a79c2adf232380ca256e16aee3a64b85880f5dec112395570164",
+      "source_bytes": 8049,
+      "published_bytes": 8148,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.5.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.5.0/validation.json",
+      "source_sha256": "9b70b6555b2f09273bc8ac31cff098a26d494ddf16923612ec51a9a6664e60f9",
+      "published_sha256": "8922869e3d9ebf1c7fd05ae245e5eeb6da08dabfd1eb744fd7fee0a806207bbf",
+      "source_bytes": 2829,
+      "published_bytes": 2750,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.6.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.6.0/VALIDATION.md",
+      "source_sha256": "2ca7cc6ed93d3e0a42925aa1900f773e27b40bb75af96b393c35ed1a545ab31d",
+      "published_sha256": "3e588572914c6f018ee1951ada3eaeefa440f52181b3f3b27502a04b3908e3dd",
+      "source_bytes": 7719,
+      "published_bytes": 8129,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.6.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.6.0/validation.json",
+      "source_sha256": "898390219fc479a112d7bdc04c77b594bf2a2ae167426865a26f90202604968e",
+      "published_sha256": "898390219fc479a112d7bdc04c77b594bf2a2ae167426865a26f90202604968e",
+      "source_bytes": 2863,
+      "published_bytes": 2863,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.7.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.7.0/VALIDATION.md",
+      "source_sha256": "53bd0e3ffc938b8de699e0e3125a10780b522ea641b1c0b4202a6ced83bc5db0",
+      "published_sha256": "3cd787ecfee57b1f24a164a0eebad333f471ce24d8b5090d24e40737bfdcfe61",
+      "source_bytes": 5930,
+      "published_bytes": 6122,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.7.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.7.0/validation.json",
+      "source_sha256": "dacc47d5531c83bb909accb2b667c04b520d73eb8fd7301a61a0498e9e1b3647",
+      "published_sha256": "dacc47d5531c83bb909accb2b667c04b520d73eb8fd7301a61a0498e9e1b3647",
+      "source_bytes": 3578,
+      "published_bytes": 3578,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.8.0/NATIVE-ENGINE.md",
+      "source_archive_member": "forge9070/artifacts/v0.8.0/NATIVE-ENGINE.md",
+      "source_sha256": "e6417be6a8b8ca0e986d9c60fb225ff1dc073c8175419153547ef97753af9d2f",
+      "published_sha256": "9c96ae72e74e259ecd52a56b7ab4044353a1ea76c298fc4b92fe27b159365b82",
+      "source_bytes": 10714,
+      "published_bytes": 10898,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.8.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.8.0/VALIDATION.md",
+      "source_sha256": "bbe26b10c2111c3fb10a3d84517af3700c58fa575d48e7a0bcaa31e18bf3acd2",
+      "published_sha256": "1f0e1accf43d3d42242e7fbefcc023923e2814906f656d0a0ffd44ea4bcf2c96",
+      "source_bytes": 8659,
+      "published_bytes": 9099,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.8.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.8.0/validation.json",
+      "source_sha256": "c01a602676bb504949ba4ed55f4d3c37fdd7f01e7e85152bdaf7b79cf04f49ea",
+      "published_sha256": "c01a602676bb504949ba4ed55f4d3c37fdd7f01e7e85152bdaf7b79cf04f49ea",
+      "source_bytes": 5712,
+      "published_bytes": 5712,
+      "publication_edits": false
+    },
+    {
+      "path": "v0.9.0/NATIVE-ENGINE.md",
+      "source_archive_member": "forge9070/artifacts/v0.9.0/NATIVE-ENGINE.md",
+      "source_sha256": "fd31daa22191886413d751477b9f2277010a26f93a2e85687bf1b88bd0081070",
+      "published_sha256": "6256b675b1b6f7cc3f088d6e04938299ebeda5ba91aa637374426c3c7c13d0fe",
+      "source_bytes": 16479,
+      "published_bytes": 16663,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.9.0/VALIDATION.md",
+      "source_archive_member": "forge9070/artifacts/v0.9.0/VALIDATION.md",
+      "source_sha256": "dd970cdf8d7e2d7e5ec790016a6b354704333e34df3edb3cfa51133d4f4c748a",
+      "published_sha256": "deee3cc862bf70b8d71994fa0b9c8d96c5e64480044196153f65baefeee0d954",
+      "source_bytes": 12115,
+      "published_bytes": 12596,
+      "publication_edits": true
+    },
+    {
+      "path": "v0.9.0/validation.json",
+      "source_archive_member": "forge9070/artifacts/v0.9.0/validation.json",
+      "source_sha256": "53d28ffc52becac5239e2135aaf7ea05f4b99ca71482d5e5a2de10ba9c8c8629",
+      "published_sha256": "53d28ffc52becac5239e2135aaf7ea05f4b99ca71482d5e5a2de10ba9c8c8629",
+      "source_bytes": 5793,
+      "published_bytes": 5793,
+      "publication_edits": false
+    },
+    {
+      "path": "validation.json",
+      "source_archive_member": "forge9070/artifacts/validation.json",
+      "source_sha256": "cdb1744f0b7de53b8e35b162752d764ed46e904a1e360add56776482c4173afe",
+      "published_sha256": "cdb1744f0b7de53b8e35b162752d764ed46e904a1e360add56776482c4173afe",
+      "source_bytes": 3870,
+      "published_bytes": 3870,
+      "publication_edits": false
+    },
+    {
+      "path": "wsl-launcher-mocks.json",
+      "source_archive_member": "forge9070/artifacts/wsl-launcher-mocks.json",
+      "source_sha256": "e12474076cc6943e12603672bd3b371d4e6a6e61aa2fb15eb21b5fdbf41ca56c",
+      "published_sha256": "e12474076cc6943e12603672bd3b371d4e6a6e61aa2fb15eb21b5fdbf41ca56c",
+      "source_bytes": 286,
+      "published_bytes": 286,
+      "publication_edits": false
+    }
+  ]
+}

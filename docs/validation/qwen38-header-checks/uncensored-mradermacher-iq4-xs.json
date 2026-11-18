@@ -1,0 +1,69 @@
+{
+  "checked_at_utc": "2026-11-16T22:55:25Z",
+  "command": [
+    "./target/debug/forge9070",
+    "models",
+    "files",
+    "mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+    "--revision",
+    "3aa3ff434a0dc2b9dd6886fe12da134756229f74",
+    "--file",
+    "Qwen3.8-Flash-Next-Uncensored.IQ4_XS.gguf",
+    "--json"
+  ],
+  "elapsed_seconds": 15.33,
+  "exit_code": 0,
+  "report": {
+    "repo": "mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+    "revision": "3aa3ff434a0dc2b9dd6886fe12da134756229f74",
+    "commit": "3aa3ff434a0dc2b9dd6886fe12da134756229f74",
+    "models": [
+      {
+        "file": "Qwen3.8-Flash-Next-Uncensored.IQ4_XS.gguf",
+        "size": 98421788672,
+        "shards": 1,
+        "sha256": "a1975fd73542230e2b344d112f29f22ff522d051cb4bf33bdb872cb3ffc5dedf",
+        "compatibility": {
+          "policy": "sparse_moe_only",
+          "architecture": "qwen4exp",
+          "layers": 48,
+          "experts_per_layer": 512,
+          "active_experts_per_token": 10,
+          "shards": 1,
+          "tensors": 1224,
+          "tensor_weight_bytes": 98410764800,
+          "quantization_histogram": {
+            "BF16": 24,
+            "F16": 1,
+            "F32": 388,
+            "IQ4_NL": 182,
+            "IQ4_XS": 562,
+            "Q5_1": 12,
+            "Q5_K": 54,
+            "Q6_K": 1
+          },
+          "compression": {
+            "tensor_elements": 176943899520,
+            "sub4bit_tensors": 0,
+            "sub4bit_elements": 0,
+            "sub4bit_formats": [],
+            "routed_expert_tensors": 144,
+            "routed_expert_elements": 120795955200,
+            "sub4bit_routed_expert_tensors": 0,
+            "sub4bit_routed_expert_elements": 0,
+            "unknown_type_tensors": 0
+          },
+          "supported_metadata": true,
+          "issues": [],
+          "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation."
+        }
+      }
+    ],
+    "license": "apache-2.0",
+    "gated": false,
+    "policy": "sparse_moe_only",
+    "excluded": []
+  },
+  "stderr": "",
+  "scope": "Bounded remote GGUF metadata only; no full model download or inference."
+}

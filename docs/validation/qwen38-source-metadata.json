@@ -1,0 +1,600 @@
+{
+  "schema_version": 1,
+  "checked_date_utc": "2026-11-16",
+  "scope": "Primary publisher Hugging Face metadata, small text configuration files, and the explicitly recorded bounded public GGUF header inspections.",
+  "validation": {
+    "binary_headers_tested": true,
+    "inference_tested": false,
+    "full_weights_downloaded": false,
+    "performance_measured": false,
+    "note": "Selected GGUF headers and tensor descriptors were parsed using bounded public HTTP Range requests. No full weights were downloaded, tensor payloads interpreted, model loaded, or inference executed. Structural metadata checks do not establish numerical fidelity, accuracy, GPU memory fit, or token rates."
+  },
+  "units": {
+    "file_sizes": "bytes",
+    "GB": 1000000000,
+    "GiB": 1073741824,
+    "note": "File size is not a strict resident RAM or VRAM requirement for a streaming or memory-mapped backend."
+  },
+  "official_model": {
+    "repo_id": "Qwen/Qwen3.8-Flash-Next",
+    "url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+    "metadata_api_url": "https://huggingface.co/api/models/Qwen/Qwen3.8-Flash-Next",
+    "revision": "812d96e10a0dd82b69d749e68693698cf6c36daa",
+    "gated": false,
+    "format": "Safetensors",
+    "config_path": "config.json",
+    "config_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/812d96e10a0dd82b69d749e68693698cf6c36daa/config.json",
+    "transformers_architecture": "Qwen4ExpForConditionalGeneration",
+    "transformers_model_type": "qwen4_exp",
+    "parameters": {
+      "language_model_approx": 125000000000,
+      "active_language_model_approx": 6000000000,
+      "additional_ngram_embedding_approx": 51000000000,
+      "additional_mtp_approx": 4000000000,
+      "safetensors_api_total": 179999981459,
+      "safetensors_api_bf16": 179999981424,
+      "safetensors_api_i64": 35,
+      "note": "The 6B active parameter count does not describe the total stored model size."
+    },
+    "architecture": {
+      "hidden_size": 2560,
+      "layers": 48,
+      "full_attention_interval": 4,
+      "hc_count": 4,
+      "hc_lowrank": 320,
+      "indexer_compress_ratio": 4,
+      "indexer_budget": 2048,
+      "ple_layer_ids": [
+        2
+      ],
+      "ple_embed_dim": 2560,
+      "routed_experts": 512,
+      "active_routed_experts_per_token": 10,
+      "active_shared_experts_per_token": 1
+    },
+    "license_display": "qwen-community-1.0",
+    "license_api": {
+      "license": "other",
+      "license_name": "qwen-community-1.0",
+      "license_link": "LICENSE"
+    }
+  },
+  "gguf_repositories": [
+    {
+      "variant": "original",
+      "repo_id": "unsloth/Qwen3.8-Flash-Next-GGUF",
+      "url": "https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF",
+      "metadata_api_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-Flash-Next-GGUF",
+      "tree_api_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-Flash-Next-GGUF/tree/main?recursive=true&expand=false",
+      "revision": "f5d175de2cf7f720d45d6064019a81fcf056e986",
+      "gated": false,
+      "license_display": "qwen-community-1.0",
+      "groups": [
+        {
+          "quant": "UD-IQ4_XS",
+          "packaging": "numbered GGUF shards",
+          "total_bytes": 93672359738,
+          "files": [
+            {
+              "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+              "bytes": 10946618
+            },
+            {
+              "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00004.gguf",
+              "bytes": 49604491008
+            },
+            {
+              "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00004.gguf",
+              "bytes": 15256783680
+            },
+            {
+              "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00004-of-00004.gguf",
+              "bytes": 28800138432
+            }
+          ]
+        },
+        {
+          "quant": "UD-Q4_K_XL",
+          "packaging": "numbered GGUF shards",
+          "total_bytes": 111334654778,
+          "files": [
+            {
+              "path": "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+              "bytes": 10946618
+            },
+            {
+              "path": "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf",
+              "bytes": 49720539552
+            },
+            {
+              "path": "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf",
+              "bytes": 32803030176
+            },
+            {
+              "path": "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf",
+              "bytes": 28800138432
+            }
+          ]
+        }
+      ],
+      "ple_source_url": "https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF/blob/f5d175de2cf7f720d45d6064019a81fcf056e986/engram/README.md",
+      "ple_note": "Publisher documentation identifies shard 4 of 4 for both listed quants as the IQ4_NL n-gram table. Standalone .gguf_file tables are not complete models. No binary contents were inspected by this research."
+    },
+    {
+      "variant": "uncensored publisher-described abliteration",
+      "repo_id": "mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "url": "https://huggingface.co/mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "metadata_api_url": "https://huggingface.co/api/models/mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "tree_api_url": "https://huggingface.co/api/models/mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF/tree/main?recursive=true&expand=false",
+      "revision": "3aa3ff434a0dc2b9dd6886fe12da134756229f74",
+      "gated": false,
+      "license_display": "apache-2.0",
+      "publisher_source_model": "orcarouter/Qwen3.8-Flash-Next-Uncensored",
+      "gguf_architecture_display": "qwen4exp",
+      "groups": [
+        {
+          "quant": "IQ4_XS",
+          "packaging": "single GGUF",
+          "total_bytes": 98421788672,
+          "files": [
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored.IQ4_XS.gguf",
+              "bytes": 98421788672
+            }
+          ]
+        },
+        {
+          "quant": "Q4_K_M",
+          "packaging": "raw multipart file requiring concatenation, not independently structured numbered GGUF shards",
+          "total_bytes": 119150723072,
+          "files": [
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored.Q4_K_M.gguf.part1of3",
+              "bytes": 39728447488
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored.Q4_K_M.gguf.part2of3",
+              "bytes": 39728447488
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored.Q4_K_M.gguf.part3of3",
+              "bytes": 39693828096
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "uncensored publisher-described abliteration",
+      "repo_id": "orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "url": "https://huggingface.co/orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "metadata_api_url": "https://huggingface.co/api/models/orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "tree_api_url": "https://huggingface.co/api/models/orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF/tree/main?recursive=true&expand=false",
+      "revision": "98eb3357afd966c25cadd082c7f830eafde7aa52",
+      "gated": "auto",
+      "access_note": "Public file listing is accessible. File access requires acceptance of the repository conditions and appropriate authentication. No binary probe was attempted.",
+      "license_display": "apache-2.0",
+      "gguf_architecture_display": "qwen4exp",
+      "groups": [
+        {
+          "quant": "IQ4_XS",
+          "packaging": "numbered GGUF shards",
+          "total_bytes": 97473155200,
+          "files": [
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00001-of-00003.gguf",
+              "bytes": 44766155936
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00002-of-00003.gguf",
+              "bytes": 44735995008
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00003-of-00003.gguf",
+              "bytes": 7971004256
+            }
+          ]
+        },
+        {
+          "quant": "Q4_K_M",
+          "packaging": "numbered GGUF shards",
+          "total_bytes": 119150722944,
+          "files": [
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-Q4_K_M-00001-of-00003.gguf",
+              "bytes": 44598509600
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-Q4_K_M-00002-of-00003.gguf",
+              "bytes": 44693535520
+            },
+            {
+              "path": "Qwen3.8-Flash-Next-Uncensored-Q4_K_M-00003-of-00003.gguf",
+              "bytes": 29858677824
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "license_display_discrepancy": "The official Qwen repository and Unsloth display qwen-community-1.0, while the checked OrcaRouter and mradermacher cards display apache-2.0. This records inconsistent publisher metadata; it does not resolve legal rights or assert that derivative metadata overrides upstream terms.",
+  "metadata_method": "Public Hugging Face model APIs supplied revisions and gated flags. Recursive public tree APIs supplied exact file sizes, with no continuation page returned. Group totals were calculated from all listed files in each selected quant. Publisher cards and the official config supplied parameter and architecture facts.",
+  "bounded_header_inspections": {
+    "checked_date_utc": "2026-11-16",
+    "aggregate_bytes_read": 38670452,
+    "aggregate_hard_limit_bytes": 67108864,
+    "method": "Authenticated access was not required: both repositories reported gated=false. Each request required HTTP 206 and a Content-Range beginning at byte zero before reading a fixed bounded prefix. Tokenizer metadata was skipped and never printed. Only GGUF metadata and tensor descriptors were interpreted; no tensor data or inference were executed.",
+    "common_ple_metadata": {
+      "layers": [
+        1
+      ],
+      "ngram_size": 3,
+      "heads_per_ngram": 8,
+      "total_heads": 16,
+      "conv_kernel": 4,
+      "eos_token_id": 248044,
+      "embedding_length_per_layer_input": 160,
+      "layer_multipliers": [
+        23703573157769,
+        20109073645365,
+        8052911324071
+      ],
+      "head_offsets": [
+        0,
+        20000003,
+        40000026,
+        60000059,
+        80000106,
+        100000165,
+        120000228,
+        140000297,
+        160000374,
+        180000455,
+        200000548,
+        220000655,
+        240000802,
+        260000955,
+        280001114,
+        300001275
+      ],
+      "head_vocab_sizes": [
+        20000003,
+        20000023,
+        20000033,
+        20000047,
+        20000059,
+        20000063,
+        20000069,
+        20000077,
+        20000081,
+        20000093,
+        20000107,
+        20000147,
+        20000153,
+        20000159,
+        20000161,
+        20000171
+      ]
+    },
+    "ple_checks": {
+      "array_lengths_valid": true,
+      "all_head_vocab_sizes_positive": true,
+      "largest_head_exclusive_row_end": 320001446,
+      "mradermacher_table_rows": 320001536,
+      "mradermacher_table_shape": [
+        160,
+        320001536
+      ],
+      "mradermacher_ple_tensor_layer_indices": [
+        1
+      ],
+      "official_hf_ple_layer_ids": [
+        2
+      ],
+      "layer_numbering_note": "Audited Avalon conversion/qwen4exp.py documents that Hugging Face PLE layer IDs are one-based and subtracts one for GGUF. Thus HF [2], GGUF [1], and blk.1 PLE tensors agree.",
+      "finding": "No structurally invalid PLE arrays were found; both inspected files have identical listed PLE values."
+    },
+    "files": [
+      {
+        "repo_id": "mradermacher/Qwen3.8-Flash-Next-Uncensored-GGUF",
+        "revision": "3aa3ff434a0dc2b9dd6886fe12da134756229f74",
+        "path": "Qwen3.8-Flash-Next-Uncensored.IQ4_XS.gguf",
+        "http_status": 206,
+        "content_range": "bytes 0-16777215/98421788672",
+        "bytes_read": 16777216,
+        "prefix_sha256": "24423b6037d07fc6c00f6b8d27a80bf7cd2b5f1af8963a5fe489b02368e2b8e4",
+        "gguf_version": 3,
+        "tensor_count": 1224,
+        "metadata_count": 70,
+        "metadata_end_offset": 10946176,
+        "tensor_descriptors_end_offset": 11023865,
+        "attention_compress_ratios": {
+          "element_type": "int32",
+          "length": 48,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "indexer_tensor_layer_indices": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39,
+          43,
+          47
+        ],
+        "finding": "The compression-ratio array is all zero and inconsistent with the official QSA compression ratio 4 and the current converter pattern. This is a real metadata portability issue. It is not evidence of incorrect execution in the pinned Forge engine, which ignores this array for qwen4exp and uses a fixed QSA pool of 4 with the indexer tensors."
+      },
+      {
+        "repo_id": "unsloth/Qwen3.8-Flash-Next-GGUF",
+        "revision": "f5d175de2cf7f720d45d6064019a81fcf056e986",
+        "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+        "http_status": 206,
+        "content_range": "bytes 0-10946617/10946618",
+        "bytes_read": 10946618,
+        "prefix_sha256": "93ff23a08e5cd7501f24fa16f5b415d5807d0175e04edd3ed6a7a41b601a4eef",
+        "gguf_version": 3,
+        "tensor_count": 0,
+        "metadata_count": 67,
+        "metadata_end_offset": 10946618,
+        "split_no": 0,
+        "split_count": 4,
+        "attention_compress_ratios": {
+          "element_type": "int32",
+          "length": 48,
+          "values": [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4
+          ]
+        },
+        "finding": "The first shard is metadata-only. Its compression ratios match the official configuration and converter pattern. The other three weight shards were not inspected by this particular array audit."
+      },
+      {
+        "repo_id": "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+        "revision": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+        "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+        "http_status": 206,
+        "content_range": "bytes 0-10946617/10946618",
+        "bytes_read": 10946618,
+        "prefix_sha256": "93ff23a08e5cd7501f24fa16f5b415d5807d0175e04edd3ed6a7a41b601a4eef",
+        "gguf_version": 3,
+        "tensor_count": 0,
+        "metadata_count": 67,
+        "metadata_end_offset": 10946618,
+        "split_no": 0,
+        "split_count": 4,
+        "attention_compress_ratios": {
+          "element_type": "int32",
+          "length": 48,
+          "values": [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            4
+          ]
+        },
+        "matches_expected_compression_pattern": true,
+        "matches_inspected_unsloth_metadata_shard_hash": true,
+        "finding": "Metadata-only first shard has the expected compression ratios and exactly matches the previously inspected Unsloth first-shard SHA-256. Actual replacement weight payloads, quantization accuracy and model behavior were not evaluated."
+      }
+    ],
+    "engine_comparison": {
+      "official_indexer_compress_ratio": 4,
+      "expected_target_compress_ratio_pattern": [
+        0,
+        0,
+        0,
+        4
+      ],
+      "expected_pattern_repetitions": 12,
+      "indexer_head_count": 4,
+      "indexer_key_length": 128,
+      "indexer_top_k": 2048,
+      "cpu_qsa_pool": 4,
+      "gpu_qsa_pool": 4,
+      "code_sources": [
+        "vendor/rusting-strata/src/config.rs",
+        "vendor/rusting-strata/src/model.rs",
+        "vendor/rusting-strata/src/gpu_model.rs"
+      ],
+      "note": "The inspected qwen4exp ModelConfig does not consume attention.compress_ratios; CPU and GPU implementations define QSA_POOL=4. PLE geometry and hash-array lengths are checked at runtime. This source review does not replace a numerical reference comparison."
+    }
+  },
+  "additional_uncensored_candidates": [
+    {
+      "repo_id": "ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "url": "https://huggingface.co/ToR-O3/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "revision": "afa27ea7af1f83171a0aeafa8d5918eaa0dbfeee",
+      "gated": false,
+      "quant": "UD-IQ4_XS",
+      "packaging": "numbered GGUF shards",
+      "license_display": "qwen-community-1.0",
+      "total_bytes": 93672359738,
+      "files": [
+        {
+          "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf",
+          "bytes": 10946618
+        },
+        {
+          "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00004.gguf",
+          "bytes": 49604491008
+        },
+        {
+          "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00004.gguf",
+          "bytes": 15256783680
+        },
+        {
+          "path": "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00004-of-00004.gguf",
+          "bytes": 28800138432
+        }
+      ],
+      "publisher_provenance": {
+        "original_model": "Qwen/Qwen3.8-Flash-Next",
+        "qwen_reference_revision": "7ecef55a2e549814c62143fcf8b5be457695e3b9",
+        "quantized_base": "unsloth/Qwen3.8-Flash-Next-GGUF",
+        "quantized_base_revision": "d96201194f103c906994f283f504209dc8d2a10c",
+        "abliterated_weights": "orcarouter/Qwen3.8-Flash-Next-Uncensored",
+        "abliterated_weights_revision": "da29941aee972c7eeab497e05a292c569da1f1d6",
+        "summary": "Publisher describes replacement of 146 main-model tensors, requantized into the existing Unsloth Dynamic v3.1 tensor formats, with matching shapes and shard layout. This is a community derivative, not a complete copy of the Orca checkpoint; no MTP transplant or additional training is claimed."
+      },
+      "quality_scope": "Publisher reports limited functional checks and acknowledges factual/output-format failures. No unchanged-capability guarantee or RX 9070 XT inference claim is supported. Our inspection checked the first-shard metadata only; actual Forge verification remains separate."
+    },
+    {
+      "repo_id": "vaultai/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "url": "https://huggingface.co/vaultai/Qwen3.8-Flash-Next-Uncensored-GGUF",
+      "revision": "3d7cbfe2ee9430151271840540eb7e2b4d98b360",
+      "gated": false,
+      "license_display": "qwen",
+      "publisher_provenance": "Card describes a huihui-ai abliterated build, Unsloth UD-Q4_K_XL, merged into one file; identifies Qwen/Qwen3.8-Flash-Next as the original base, without exact intermediate revisions.",
+      "file": {
+        "path": "blobs/sha256-b3b6a4046a53afe92b55cf1abad25622a6cbe79a28e52978414b6dba123222c0",
+        "bytes": 111334654528
+      },
+      "binary_header_inspected": false,
+      "not_selected_reason": "The advertised model is a hash-named blob with no .gguf suffix, so it is not an ordinary catalog GGUF candidate. No binary probe was spent on this alternative."
+    }
+  ]
+}

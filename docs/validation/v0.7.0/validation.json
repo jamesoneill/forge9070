@@ -1,0 +1,77 @@
+{
+  "version": "0.7.0",
+  "checked_at_utc": "2026-11-17T00:53:37.973257+00:00",
+  "status": "validated_with_documented_environment_limits",
+  "rust": {
+    "reported_passed": 283,
+    "failed": 0,
+    "frontend_units": 38,
+    "engine_units": 217,
+    "serving_suite_reported": 28,
+    "serving_suite_exercised": 27,
+    "serving_gpu_smoke_early_return": 1,
+    "record": "rust-tests-0.7.0.json",
+    "inherited_cuda_availability_checks": "return early when CUDA/NVRTC is absent; no GPU compute claim"
+  },
+  "linux_release_build": {
+    "passed": true,
+    "elapsed_seconds": 149.72128820419312,
+    "record": "build-release-0.7.0.json"
+  },
+  "release_http": {
+    "coding_api_checks": 25,
+    "scheduling_checks": 10,
+    "smoke_checks": 9,
+    "concurrency_regression_checks": 9,
+    "code_context_commands_and_assertions": 33,
+    "records": [
+      "api-coding-client-0.7.0.json",
+      "scheduling-api-0.7.0.json",
+      "smoke-0.7.0.json",
+      "concurrency-regression-0.7.0.json",
+      "code-context-integration-0.7.0.json"
+    ],
+    "logs_counted_as_checks": false
+  },
+  "ui": {
+    "passed": 13,
+    "scope": "Actual UI JavaScript helper unit validation using Node VM and minimal element/store stubs. No DOM, browser rendering, layout, events, HTTP, GPU, or model-quality validation.",
+    "record": "code-ui-helpers-0.7.0.json",
+    "rendered_browser_tested": false,
+    "browser_environment_limitation": "Previous Chromium attempt failed before page creation with socket EPERM; not retried for this release"
+  },
+  "capabilities": {
+    "qwen38_active_sequences": 1,
+    "compatible_gpu_ceiling": 4,
+    "auto_memory_resize": false,
+    "queue_persistent": false,
+    "openai_chat_completions": true,
+    "responses_api": false
+  },
+  "hardware": {
+    "windows_build_tested": false,
+    "rx9070xt_inference_tested": false,
+    "native_wsl_vulkan_tested": false,
+    "full_qwen38_inference_tested": false,
+    "real_model_tool_selection_tested": false,
+    "external_coding_client_tested": false,
+    "token_rate_claimed": false
+  },
+  "previous_release_record": "v0.6.0/validation.json",
+  "source_sha256": {
+    "src/main.rs": "09dc20dc8ef71a137d18474b837f3774b07dd97b5de4efaea3b573c2072f923d",
+    "src/profile.rs": "355de35e55521a2409c06d6b2dbf3bd1d54d059633445974149ccba70b1d49e2",
+    "vendor/rusting-strata/src/cli.rs": "578efdb1713446d3ca70798d7ef2f816c4e7a84d058f253bdce46f9cc4d3d2e0",
+    "vendor/rusting-strata/src/serve.rs": "4e801990d03e00d3af5a02c621c35578ea869cb0b13d94d09d5b7e7ea8738cf5",
+    "vendor/rusting-strata/src/chat.rs": "99c73fcbac8e18d411d175b6d186c0b46a6d93719bb14766f633b68c51d20bac",
+    "vendor/rusting-strata/src/admission.rs": "fd9f3ac81d53c93b6c41b88dbcba0f487a3c99fc9ecb31a58f2154dc0631a367",
+    "vendor/rusting-strata/src/serving_policy.rs": "92cfb962036276f67795e8a746638ef00b381824c382287ad725b83d16fe76b7",
+    "vendor/rusting-strata/src/web/index.html": "8064ad3391b3e8386b71557389442031e77da88c71a6cf0e4b7f442a552e80d3",
+    "Cargo.toml": "e7293bc2bc630e8671bc7772aeeae95e6767a67cc382deee7ad8519891220ca6",
+    "Cargo.lock": "c2e6bd8097598417a3e07c80d5b968927bf90e98adfc699589b708ea2d10a010",
+    "vendor/rusting-strata/src/lib.rs": "a89bd9ba2a4ad9d6fe1accbe311c0f7621ed40471f496b9ee57212bd56360e88",
+    "tests/scheduling_api.py": "06f6b675847d4a94462c0dbc69dc28f211d461690f056f6e9c71df668490bbba",
+    "tests/api-coding-client.py": "75737111a525ba7e3d3c9726873cccaaf2e7d2c171819d91e8e4be92c3c8fc2c",
+    "vendor/rusting-strata/tests/serve.rs": "85e06b055619f5c286e3ba6fc7a1e8bcc96d2344a0b843862285ad3fde9f2d24"
+  }
+}

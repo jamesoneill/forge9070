@@ -1,0 +1,13 @@
+{
+  "version": "0.4.0",
+  "command": [
+    "python3",
+    "tests/models_cli.py",
+    "--binary",
+    "target/release/forge9070"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.62,
+  "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"CLI local catalog finds nested repositories and preserves spaces\",\n    \"Dense models are excluded from the compatible MoE catalog\",\n    \"Actual native Linux launcher starts an unloaded CPU server\",\n    \"CLI switches between catalog IDs and actual inference continues\",\n    \"Direct CLI load cannot bypass MoE policy and preserves the active model\",\n    \"Unsupported CPU parallel settings are rejected before unloading\",\n    \"Explicit stale model ID is rejected rather than answered by a different model\",\n    \"CLI unload releases the model while leaving management available\",\n    \"CLI reload succeeds after unload\"\n  ],\n  \"actual_linux_launcher\": true,\n  \"wsl_kernel_tested\": false,\n  \"windows_interop_tested\": false,\n  \"gpu_compute_tested\": false\n}\n",
+  "stderr": ""
+}

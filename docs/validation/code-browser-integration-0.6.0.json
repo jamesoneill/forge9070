@@ -1,0 +1,106 @@
+{
+  "executable_version": "forge9070 0.6.0",
+  "checked_at_utc": "2026-11-17T00:04:08.988284+00:00",
+  "scope": "Headless Chromium, isolated browser storage and synthetic CPU loopback server. UI-only capability fixtures are labelled. No Qwen3.8 full-model, Windows or GPU test.",
+  "passed": 5,
+  "failure": "TargetClosedError: BrowserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=<temporary-directory>/playwright_chromiumdev_profile-aEU4AF --remote-debugging-pipe --no-startup-window\n<launched> pid=25\n[pid=25][err] /usr/bin/chromium: 9: [: 5225709568: unexpected operator\n[pid=25][err] [25:25:1117/000408.893026:FATAL:chrome/browser/process_singleton_posix.cc:297] Check failed: . socket() failed: Operation not permitted (1)\n[pid=25][err] [1117/000408.893923:ERROR:third_party/crashpad/crashpad/util/linux/scoped_ptrace_attach.cc:27] ptrace: Operation not permitted (1)\nCall log:\n  - <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=<temporary-directory>/playwright_chromiumdev_profile-aEU4AF --remote-debugging-pipe --no-startup-window\n  - <launched> pid=25\n  - [pid=25][err] /usr/bin/chromium: 9: [: 5225709568: unexpected operator\n  - [pid=25][err] [25:25:1117/000408.893026:FATAL:chrome/browser/process_singleton_posix.cc:297] Check failed: . socket() failed: Operation not permitted (1)\n  - [pid=25][err] [1117/000408.893923:ERROR:third_party/crashpad/crashpad/util/linux/scoped_ptrace_attach.cc:27] ptrace: Operation not permitted (1)\n  - [pid=25] <gracefully close start>\n  - [pid=25] <kill>\n  - [pid=25] <will force kill>\n  - [pid=25] <process did exit: exitCode=null, signal=SIGABRT>\n  - [pid=25] starting temporary directories cleanup\n  - [pid=25] finished temporary directories cleanup\n  - [pid=25] <gracefully close end>\n",
+  "records": [
+    {
+      "name": "executable-version",
+      "passed": true,
+      "detail": "forge9070 0.6.0"
+    },
+    {
+      "name": "executable-identity",
+      "passed": true,
+      "path": "<workspace>/<project>/target/release/forge9070",
+      "sha256": "2a14eb5b011df7fe8196bc86fac438a40139ab5c0dc84aa92fbc993d1e89270b"
+    },
+    {
+      "name": "private-cpu-server-ready",
+      "passed": true,
+      "detail": {
+        "slots": 1,
+        "status": "ok",
+        "waiting": 0
+      }
+    },
+    {
+      "name": "server-configuration",
+      "passed": true,
+      "detail": {
+        "cache_ram": 0,
+        "calibrated": null,
+        "chunk": 32,
+        "context_max": 131072,
+        "context_min": 128,
+        "ctx": 512,
+        "ctx_train": 512,
+        "decode_cache_policy": "not_applicable_cpu",
+        "default_max_tokens": 64,
+        "expert_ram": "0",
+        "expert_tail_min_rank": 0,
+        "expert_warmup": false,
+        "gpu": false,
+        "inference_overrides": {},
+        "kv": "f16",
+        "llama_numerics": false,
+        "max_ram": 0,
+        "max_tokens": 64,
+        "model_identity": "dbc914cb1d74986ed91b6b192d6064f32e8e51aa6afff487d8072e2dc7aa64ca",
+        "mtp": 0,
+        "parallel": 1,
+        "preserve_thinking": true,
+        "ram_margin": 0,
+        "temperature": 1.0,
+        "think": true,
+        "threads": 2,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "vram_margin": "2048"
+      }
+    },
+    {
+      "name": "server-log",
+      "passed": true,
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "serve",
+        "--cpu",
+        "--model",
+        "<temporary-directory>/forge-code-browser-ic0tunra/models/fixture.gguf",
+        "--models-dir",
+        "<temporary-directory>/forge-code-browser-ic0tunra/models",
+        "--port",
+        "55617",
+        "--ctx",
+        "512",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--max-tokens",
+        "64",
+        "--temperature",
+        "1",
+        "--top-p",
+        "0.95",
+        "--top-k",
+        "20",
+        "--think",
+        "true",
+        "--preserve-thinking",
+        "true",
+        "--expert-ram",
+        "0",
+        "--expert-warmup",
+        "false",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0"
+      ],
+      "output": "Forge9070: CPU (explicit) | context 512 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nlistening on http://127.0.0.1:55617/ (models folder: <temporary-directory>/forge-code-browser-ic0tunra/models)\nloading <temporary-directory>/forge-code-browser-ic0tunra/models/fixture.gguf\nhost available: 7.34 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (mapped path)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nchat template: Xml\nloaded fixture.gguf\nstopped\n"
+    }
+  ]
+}

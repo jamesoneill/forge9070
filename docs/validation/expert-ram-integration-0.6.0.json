@@ -1,0 +1,454 @@
+{
+  "version": "0.6.0",
+  "checked_at_utc": "2026-11-17T00:04:06.033718+00:00",
+  "scope": "Synthetic CPU/storage/loopback-server integration only; not Qwen3.8 inference or a GPU benchmark.",
+  "passed": 22,
+  "checks": [
+    {
+      "name": "version",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "forge9070 0.6.0\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "memory-preview",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "memory",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"note\": \"Preview before model/tokenizer allocation. Recomputed at load. Pageable owned payload ceiling, not an OS reservation; sparse embeddings stay lazy; no GPU fit or speed test.\",\n  \"plan\": {\n    \"all_experts_fit_budget\": true,\n    \"budget_bytes\": 98304,\n    \"existing_owned_bytes\": 0,\n    \"expert_weight_bytes\": 98304,\n    \"memory\": {\n      \"available_bytes\": 7916281856,\n      \"cgroup_headroom_bytes\": null,\n      \"cgroup_limit_bytes\": null,\n      \"physical_total_bytes\": 10451423232\n    },\n    \"os_margin_bytes\": 4294967296,\n    \"prompt_cache_reserve_bytes\": 536870912,\n    \"requested_ceiling_bytes\": null,\n    \"runtime_reserve_bytes\": 1073741824\n  },\n  \"schema\": \"forge9070.memory.v1\",\n  \"weight_memory\": {\n    \"lazy_embedding_bytes\": 0,\n    \"other_weight_bytes\": 84352,\n    \"routed_expert_bytes\": 98304\n  }\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "preview-counts-actual-experts",
+      "passed": true,
+      "detail": {
+        "model": "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "note": "Preview before model/tokenizer allocation. Recomputed at load. Pageable owned payload ceiling, not an OS reservation; sparse embeddings stay lazy; no GPU fit or speed test.",
+        "plan": {
+          "all_experts_fit_budget": true,
+          "budget_bytes": 98304,
+          "existing_owned_bytes": 0,
+          "expert_weight_bytes": 98304,
+          "memory": {
+            "available_bytes": 7916281856,
+            "cgroup_headroom_bytes": null,
+            "cgroup_limit_bytes": null,
+            "physical_total_bytes": 10451423232
+          },
+          "os_margin_bytes": 4294967296,
+          "prompt_cache_reserve_bytes": 536870912,
+          "requested_ceiling_bytes": null,
+          "runtime_reserve_bytes": 1073741824
+        },
+        "schema": "forge9070.memory.v1",
+        "weight_memory": {
+          "lazy_embedding_bytes": 0,
+          "other_weight_bytes": 84352,
+          "routed_expert_bytes": 98304
+        }
+      }
+    },
+    {
+      "name": "preview-ceiling-within-payload",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "memory-disabled",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "memory",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--expert-ram",
+        "0",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"model\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"note\": \"Preview before model/tokenizer allocation. Recomputed at load. Pageable owned payload ceiling, not an OS reservation; sparse embeddings stay lazy; no GPU fit or speed test.\",\n  \"plan\": {\n    \"all_experts_fit_budget\": false,\n    \"budget_bytes\": 0,\n    \"existing_owned_bytes\": 0,\n    \"expert_weight_bytes\": 98304,\n    \"memory\": {\n      \"available_bytes\": 7913709568,\n      \"cgroup_headroom_bytes\": null,\n      \"cgroup_limit_bytes\": null,\n      \"physical_total_bytes\": 10451423232\n    },\n    \"os_margin_bytes\": 4294967296,\n    \"prompt_cache_reserve_bytes\": 536870912,\n    \"requested_ceiling_bytes\": 0,\n    \"runtime_reserve_bytes\": 1073741824\n  },\n  \"schema\": \"forge9070.memory.v1\",\n  \"weight_memory\": {\n    \"lazy_embedding_bytes\": 0,\n    \"other_weight_bytes\": 84352,\n    \"routed_expert_bytes\": 98304\n  }\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "disabled-preview-zero",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "invalid-ceiling-rejected",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "memory",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--expert-ram",
+        "64GB"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: --expert-ram must be auto, 0, or a whole number of MiB\n\nCaused by:\n    invalid digit found in string\n",
+      "passed": true
+    },
+    {
+      "name": "tune-memory-controls",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "tune",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout": "Select measured decode settings that match baseline greedy outputs on test prompts\n\nUsage: forge9070 tune [OPTIONS] --model <MODEL>\n\nOptions:\n      --model <MODEL>                  \n      --ctx <CTX>                      [default: 4096]\n      --vram-margin <VRAM_MARGIN>      [default: 2048]\n      --expert-ram <EXPERT_RAM>        [default: auto]\n      --expert-warmup <EXPERT_WARMUP>  [default: true] [possible values: true, false]\n      --ram-margin <RAM_MARGIN>        [default: 4096]\n      --max-ram <MAX_RAM>              [default: 0]\n      --cache-ram <CACHE_RAM>          [default: 512]\n      --kv <KV>                        [default: f16] [possible values: q8, f16]\n      --device <DEVICE>                \n      --prompt-file <PROMPT_FILE>      UTF-8 workload prompt; defaults to three built-in chat prompts\n      --tg <TG>                        [default: 128]\n      --reps <REPS>                    [default: 3]\n      --warmup <WARMUP>                [default: 1]\n      --json-out <JSON_OUT>            \n      --threads <THREADS>              Fixed CPU worker count. Compare thread counts in separate invocations\n  -h, --help                           Print help\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "tune-exposes-policy",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "cpu-mapped-generation",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "256",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--prompt",
+        "hello world",
+        "--max-tokens",
+        "8",
+        "--temperature",
+        "0",
+        "--seed",
+        "7",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0",
+        "--expert-ram",
+        "0"
+      ],
+      "exit_code": 0,
+      "stdout": "AAAAAAAA",
+      "stderr": "Forge9070: CPU (explicit) | context 256 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nhost available: 7.37 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (mapped path)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\n\nprompt 11 tok 924.12 tok/s | gen 8 tok 1266.56 tok/s\n",
+      "passed": true
+    },
+    {
+      "name": "cpu-owned-warm-generation",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "256",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--prompt",
+        "hello world",
+        "--max-tokens",
+        "8",
+        "--temperature",
+        "0",
+        "--seed",
+        "7",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0",
+        "--expert-ram",
+        "1",
+        "--expert-warmup",
+        "true"
+      ],
+      "exit_code": 0,
+      "stdout": "AAAAAAAA",
+      "stderr": "Forge9070: CPU (explicit) | context 256 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nhost available: 7.37 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 4 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\n\nprompt 11 tok 2112.67 tok/s | gen 8 tok 1447.87 tok/s\nexpert RAM: 0.00/0.00 GiB, 4 experts, 16 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=12 buffered=0\n",
+      "passed": true
+    },
+    {
+      "name": "cpu-owned-demand-generation",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "256",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--prompt",
+        "hello world",
+        "--max-tokens",
+        "8",
+        "--temperature",
+        "0",
+        "--seed",
+        "7",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0",
+        "--expert-ram",
+        "1",
+        "--expert-warmup",
+        "false"
+      ],
+      "exit_code": 0,
+      "stdout": "AAAAAAAA",
+      "stderr": "Forge9070: CPU (explicit) | context 256 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nhost available: 7.36 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\n\nprompt 11 tok 1950.55 tok/s | gen 8 tok 1480.57 tok/s\nexpert RAM: 0.00/0.00 GiB, 2 experts, 14 hits / 2 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=6 buffered=0\n",
+      "passed": true
+    },
+    {
+      "name": "generated-output-identical",
+      "passed": true,
+      "detail": {
+        "mapped": "AAAAAAAA",
+        "warm": "AAAAAAAA",
+        "demand": "AAAAAAAA"
+      }
+    },
+    {
+      "name": "warmup-actually-populates",
+      "passed": true,
+      "detail": "Forge9070: CPU (explicit) | context 256 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nhost available: 7.37 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 4 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\n\nprompt 11 tok 2112.67 tok/s | gen 8 tok 1447.87 tok/s\nexpert RAM: 0.00/0.00 GiB, 4 experts, 16 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=12 buffered=0\n"
+    },
+    {
+      "name": "server-catalog-ready",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "two-independent-catalog-models",
+      "passed": true,
+      "detail": [
+        "fixture-a.gguf",
+        "fixture-b.gguf"
+      ]
+    },
+    {
+      "name": "server-first-load-warmed",
+      "passed": true,
+      "detail": {
+        "load": {
+          "loaded": "fixture-a.gguf"
+        },
+        "expert_ram": {
+          "admissions": 4,
+          "allocation_failures": 0,
+          "budget_bytes": 98304,
+          "buffered_reads": 0,
+          "bypasses": 0,
+          "direct_reads": 12,
+          "evictions": 0,
+          "hits": 0,
+          "misses": 0,
+          "owned_source_copies": 0,
+          "peak_bytes": 98304,
+          "prefill_bypasses": 0,
+          "prefill_hits": 0,
+          "resident_bytes": 98304,
+          "resident_experts": 4,
+          "warm_admissions": 4,
+          "warm_bypasses": 0
+        }
+      }
+    },
+    {
+      "name": "server-generates-with-owned-cache",
+      "passed": true,
+      "detail": {
+        "choices": [
+          {
+            "finish_reason": "length",
+            "index": 0,
+            "message": {
+              "content": "",
+              "reasoning_content": "AAAA",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1794873845,
+        "id": "chatcmpl-3",
+        "model": "fixture-a.gguf",
+        "object": "chat.completion",
+        "timings": {
+          "cache_n": 0,
+          "predicted_ms": 4.8029209999999996,
+          "predicted_n": 4,
+          "predicted_per_second": 832.8265236925613,
+          "predicted_per_token_ms": 1.2007302499999999,
+          "prompt_ms": 21.32151,
+          "prompt_n": 26,
+          "prompt_per_second": 1219.4258286584768,
+          "prompt_per_token_ms": 0.820058076923077
+        },
+        "usage": {
+          "completion_tokens": 4,
+          "prompt_tokens": 26,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 30
+        }
+      }
+    },
+    {
+      "name": "server-cache-hit-counters-advance",
+      "passed": true,
+      "detail": {
+        "admissions": 4,
+        "allocation_failures": 0,
+        "budget_bytes": 98304,
+        "buffered_reads": 0,
+        "bypasses": 0,
+        "direct_reads": 12,
+        "evictions": 0,
+        "hits": 8,
+        "misses": 0,
+        "owned_source_copies": 0,
+        "peak_bytes": 98304,
+        "prefill_bypasses": 0,
+        "prefill_hits": 52,
+        "resident_bytes": 98304,
+        "resident_experts": 4,
+        "warm_admissions": 4,
+        "warm_bypasses": 0
+      }
+    },
+    {
+      "name": "model-swap-gets-fresh-owned-cache",
+      "passed": true,
+      "detail": {
+        "load": {
+          "loaded": "fixture-b.gguf"
+        },
+        "expert_ram": {
+          "admissions": 4,
+          "allocation_failures": 0,
+          "budget_bytes": 98304,
+          "buffered_reads": 0,
+          "bypasses": 0,
+          "direct_reads": 12,
+          "evictions": 0,
+          "hits": 0,
+          "misses": 0,
+          "owned_source_copies": 0,
+          "peak_bytes": 98304,
+          "prefill_bypasses": 0,
+          "prefill_hits": 0,
+          "resident_bytes": 98304,
+          "resident_experts": 4,
+          "warm_admissions": 4,
+          "warm_bypasses": 0
+        }
+      }
+    },
+    {
+      "name": "unload-releases-model-cache-status",
+      "passed": true,
+      "detail": {
+        "backend": "",
+        "busy": 0,
+        "cached_tokens": 0,
+        "completion_tokens": 4,
+        "ctx": 0,
+        "device": "",
+        "drafts": null,
+        "expert_ram": null,
+        "expert_tail": {
+          "min_rank": 0,
+          "skipped_assignments": 0,
+          "skipped_expert_groups": 0
+        },
+        "experts": null,
+        "live_tokens": 0,
+        "loading": false,
+        "model": null,
+        "mtp_drafts": 0,
+        "prompt_tokens": 26,
+        "ram_cap": null,
+        "recent": [
+          {
+            "at": 1794873845,
+            "cached_tokens": 0,
+            "completion_tokens": 4,
+            "decode_ms": 4.8029209999999996,
+            "finish": "length",
+            "model": "fixture-a.gguf",
+            "prefill_ms": 21.32151,
+            "prompt_tokens": 26,
+            "system_tokens": 0
+          }
+        ],
+        "requests": 1,
+        "slots": 0,
+        "system": {
+          "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+          "cpu_pct": 40.0,
+          "ram_total": 10451423232,
+          "ram_used": 2555269120,
+          "rss": 11345920,
+          "threads": 9
+        },
+        "uptime_s": 0,
+        "vram": null
+      }
+    },
+    {
+      "name": "server-log",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "serve",
+        "--cpu",
+        "--models-dir",
+        "<temporary-directory>/forge-expert-ram-test-wlh19ur2/models",
+        "--port",
+        "52831",
+        "--ctx",
+        "256",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--max-tokens",
+        "16",
+        "--expert-ram",
+        "1",
+        "--expert-warmup",
+        "true",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0"
+      ],
+      "output": "Forge9070: CPU (explicit) | context 256 per request | chunk 32 | KV f16 | MTP 0 | slots 1\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nlistening on http://127.0.0.1:52831/ (models folder: <temporary-directory>/forge-expert-ram-test-wlh19ur2/models)\nloading <temporary-directory>/forge-expert-ram-test-wlh19ur2/models/fixture-a.gguf\nhost available: 7.35 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 4 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\nchat template: Xml\nloaded fixture-a.gguf\nrequest: POST /v1/chat/completions key=open model=fixture-a.gguf prompt=26 tok stream=false tools=0\ndone: key=open model=fixture-a.gguf prompt=26 tok (0 cached) -> 4 tok in 0.00 s, decode 832.8 tok/s, prefill 1219.4 tok/s, finish=length\nexpert RAM: 0.00/0.00 GiB, 4 experts, 8 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=12 buffered=0\nloading <temporary-directory>/forge-expert-ram-test-wlh19ur2/models/fixture-b.gguf\nhost available: 7.35 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 4 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\nchat template: Xml\nloaded fixture-b.gguf\nexpert RAM: 0.00/0.00 GiB, 4 experts, 0 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=12 buffered=0\nstopped\n",
+      "passed": true
+    }
+  ]
+}

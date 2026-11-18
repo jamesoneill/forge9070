@@ -1,0 +1,160 @@
+{
+  "version": "0.8.0",
+  "independent_engine_version": "0.1.0",
+  "checked_at_utc": "2026-11-17T19:06:12.618520+00:00",
+  "status": "validated_cpu_foundation_with_documented_limits",
+  "release_scope": {
+    "independent_runtime": true,
+    "independent_runtime_uses_strata": false,
+    "independent_architectures": [
+      "qwen3",
+      "qwen3moe"
+    ],
+    "independent_backends": [
+      "cpu"
+    ],
+    "independent_formats": [
+      "F32",
+      "F16",
+      "BF16",
+      "Q4_0",
+      "Q8_0"
+    ],
+    "independent_requires_explicit_cpu": true,
+    "independent_vulkan": false,
+    "independent_qwen38": false,
+    "independent_sharded_models": false,
+    "independent_http": false,
+    "existing_api_and_gpu_path": "Attributed RustingStrata compatibility engine",
+    "production_engine_replacement_complete": false
+  },
+  "rust": {
+    "reported_passed": 332,
+    "failed": 0,
+    "independent_units": 36,
+    "independent_numerical_parity": 8,
+    "frontend_units": 38,
+    "existing_inference": 5,
+    "compatibility_engine_units": 217,
+    "serving_suite_reported": 28,
+    "serving_suite_exercised": 27,
+    "serving_gpu_smoke_early_return": 1,
+    "inherited_cuda_availability_checks": "Return early without CUDA/NVRTC; no GPU compute validation",
+    "record": "native-core-tests-0.8.0.json",
+    "numerical_scope": "Synthetic dense/MoE, five formats, multihead GQA; full logits, normalized hidden and K/V",
+    "numerical_tolerance": "abs(new-reference) <= 2e-5 + 2e-5 * abs(reference)"
+  },
+  "linux_release_build": {
+    "passed": true,
+    "elapsed_seconds": 53.043243657004496,
+    "record": "build-release-0.8.0.json"
+  },
+  "independent_cli": {
+    "passed": 16,
+    "skipped": 0,
+    "record": "forge-engine-cli-0.8.0.json",
+    "gpu_tested": false,
+    "pretrained_quality_tested": false
+  },
+  "compatibility_release_http": {
+    "coding_api_checks": 25,
+    "scheduling_checks": 10,
+    "smoke_checks": 9,
+    "backend": "cpu",
+    "fixtures": "Untrained synthetic GGUFs",
+    "records": [
+      "api-coding-client-0.8.0.json",
+      "scheduling-api-0.8.0.json",
+      "scheduling-api-0.8.0-evidence.json",
+      "smoke-0.8.0.json"
+    ],
+    "harness_note": "Scheduling harness retains a static 0.7.0 label and original output path; its fresh 0.8 binary execution evidence is preserved under the 0.8 filename.",
+    "run_timing": "Passed against the 0.8 release binary before the final independent-core-only metadata/F16 changes; compatibility implementation is unchanged."
+  },
+  "kernel_benchmark": {
+    "record": "native-kernels-0.8.0.json",
+    "run_record": "native-kernels-run-0.8.0.json",
+    "host_record": "native-host-0.8.0.json",
+    "scope": "checked_cpu_row_dot_warm_memory",
+    "row_width": 4096,
+    "rows": 256,
+    "iterations_per_sample": 64,
+    "repetitions": 7,
+    "comparison": "Runtime-selected checked CPU row dot versus this new engine portable scalar dot; serial warm synthetic rows.",
+    "ratios": [
+      {
+        "format": "F32",
+        "selected_kernel": "avx2_fma",
+        "scalar_over_selected_time_ratio": 1.7680579747918803,
+        "max_error_scaled_by_max_abs_reference_or_one": 4.947185516357422e-05
+      },
+      {
+        "format": "F16",
+        "selected_kernel": "avx2_fma_f16c",
+        "scalar_over_selected_time_ratio": 4.477780055172058,
+        "max_error_scaled_by_max_abs_reference_or_one": 4.947185516357422e-05
+      },
+      {
+        "format": "BF16",
+        "selected_kernel": "avx2_fma",
+        "scalar_over_selected_time_ratio": 1.7316537245099042,
+        "max_error_scaled_by_max_abs_reference_or_one": 4.947185516357422e-05
+      },
+      {
+        "format": "Q4_0",
+        "selected_kernel": "avx2_fma",
+        "scalar_over_selected_time_ratio": 1.9057447649803767,
+        "max_error_scaled_by_max_abs_reference_or_one": 2.9186847314122133e-05
+      },
+      {
+        "format": "Q8_0",
+        "selected_kernel": "avx2_fma",
+        "scalar_over_selected_time_ratio": 1.8867083285417354,
+        "max_error_scaled_by_max_abs_reference_or_one": 4.947185516357422e-05
+      }
+    ],
+    "whole_model_speedup_claimed": false,
+    "gpu_speedup_claimed": false,
+    "strata_speedup_claimed": false
+  },
+  "synthetic_sequence_benchmarks": {
+    "records": [
+      "native-1-requests-0.8.0.json",
+      "native-4-requests-0.8.0.json"
+    ],
+    "scope": "Timing harness/independent CPU sequence validation only; tiny untrained model; four worker threads; not useful model throughput.",
+    "run_timing": "Recorded before final F16C addition; the committed fixture uses F32 weights and small scalar rows."
+  },
+  "hardware": {
+    "host": {
+      "platform": "Linux",
+      "architecture": "x86_64",
+      "cpu": {
+        "model": "AMD EPYC 9V74 80-Core Processor",
+        "avx2": true,
+        "fma": true,
+        "f16c": true
+      },
+      "logical_cpus": 9,
+      "available_cpu_affinity": 9,
+      "compiler": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+      "gpu_tested": false
+    },
+    "windows_build_tested": false,
+    "rx9070xt_inference_tested": false,
+    "native_wsl_vulkan_tested": false,
+    "full_qwen38_inference_tested": false,
+    "pretrained_model_quality_tested": false,
+    "external_coding_client_tested": false,
+    "real_model_tokens_per_second_claimed": false
+  },
+  "existing_capabilities": {
+    "qwen38_active_sequences": 1,
+    "eligible_gpu_sequence_ceiling": 4,
+    "queue": "Existing bounded FIFO admission with cancellation/timeout",
+    "independent_four_cpu_sequences_do_not_unlock_qwen38_gpu_concurrency": true
+  },
+  "dependency_record": "native-dependencies-0.8.0.txt",
+  "source_record": "native-source-0.8.0.json",
+  "previous_release_record": "v0.7.0/validation.json"
+}

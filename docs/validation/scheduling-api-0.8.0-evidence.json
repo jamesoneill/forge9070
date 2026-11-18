@@ -1,0 +1,146 @@
+{
+  "schema": "forge9070.scheduling-api.v1",
+  "version": "0.7.0",
+  "status": "passed",
+  "binary": "<workspace>/<project>/target/release/forge9070",
+  "backend_tested": "cpu",
+  "checks": [
+    {
+      "name": "Authenticated status reports no-model readiness and zero execution capacity",
+      "status": "passed"
+    },
+    {
+      "name": "Generation without a model returns structured HTTP 503",
+      "status": "passed"
+    },
+    {
+      "name": "Default auto concurrency resolves to one active CPU request",
+      "status": "passed",
+      "status_snapshot": {
+        "admission": {
+          "active": 0,
+          "cancelled_total": 0,
+          "capacity": 1,
+          "queue_capacity": 2,
+          "queue_timeout_seconds": 30.0,
+          "queued": 0,
+          "rejected_full_total": 0,
+          "reserved": 0,
+          "timed_out_total": 0
+        },
+        "api": {
+          "chat_completions": "/v1/chat/completions",
+          "context_preview": "/api/context",
+          "function_tools": true,
+          "messages": "/v1/messages",
+          "models": "/v1/models",
+          "queue_persistence": "connection_bound_memory",
+          "responses_api": false,
+          "status": "/v1/status",
+          "streaming": true,
+          "tool_execution": "client"
+        },
+        "backend": "cpu",
+        "concurrency": {
+          "ceiling": 4,
+          "mode": "auto",
+          "reason": "CPU execution generates one reply at a time; additional requests queue",
+          "slots": 1
+        },
+        "context_tokens_per_request": 32768,
+        "generating_requests": 0,
+        "max_output_tokens": 16384,
+        "model": "scheduling-synthetic.gguf",
+        "object": "forge.server.status",
+        "status": "ready"
+      }
+    },
+    {
+      "name": "Full generation queue returns HTTP 429 with queue_full and Retry-After",
+      "status": "passed",
+      "admission": {
+        "active": 1,
+        "cancelled_total": 0,
+        "capacity": 1,
+        "queue_capacity": 2,
+        "queue_timeout_seconds": 30.0,
+        "queued": 2,
+        "rejected_full_total": 1,
+        "reserved": 0,
+        "timed_out_total": 0
+      }
+    },
+    {
+      "name": "Malformed chat is rejected before generation admission while the queue is full",
+      "status": "passed"
+    },
+    {
+      "name": "Status remains responsive during real CPU decoding and a full queue",
+      "status": "passed",
+      "response_seconds": 0.0002858709995052777
+    },
+    {
+      "name": "FIFO is observable over HTTP: second queued generation starts before the third",
+      "status": "passed",
+      "observed_middle_state": {
+        "active": 1,
+        "cancelled_total": 0,
+        "capacity": 1,
+        "queue_capacity": 2,
+        "queue_timeout_seconds": 30.0,
+        "queued": 1,
+        "rejected_full_total": 1,
+        "reserved": 0,
+        "timed_out_total": 0
+      }
+    },
+    {
+      "name": "Queued disconnect cancels once, never reaches generation, and capacity recovers",
+      "status": "passed",
+      "cancelled_total": 1,
+      "engine_start_log_delta": 2
+    },
+    {
+      "name": "Waiting deadline returns HTTP 503 queue_timeout without executing the expired request",
+      "status": "passed",
+      "response_seconds": 1.0013065469975118,
+      "admission": {
+        "active": 1,
+        "cancelled_total": 0,
+        "capacity": 1,
+        "queue_capacity": 1,
+        "queue_timeout_seconds": 1.0,
+        "queued": 0,
+        "rejected_full_total": 0,
+        "reserved": 0,
+        "timed_out_total": 1
+      },
+      "engine_start_log_delta": 1
+    },
+    {
+      "name": "Timeout and active cancellation release capacity; subsequent real inference returns AAAA",
+      "status": "passed"
+    }
+  ],
+  "rx9070xt_gpu_tested": false,
+  "four_gpu_sequences_tested": false,
+  "qwen38_inference_tested": false,
+  "performance_benchmark": false,
+  "synchronization": "Observed live active/queued/status counters and actual HTTP responses; no product test-delay hooks",
+  "scope": "CPU HTTP admission, queue bounds, FIFO, timeout and cancellation; not model quality or GPU throughput",
+  "fixture": {
+    "source": "tests/fixtures/tiny-qwen3moe.gguf",
+    "source_sha256": "a5c3df3b15a2d24017176a8d5ff742c5d8ca537aef599933bf2d6147392deba7",
+    "expanded_sha256": "3d397b0d60d65ff1c1a683962caa4ce1c128c851d4e028d397667d55229c925b",
+    "expanded_bytes": 537600,
+    "layers": 4,
+    "declared_context_tokens": 32768,
+    "description": "Untrained F32 CPU Qwen3MoE; repeated real nonzero fixture layers, deterministic A output"
+  },
+  "server_logs": [
+    "Forge9070: CPU (explicit) | context 32768 per request | chunk 256 | KV f16 | MTP 0 | slots awaiting model\nCapacity policy auto (auto ceiling 4): resolved when a model is loaded\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nlistening on http://127.0.0.1:47099/ (models folder: <temporary-directory>/forge-scheduling-ey3u_stm)\nloading <temporary-directory>/forge-scheduling-ey3u_stm/scheduling-synthetic.gguf\nserving capacity: 1 slots (CPU execution generates one reply at a time; additional requests queue) | queue 2 | timeout 30s\nhost available: 7.53 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.50 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 16 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\nchat template: Xml\nloaded scheduling-synthetic.gguf\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=26 tok stream=true tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=26 tok (0 cached) -> 8 tok in 0.01 s, decode 764.4 tok/s, prefill 726.6 tok/s, finish=cut\nrequest 6: Broken pipe (os error 32)\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=26 tok stream=true tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=26 tok (0 cached) -> 2 tok in 0.00 s, decode 1042.9 tok/s, prefill 1035.5 tok/s, finish=cut\nrequest 8: Broken pipe (os error 32)\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=26 tok stream=false tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=26 tok (0 cached) -> 4 tok in 0.00 s, decode 894.0 tok/s, prefill 736.3 tok/s, finish=length\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=26 tok stream=true tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=26 tok (0 cached) -> 86 tok in 0.08 s, decode 1080.3 tok/s, prefill 1369.9 tok/s, finish=cut\nrequest 20: Broken pipe (os error 32)\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=57 tok stream=false tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=57 tok (0 cached) -> 4 tok in 0.00 s, decode 943.4 tok/s, prefill 960.9 tok/s, finish=length\nstopped\nexpert RAM: 0.00/0.00 GiB, 16 experts, 832 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=48 buffered=0\n",
+    "Forge9070: CPU (explicit) | context 32768 per request | chunk 256 | KV f16 | MTP 0 | slots 1\nCapacity policy auto: CPU execution generates one reply at a time; additional requests queue\nStarting preset: general (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nlistening on http://127.0.0.1:34291/ (models folder: <temporary-directory>/forge-scheduling-ey3u_stm)\nloading <temporary-directory>/forge-scheduling-ey3u_stm/scheduling-synthetic.gguf\nserving capacity: 1 slots (CPU execution generates one reply at a time; additional requests queue) | queue 1 | timeout 1s\nhost available: 7.53 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.50 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 16 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\nchat template: Xml\nloaded scheduling-synthetic.gguf\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=26 tok stream=true tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=26 tok (0 cached) -> 1115 tok in 1.00 s, decode 1110.5 tok/s, prefill 1328.8 tok/s, finish=cut\nrequest 2: Broken pipe (os error 32)\nrequest: POST /v1/chat/completions key=admin model=scheduling-synthetic.gguf prompt=48 tok stream=false tools=0\ndone: key=admin model=scheduling-synthetic.gguf prompt=48 tok (0 cached) -> 4 tok in 0.00 s, decode 1115.4 tok/s, prefill 1110.9 tok/s, finish=length\nstopped\nexpert RAM: 0.00/0.00 GiB, 16 experts, 8952 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=48 buffered=0\n"
+  ],
+  "elapsed_seconds": 1.9236965620002593,
+  "passed_checks": 10
+}

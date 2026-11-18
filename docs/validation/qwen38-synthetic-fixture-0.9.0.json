@@ -1,0 +1,21 @@
+{
+  "scope": "Original deterministic synthetic Qwen3.8 fixture for numerical, CLI/API and GPU-memory-pressure diagnostics",
+  "path": "tests/fixtures/tiny-qwen38.gguf",
+  "bytes": 423808,
+  "sha256": "5a1b2d1d014100404d39f461dc8853e6919d5710422529aa8ca563cd2b29d837",
+  "generator": "tests/new_qwen38_parity.rs::fixture(Storage::F32, false, true, true)",
+  "reproduce_command": "FORGE_QWEN38_FIXTURE_OUTPUT=tests/fixtures/tiny-qwen38.gguf cargo test --test new_qwen38_parity hybrid_hyper_ple_qsa_shared_moe_f32_full_trace --locked --offline",
+  "features": [
+    "4 hybrid layers",
+    "hyper-connections",
+    "PLE hashing and dilated convolution",
+    "QSA sparse attention",
+    "separate Delta beta/alpha projections",
+    "routed MoE and shared experts"
+  ],
+  "context_length": 64,
+  "pretrained": false,
+  "quality_benchmark": false,
+  "tokenizer_metadata_source": "tests/fixtures/tiny-qwen3moe.gguf (byte tokenizer only)",
+  "created_receipt_at_utc": "2026-11-17T19:54:31.295935+00:00"
+}

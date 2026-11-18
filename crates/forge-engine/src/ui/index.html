@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Configure your local Forge9070 inference service.">
+  <title>Forge9070 · Service console</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/ui/style.css">
+  <script src="/ui/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to service settings</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="Forge9070 overview">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span>Forge<span class="brand-number">9070</span><small>LOCAL INFERENCE</small></span>
+      </a>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav aria-label="Console navigation">
+        <a class="nav-link" href="#overview"><span class="nav-glyph" aria-hidden="true">◫</span> Overview</a>
+        <a class="nav-link" href="#models"><span class="nav-glyph" aria-hidden="true">◇</span> Models</a>
+        <a class="nav-link" href="#configuration"><span class="nav-glyph" aria-hidden="true">≋</span> Configuration</a>
+        <a class="nav-link" href="#connect"><span class="nav-glyph" aria-hidden="true">↗</span> Connect a client</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="engine-label"><span class="dot"></span> Independent Rust engine</span>
+        <span id="engine-version" class="sidebar-version">Native service console</span>
+        <span id="platform-label" class="sidebar-version">Checking service…</span>
+      </div>
+    </aside>
+
+    <main id="main" class="main">
+      <header id="overview" class="page-header">
+        <div>
+          <div class="eyebrow">SERVICE CONSOLE</div>
+          <h1>Your models. Your machine.</h1>
+          <p class="page-description">Find your model, tune the runtime, and connect your coding tools.</p>
+        </div>
+        <div class="header-actions">
+          <span id="service-state" class="status-pill" data-state="waiting"><span class="dot"></span><span id="service-state-text">Connecting</span></span>
+          <button id="refresh-status" class="button button-icon" type="button" aria-label="Refresh service status" title="Refresh service status">↻</button>
+        </div>
+      </header>
+
+      <section id="auth-panel" class="auth-panel" aria-labelledby="auth-heading" hidden>
+        <div><h2 id="auth-heading">Unlock your service</h2><p>This service requires its API key. The key stays in this page’s memory and is cleared when you reload.</p></div>
+        <form id="auth-form" class="auth-controls">
+          <label class="sr-only" for="api-key">Service API key</label>
+          <input id="api-key" type="password" autocomplete="off" placeholder="Enter your service API key" required>
+          <button id="unlock" type="submit" class="button button-primary">Connect</button>
+        </form>
+      </section>
+
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section class="metrics" aria-label="Live service status">
+        <div class="metric"><span class="metric-label">LOADED MODEL</span><strong id="loaded-model-name" class="model-metric">No model loaded</strong><span id="loaded-model-detail" class="metric-note">Select a GGUF to get started</span></div>
+        <div class="metric"><span class="metric-label">EXECUTION</span><strong id="execution-name">—</strong><span id="execution-detail" class="metric-note">Runtime starts when a model loads</span></div>
+        <div class="metric"><span class="metric-label">ACTIVE REQUESTS</span><strong><span id="active-count">0</span><span class="metric-denominator"> / <span id="active-capacity">1</span></span></strong><span class="metric-note">Independent sequence slots</span></div>
+        <div class="metric"><span class="metric-label">WAITING IN QUEUE</span><strong><span id="queued-count">0</span><span class="metric-denominator"> / <span id="queue-capacity">32</span></span></strong><span class="metric-note">First in, first out</span></div>
+      </section>
+
+      <div class="content-grid">
+        <div class="primary-column">
+          <section id="models" class="card" aria-labelledby="models-heading">
+            <div class="section-heading"><div><span class="step-label">01 / MODEL LIBRARY</span><h2 id="models-heading">Find your model</h2></div><span id="model-count" class="badge">GGUF</span></div>
+            <p class="section-description">Scan a folder for complete, compatible MoE checkpoints. Select the first shard of a split model.</p>
+            <form id="scan-form">
+              <label for="model-directory">Model folder or drive</label>
+              <div class="input-action"><input id="model-directory" type="text" spellcheck="false" autocomplete="off" placeholder="F:\Models" aria-describedby="directory-help" required><button id="scan-models" type="submit" class="button button-secondary">Scan models</button></div>
+              <div class="directory-help"><p id="directory-help" class="field-help">Choose the folder on the machine running this service.</p><button id="use-f-drive" type="button" class="text-button" hidden>Use F: drive</button></div>
+              <div id="suggested-folders" class="folder-shortcuts" aria-label="Suggested model folders" hidden></div>
+            </form>
+            <div id="scan-summary" class="scan-summary" role="status" aria-live="polite"></div>
+            <div id="model-results" class="model-results" role="group" aria-label="Available models">
+              <div class="empty-state"><div class="folder-symbol" aria-hidden="true">⌑</div><h3>Choose where your weights live</h3><p>Your model files stay on this machine. Scanning checks compatibility without loading a model for inference.</p></div>
+            </div>
+            <details id="scan-details" class="scan-details" hidden><summary id="scan-details-summary">Files that need attention</summary><div id="scan-issues" class="scan-issues"></div></details>
+            <div id="selected-model" class="selected-model" hidden><span class="selected-label">SELECTED FOR NEXT APPLY</span><strong id="selected-model-name"></strong><span id="selected-model-path" class="mono path-text"></span></div>
+            <div class="info-note"><span class="info-symbol" aria-hidden="true">i</span><p>The source download does not include pretrained weights. This engine loads supported <code>.gguf</code> files; a Hugging Face folder containing only <code>.safetensors</code> needs a compatible GGUF checkpoint.</p></div>
+          </section>
+
+          <section id="configuration" class="card" aria-labelledby="settings-heading">
+            <div class="section-heading"><div><span class="step-label">02 / RUNTIME</span><h2 id="settings-heading">Make room for your work</h2></div><span id="draft-state" class="badge badge-muted">Current settings</span></div>
+            <p class="section-description">Changes apply together when the service is idle. Loading a model or changing its settings releases and rebuilds its runtime.</p>
+            <form id="settings-form">
+              <fieldset id="runtime-fields">
+                <legend class="sr-only">Runtime settings</legend>
+                <div class="form-grid">
+                  <div class="field"><label for="backend">Execution backend</label><select id="backend"><option value="vulkan">Vulkan · GPU</option><option value="cpu">CPU</option><option value="hybrid">Hybrid · diagnostic</option></select><p id="backend-help" class="field-help">Use Vulkan for the native GPU execution path.</p></div>
+                  <div class="field"><label for="device">Vulkan adapter</label><select id="device"><option value="">Automatic hardware selection</option></select><p class="field-help">Software adapters are not enabled by this console.</p></div>
+                </div>
+                <div class="form-divider"></div>
+                <h3 class="group-title">Context &amp; generation</h3>
+                <div class="form-grid">
+                  <div class="field"><label for="ctx">Context per request <span class="unit">tokens</span></label><input id="ctx" type="number" min="2" max="1048576" step="1" value="8192" required><p class="field-help">Includes the prompt and generated answer.</p></div>
+                  <div class="field"><label for="max-tokens">Output token cap <span class="unit">tokens</span></label><input id="max-tokens" type="number" min="1" max="1048575" step="1" value="2048" required><p class="field-help">Also the default when omitted. Clients can request up to this cap; prompt and output must fit the context.</p></div>
+                </div>
+                <p class="context-advice">Larger context reserves more state per request. Increase it for the work you need, then check the loaded runtime’s memory plan.</p>
+                <div class="form-divider"></div>
+                <h3 class="group-title">Concurrent requests &amp; queue</h3>
+                <div class="form-grid form-grid-three">
+                  <div class="field"><label for="parallel">Active requests</label><select id="parallel"><option value="1">1 request</option><option value="2">2 requests</option><option value="3">3 requests</option><option value="4">4 requests</option></select></div>
+                  <div class="field"><label for="max-queued">Queue capacity</label><input id="max-queued" type="number" min="0" max="4096" step="1" value="32" required></div>
+                  <div class="field"><label for="queue-timeout">Queue timeout <span class="unit">sec</span></label><input id="queue-timeout" type="number" min="1" max="3600" step="1" value="120" required></div>
+                </div>
+                <p class="field-help group-help">Start with one active request for individual response speed. More active requests share the card and need more state memory; excess requests wait in the bounded queue.</p>
+                <details id="memory-settings" class="advanced-settings">
+                  <summary><span>Memory &amp; expert loading</span><span class="summary-note">Avalon-based loading</span></summary>
+                  <div class="advanced-content">
+                    <div class="form-grid">
+                      <div class="field"><label for="vram-mib">GPU allocation cap <span class="unit">MiB</span></label><input id="vram-mib" type="number" min="0" max="16777216" step="1" value="0" required><p class="field-help">0 = 70% of the largest device heap. This is not a free-VRAM measurement.</p></div>
+                      <div class="field"><label for="expert-ram-mib">Expert RAM cache <span class="unit">MiB</span></label><input id="expert-ram-mib" type="number" min="0" max="16777216" step="1" placeholder="Auto"><p class="field-help">Blank = automatic after reserves. 0 disables the owned RAM cache.</p></div>
+                      <div class="field"><label for="ram-margin-mib">RAM reserve for other work <span class="unit">MiB</span></label><input id="ram-margin-mib" type="number" min="0" max="16777216" step="1" value="4096" required><p class="field-help">Leaves headroom in the automatic cache plan.</p></div>
+                      <div class="field checkbox-field"><label class="checkbox-label" for="expert-warmup"><input id="expert-warmup" type="checkbox" checked><span>Warm the bounded expert cache</span></label><p class="field-help">Loads a limited expert working set before generation. Large PLE tables stay lazy.</p></div>
+                    </div>
+                    <p class="loading-note">Complete shards, bounded expert caches, and lazy PLE reads are retained. All selected experts are computed; this console does not enable approximate expert omission.</p>
+                  </div>
+                </details>
+              </fieldset>
+              <div class="apply-area">
+                <div class="apply-description"><strong id="apply-title">Ready when you are</strong><span id="apply-help">Choose a model above, or save runtime settings for later.</span></div>
+                <div class="apply-buttons"><button id="reset-settings" class="button button-quiet" type="button">Reset changes</button><button id="apply-settings" class="button button-primary" type="submit">Apply settings</button></div>
+              </div>
+            </form>
+            <div id="persistence-note" class="persistence-note">Settings apply to this running service.</div>
+          </section>
+        </div>
+
+        <aside class="secondary-column">
+          <section id="connect" class="card connect-card" aria-labelledby="connect-heading">
+            <div class="section-heading"><div><span class="step-label">CLIENT CONNECTION</span><h2 id="connect-heading">Plug into your workflow</h2></div></div>
+            <p class="section-description">Use a coding client that supports the OpenAI Chat Completions API.</p>
+            <label for="api-base">Base URL</label><div class="copy-field"><input id="api-base" readonly spellcheck="false" value="http://127.0.0.1:9070/v1"><button id="copy-api-base" class="copy-button" type="button" aria-label="Copy API base URL">Copy</button></div>
+            <label for="client-model">Model ID</label><div class="copy-field"><input id="client-model" readonly spellcheck="false" value="Load a model first"><button id="copy-model-id" class="copy-button" type="button" aria-label="Copy loaded model ID" disabled>Copy</button></div>
+            <p id="client-auth-hint" class="field-help">Use your service API key if you configured one.</p>
+            <div class="endpoint-row"><span class="method-badge">POST</span><code>/v1/chat/completions</code></div>
+            <p class="small-note">JSON and streaming responses. Tool calls depend on the loaded model’s template.</p>
+          </section>
+
+          <section class="card hardware-card" aria-labelledby="hardware-heading">
+            <div class="section-heading"><h2 id="hardware-heading">Hardware</h2><button id="refresh-hardware" class="text-button" type="button">Refresh</button></div>
+            <div id="hardware-status" class="hardware-status">Checking available adapters…</div>
+            <div id="hardware-list" class="hardware-list"></div>
+            <p class="small-note">Discovery identifies adapters. Successful model execution and measured speed require a separate inference run.</p>
+          </section>
+
+          <section class="card" aria-labelledby="runtime-heading">
+            <div class="section-heading"><h2 id="runtime-heading">Loaded runtime</h2><span class="live-label"><span class="dot"></span> LIVE</span></div>
+            <p id="runtime-empty" class="section-description">Memory usage and cache limits appear after a model loads.</p>
+            <dl id="runtime-stats" class="runtime-stats" hidden></dl>
+            <details id="runtime-details" class="runtime-details" hidden><summary>View full runtime report</summary><pre id="runtime-json" tabindex="0"></pre></details>
+            <button id="unload-model" class="button button-quiet button-full" type="button" disabled>Unload model &amp; release memory</button>
+          </section>
+
+          <section class="profile-card" aria-labelledby="profile-heading">
+            <h2 id="profile-heading">Keep your setup</h2><p>Export the selected model and runtime settings. API keys are never included.</p>
+            <button id="export-settings" class="button button-secondary button-full" type="button">Export settings</button>
+            <p class="small-note">Start the service with your saved profile:</p><code class="launch-command">forge-engine serve --settings-file forge-service.json --open-ui</code>
+            <p class="small-note">Host, port, API key, and CPU worker count are startup options.</p>
+          </section>
+        </aside>
+      </div>
+      <footer class="footer"><span>Forge9070 <span class="footer-separator">/</span> Native engine</span><span id="last-updated">Waiting for service</span></footer>
+    </main>
+  </div>
+</body>
+</html>

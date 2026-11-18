@@ -1,0 +1,33 @@
+{
+  "project": "Forge9070 0.1.0",
+  "date": "2026-11-16",
+  "host": "Linux x86_64; kernel 6.18.57; no Vulkan GPU driver",
+  "rustc": "1.100.0 (0ef1bc386 2026-11-09)",
+  "debug_build": "passed",
+  "root_unit_tests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "real_cpu_inference_tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "vendored_cli_regression_tests": {
+    "passed": 14,
+    "failed": 0,
+    "filtered_out": 78
+  },
+  "http_and_cli_checks_debug": {
+    "passed": 8,
+    "failed": 0
+  },
+  "release_build": "passed; cargo build --release --locked; 4m 30s",
+  "windows_execution": "not tested",
+  "rx9070xt_gpu_compute": "not tested; no hardware available",
+  "large_moe_inference": "not tested; no large checkpoint",
+  "fixture_sha256": "590d4f40f753f947cdd7e2750d178d092116f441e94701e010138625a478cf69",
+  "http_and_cli_checks_release": {
+    "passed": 8,
+    "failed": 0
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "version": "0.4.0",
+  "command": [
+    "python3",
+    "tests/bench_cli.py",
+    "--binary",
+    "target/release/forge9070"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.31,
+  "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"Real CPU benchmark executes the MoE fixture and reports the requested fidelity configuration\",\n    \"Only measured repetitions enter JSON samples; warmup is excluded and 128 actual output tokens are counted\",\n    \"Per-run rates use paired actual token/time values and match the aggregate report\",\n    \"Prompt token identities and the loaded checkpoint identity are recorded\"\n  ],\n  \"compute_backend_tested\": \"cpu\",\n  \"synthetic_model\": true,\n  \"gpu_calibration_tested\": false,\n  \"pretrained_model_accuracy_tested\": false\n}\n",
+  "stderr": ""
+}

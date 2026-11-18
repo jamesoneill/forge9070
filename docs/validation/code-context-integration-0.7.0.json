@@ -1,0 +1,1134 @@
+{
+  "executable_version": "forge9070 0.7.0",
+  "checked_at_utc": "2026-11-17T00:51:46.464876+00:00",
+  "scope": "Synthetic CPU/local Git/loopback API checks; no Qwen3.8 full checkpoint, Windows execution or GPU speed test.",
+  "passed": 34,
+  "records": [
+    {
+      "name": "version",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "forge9070 0.7.0\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "profile-code",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "profile",
+        "--preset",
+        "code"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"accuracy_scope\": \"preserve the selected model's computation; quantization and factual task accuracy still require evaluation\",\n  \"architecture\": \"RDNA 4 / gfx1201\",\n  \"available_presets\": [\n    \"general\",\n    \"code\",\n    \"code-long\"\n  ],\n  \"backend\": \"vulkan\",\n  \"context_limit_tokens\": 131072,\n  \"context_tokens\": 16384,\n  \"cpu_fallback\": \"explicit --cpu only\",\n  \"development_memory\": \"Start the IDE and normal development services before loading; the 6 GiB reserve allows some later growth but is not a reservation\",\n  \"expert_cache\": \"hot GPU experts above an owned host RAM tier; cold weights read from storage; sparse PLE rows remain lazy\",\n  \"expert_ram\": \"auto\",\n  \"expert_ram_policy\": \"bounded owned expert LRU sized from available RAM; lease-safe eviction; prefill misses do not replace the decode working set\",\n  \"expert_ram_runtime_reserve_mib\": 1024,\n  \"expert_tail_min_rank\": 0,\n  \"expert_tail_status\": \"disabled by this profile; every selected expert contributes\",\n  \"expert_warmup\": true,\n  \"gpu\": \"AMD Radeon RX 9070 XT\",\n  \"kv_format\": \"f16\",\n  \"kv_tradeoff\": \"F16 avoids additional KV quantization; explicit Q8 reduces state memory but may change outputs\",\n  \"limits\": \"RAM settings are startup ceilings, not operating-system reservations; owned storage is pageable; throughput needs a hardware run\",\n  \"maximum_connections\": 64,\n  \"maximum_output_tokens\": 4096,\n  \"mtp_drafts\": 0,\n  \"mtp_requirement\": \"Qwen3.8 qwen4exp MTP is not supported in this build\",\n  \"mtp_supported_drafts\": [\n    0\n  ],\n  \"name\": \"Qwen3.8 large-code starting profile for RX 9070 XT\",\n  \"nominal_vram_mib\": 16384,\n  \"parallel_allocation\": \"context/state buffers are reserved for the chosen capacity at model load; idle capacity does not release VRAM\",\n  \"parallel_auto_policy\": \"CPU, MTP and HC/PLE/QSA models use one slot; compatible GPU models use the configured ceiling; this is compatibility detection, not VRAM fit or performance tuning\",\n  \"parallel_mode\": \"auto\",\n  \"parallel_requests\": 1,\n  \"parallel_requests_ceiling\": 4,\n  \"parallel_requests_supported\": [\n    1\n  ],\n  \"parallel_strategy\": \"Qwen3.8 qwen4exp: one generation sequence; additional clients queue\",\n  \"parallel_tradeoff\": \"more active contexts reduce VRAM available for experts; aggregate throughput and per-request latency must be measured\",\n  \"persistent_prompt_cache\": \"opt-in --prompt-cache; model-specific metadata identity, not a full weight checksum\",\n  \"preferred_environment\": \"native Windows (or native Linux with working AMD Vulkan)\",\n  \"prefill_chunk_tokens\": 256,\n  \"preserve_thinking\": true,\n  \"preset\": \"code\",\n  \"prompt_cache_ram_mib\": 1024,\n  \"queue_capacity\": 32,\n  \"queue_timeout_seconds\": 120,\n  \"ram_margin_mib\": 6144,\n  \"repository_context\": \"Use the context command for bounded query-focused excerpts; this is lexical retrieval, not a full semantic code index\",\n  \"request_budget\": \"Rendered prompt plus requested output must fit context; explicit oversize requests are rejected without truncating source\",\n  \"rocm_required\": false,\n  \"sampling\": {\n    \"source\": \"Qwen3.8 thinking-mode model-card guidance; explicit request values override\",\n    \"temperature\": 1.0,\n    \"top_k\": 20,\n    \"top_p\": 0.95\n  },\n  \"status\": \"chosen defaults; not benchmark-calibrated on your hardware\",\n  \"thinking\": true,\n  \"tuning_objective\": \"median single-request decode speed among candidates matching tested greedy baseline outputs\",\n  \"vram_margin_mib\": 2048\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "profile-settings-code",
+      "passed": true,
+      "detail": {
+        "accuracy_scope": "preserve the selected model's computation; quantization and factual task accuracy still require evaluation",
+        "architecture": "RDNA 4 / gfx1201",
+        "available_presets": [
+          "general",
+          "code",
+          "code-long"
+        ],
+        "backend": "vulkan",
+        "context_limit_tokens": 131072,
+        "context_tokens": 16384,
+        "cpu_fallback": "explicit --cpu only",
+        "development_memory": "Start the IDE and normal development services before loading; the 6 GiB reserve allows some later growth but is not a reservation",
+        "expert_cache": "hot GPU experts above an owned host RAM tier; cold weights read from storage; sparse PLE rows remain lazy",
+        "expert_ram": "auto",
+        "expert_ram_policy": "bounded owned expert LRU sized from available RAM; lease-safe eviction; prefill misses do not replace the decode working set",
+        "expert_ram_runtime_reserve_mib": 1024,
+        "expert_tail_min_rank": 0,
+        "expert_tail_status": "disabled by this profile; every selected expert contributes",
+        "expert_warmup": true,
+        "gpu": "AMD Radeon RX 9070 XT",
+        "kv_format": "f16",
+        "kv_tradeoff": "F16 avoids additional KV quantization; explicit Q8 reduces state memory but may change outputs",
+        "limits": "RAM settings are startup ceilings, not operating-system reservations; owned storage is pageable; throughput needs a hardware run",
+        "maximum_connections": 64,
+        "maximum_output_tokens": 4096,
+        "mtp_drafts": 0,
+        "mtp_requirement": "Qwen3.8 qwen4exp MTP is not supported in this build",
+        "mtp_supported_drafts": [
+          0
+        ],
+        "name": "Qwen3.8 large-code starting profile for RX 9070 XT",
+        "nominal_vram_mib": 16384,
+        "parallel_allocation": "context/state buffers are reserved for the chosen capacity at model load; idle capacity does not release VRAM",
+        "parallel_auto_policy": "CPU, MTP and HC/PLE/QSA models use one slot; compatible GPU models use the configured ceiling; this is compatibility detection, not VRAM fit or performance tuning",
+        "parallel_mode": "auto",
+        "parallel_requests": 1,
+        "parallel_requests_ceiling": 4,
+        "parallel_requests_supported": [
+          1
+        ],
+        "parallel_strategy": "Qwen3.8 qwen4exp: one generation sequence; additional clients queue",
+        "parallel_tradeoff": "more active contexts reduce VRAM available for experts; aggregate throughput and per-request latency must be measured",
+        "persistent_prompt_cache": "opt-in --prompt-cache; model-specific metadata identity, not a full weight checksum",
+        "preferred_environment": "native Windows (or native Linux with working AMD Vulkan)",
+        "prefill_chunk_tokens": 256,
+        "preserve_thinking": true,
+        "preset": "code",
+        "prompt_cache_ram_mib": 1024,
+        "queue_capacity": 32,
+        "queue_timeout_seconds": 120,
+        "ram_margin_mib": 6144,
+        "repository_context": "Use the context command for bounded query-focused excerpts; this is lexical retrieval, not a full semantic code index",
+        "request_budget": "Rendered prompt plus requested output must fit context; explicit oversize requests are rejected without truncating source",
+        "rocm_required": false,
+        "sampling": {
+          "source": "Qwen3.8 thinking-mode model-card guidance; explicit request values override",
+          "temperature": 1.0,
+          "top_k": 20,
+          "top_p": 0.95
+        },
+        "status": "chosen defaults; not benchmark-calibrated on your hardware",
+        "thinking": true,
+        "tuning_objective": "median single-request decode speed among candidates matching tested greedy baseline outputs",
+        "vram_margin_mib": 2048
+      }
+    },
+    {
+      "name": "profile-code-long",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "profile",
+        "--preset",
+        "code-long"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"accuracy_scope\": \"preserve the selected model's computation; quantization and factual task accuracy still require evaluation\",\n  \"architecture\": \"RDNA 4 / gfx1201\",\n  \"available_presets\": [\n    \"general\",\n    \"code\",\n    \"code-long\"\n  ],\n  \"backend\": \"vulkan\",\n  \"context_limit_tokens\": 131072,\n  \"context_tokens\": 32768,\n  \"cpu_fallback\": \"explicit --cpu only\",\n  \"development_memory\": \"Start the IDE and normal development services before loading; the 6 GiB reserve allows some later growth but is not a reservation\",\n  \"expert_cache\": \"hot GPU experts above an owned host RAM tier; cold weights read from storage; sparse PLE rows remain lazy\",\n  \"expert_ram\": \"auto\",\n  \"expert_ram_policy\": \"bounded owned expert LRU sized from available RAM; lease-safe eviction; prefill misses do not replace the decode working set\",\n  \"expert_ram_runtime_reserve_mib\": 1024,\n  \"expert_tail_min_rank\": 0,\n  \"expert_tail_status\": \"disabled by this profile; every selected expert contributes\",\n  \"expert_warmup\": true,\n  \"gpu\": \"AMD Radeon RX 9070 XT\",\n  \"kv_format\": \"f16\",\n  \"kv_tradeoff\": \"F16 avoids additional KV quantization; explicit Q8 reduces state memory but may change outputs\",\n  \"limits\": \"RAM settings are startup ceilings, not operating-system reservations; owned storage is pageable; throughput needs a hardware run\",\n  \"maximum_connections\": 64,\n  \"maximum_output_tokens\": 8192,\n  \"mtp_drafts\": 0,\n  \"mtp_requirement\": \"Qwen3.8 qwen4exp MTP is not supported in this build\",\n  \"mtp_supported_drafts\": [\n    0\n  ],\n  \"name\": \"Qwen3.8 large-code starting profile for RX 9070 XT\",\n  \"nominal_vram_mib\": 16384,\n  \"parallel_allocation\": \"context/state buffers are reserved for the chosen capacity at model load; idle capacity does not release VRAM\",\n  \"parallel_auto_policy\": \"CPU, MTP and HC/PLE/QSA models use one slot; compatible GPU models use the configured ceiling; this is compatibility detection, not VRAM fit or performance tuning\",\n  \"parallel_mode\": \"auto\",\n  \"parallel_requests\": 1,\n  \"parallel_requests_ceiling\": 4,\n  \"parallel_requests_supported\": [\n    1\n  ],\n  \"parallel_strategy\": \"Qwen3.8 qwen4exp: one generation sequence; additional clients queue\",\n  \"parallel_tradeoff\": \"more active contexts reduce VRAM available for experts; aggregate throughput and per-request latency must be measured\",\n  \"persistent_prompt_cache\": \"opt-in --prompt-cache; model-specific metadata identity, not a full weight checksum\",\n  \"preferred_environment\": \"native Windows (or native Linux with working AMD Vulkan)\",\n  \"prefill_chunk_tokens\": 256,\n  \"preserve_thinking\": true,\n  \"preset\": \"code-long\",\n  \"prompt_cache_ram_mib\": 1024,\n  \"queue_capacity\": 32,\n  \"queue_timeout_seconds\": 120,\n  \"ram_margin_mib\": 6144,\n  \"repository_context\": \"Use the context command for bounded query-focused excerpts; this is lexical retrieval, not a full semantic code index\",\n  \"request_budget\": \"Rendered prompt plus requested output must fit context; explicit oversize requests are rejected without truncating source\",\n  \"rocm_required\": false,\n  \"sampling\": {\n    \"source\": \"Qwen3.8 thinking-mode model-card guidance; explicit request values override\",\n    \"temperature\": 1.0,\n    \"top_k\": 20,\n    \"top_p\": 0.95\n  },\n  \"status\": \"chosen defaults; not benchmark-calibrated on your hardware\",\n  \"thinking\": true,\n  \"tuning_objective\": \"median single-request decode speed among candidates matching tested greedy baseline outputs\",\n  \"vram_margin_mib\": 2048\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "profile-settings-code-long",
+      "passed": true,
+      "detail": {
+        "accuracy_scope": "preserve the selected model's computation; quantization and factual task accuracy still require evaluation",
+        "architecture": "RDNA 4 / gfx1201",
+        "available_presets": [
+          "general",
+          "code",
+          "code-long"
+        ],
+        "backend": "vulkan",
+        "context_limit_tokens": 131072,
+        "context_tokens": 32768,
+        "cpu_fallback": "explicit --cpu only",
+        "development_memory": "Start the IDE and normal development services before loading; the 6 GiB reserve allows some later growth but is not a reservation",
+        "expert_cache": "hot GPU experts above an owned host RAM tier; cold weights read from storage; sparse PLE rows remain lazy",
+        "expert_ram": "auto",
+        "expert_ram_policy": "bounded owned expert LRU sized from available RAM; lease-safe eviction; prefill misses do not replace the decode working set",
+        "expert_ram_runtime_reserve_mib": 1024,
+        "expert_tail_min_rank": 0,
+        "expert_tail_status": "disabled by this profile; every selected expert contributes",
+        "expert_warmup": true,
+        "gpu": "AMD Radeon RX 9070 XT",
+        "kv_format": "f16",
+        "kv_tradeoff": "F16 avoids additional KV quantization; explicit Q8 reduces state memory but may change outputs",
+        "limits": "RAM settings are startup ceilings, not operating-system reservations; owned storage is pageable; throughput needs a hardware run",
+        "maximum_connections": 64,
+        "maximum_output_tokens": 8192,
+        "mtp_drafts": 0,
+        "mtp_requirement": "Qwen3.8 qwen4exp MTP is not supported in this build",
+        "mtp_supported_drafts": [
+          0
+        ],
+        "name": "Qwen3.8 large-code starting profile for RX 9070 XT",
+        "nominal_vram_mib": 16384,
+        "parallel_allocation": "context/state buffers are reserved for the chosen capacity at model load; idle capacity does not release VRAM",
+        "parallel_auto_policy": "CPU, MTP and HC/PLE/QSA models use one slot; compatible GPU models use the configured ceiling; this is compatibility detection, not VRAM fit or performance tuning",
+        "parallel_mode": "auto",
+        "parallel_requests": 1,
+        "parallel_requests_ceiling": 4,
+        "parallel_requests_supported": [
+          1
+        ],
+        "parallel_strategy": "Qwen3.8 qwen4exp: one generation sequence; additional clients queue",
+        "parallel_tradeoff": "more active contexts reduce VRAM available for experts; aggregate throughput and per-request latency must be measured",
+        "persistent_prompt_cache": "opt-in --prompt-cache; model-specific metadata identity, not a full weight checksum",
+        "preferred_environment": "native Windows (or native Linux with working AMD Vulkan)",
+        "prefill_chunk_tokens": 256,
+        "preserve_thinking": true,
+        "preset": "code-long",
+        "prompt_cache_ram_mib": 1024,
+        "queue_capacity": 32,
+        "queue_timeout_seconds": 120,
+        "ram_margin_mib": 6144,
+        "repository_context": "Use the context command for bounded query-focused excerpts; this is lexical retrieval, not a full semantic code index",
+        "request_budget": "Rendered prompt plus requested output must fit context; explicit oversize requests are rejected without truncating source",
+        "rocm_required": false,
+        "sampling": {
+          "source": "Qwen3.8 thinking-mode model-card guidance; explicit request values override",
+          "temperature": 1.0,
+          "top_k": 20,
+          "top_p": 0.95
+        },
+        "status": "chosen defaults; not benchmark-calibrated on your hardware",
+        "thinking": true,
+        "tuning_objective": "median single-request decode speed among candidates matching tested greedy baseline outputs",
+        "vram_margin_mib": 2048
+      }
+    },
+    {
+      "name": "repository-pack",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"context_tokens\": 16384,\n  \"note\": \"Exact tokens describe this pack only. Other history/tools/template must fit their reserve; /api/context checks the actual complete request. No generation was run.\",\n  \"output\": null,\n  \"pack\": {\n    \"bytes\": 1115,\n    \"context\": \"# Local repository context\\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\\nQuery (JSON): \\\"refund cancellation retries\\\"\\nScope: tracked files only; paths are relative to the supplied repository directory.\\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\\n\\n--- FILE \\\"src/Orders.cs\\\" (lexical score 1000008) ---\\nL1 | public sealed class Orders {\\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\\nL3 |     private void RefundOnce() {}\\nL4 | }\\n--- END FILE ---\\n\\n--- FILE \\\"tests/OrdersTests.cs\\\" (lexical score 2) ---\\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\\n--- END FILE ---\\n\\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\\n\",\n    \"ranking\": \"lexical terms, paths and declaration heuristics; no embeddings or semantic index\",\n    \"selected\": [\n      {\n        \"end_line\": 4,\n        \"file_truncated\": false,\n        \"path\": \"src/Orders.cs\",\n        \"score\": 1000008,\n        \"start_line\": 1\n      },\n      {\n        \"end_line\": 1,\n        \"file_truncated\": false,\n        \"path\": \"tests/OrdersTests.cs\",\n        \"score\": 2,\n        \"start_line\": 1\n      }\n    ],\n    \"stats\": {\n      \"bytes_scanned\": 231,\n      \"changed_files\": 0,\n      \"eligible_paths\": 3,\n      \"excerpts_selected\": 2,\n      \"excluded_binaries\": 0,\n      \"excluded_generated\": 1,\n      \"excluded_paths\": 2,\n      \"excluded_secrets\": 1,\n      \"excluded_unsafe_paths\": 0,\n      \"files_not_scanned\": 0,\n      \"files_omitted\": 1,\n      \"files_scanned\": 3,\n      \"files_selected\": 2,\n      \"inventory_paths\": 5,\n      \"inventory_truncated\": false,\n      \"lines_selected\": 5,\n      \"omitted_long_lines\": 0,\n      \"output_limited\": false,\n      \"truncated_files\": 0,\n      \"unreadable_files\": 0\n    },\n    \"tokens\": null,\n    \"warnings\": []\n  },\n  \"pack_token_budget\": null,\n  \"preset\": \"code\",\n  \"reserved_other_tokens\": 2048,\n  \"reserved_output_tokens\": 4096,\n  \"schema\": \"forge9070.code-context.v1\",\n  \"tokenizer_model\": null\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "pack-relevant-line-labelled-code",
+      "passed": true,
+      "detail": {
+        "bytes": 1115,
+        "context": "# Local repository context\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\nQuery (JSON): \"refund cancellation retries\"\nScope: tracked files only; paths are relative to the supplied repository directory.\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\n\n--- FILE \"src/Orders.cs\" (lexical score 1000008) ---\nL1 | public sealed class Orders {\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\nL3 |     private void RefundOnce() {}\nL4 | }\n--- END FILE ---\n\n--- FILE \"tests/OrdersTests.cs\" (lexical score 2) ---\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\n--- END FILE ---\n\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\n",
+        "ranking": "lexical terms, paths and declaration heuristics; no embeddings or semantic index",
+        "selected": [
+          {
+            "end_line": 4,
+            "file_truncated": false,
+            "path": "src/Orders.cs",
+            "score": 1000008,
+            "start_line": 1
+          },
+          {
+            "end_line": 1,
+            "file_truncated": false,
+            "path": "tests/OrdersTests.cs",
+            "score": 2,
+            "start_line": 1
+          }
+        ],
+        "stats": {
+          "bytes_scanned": 231,
+          "changed_files": 0,
+          "eligible_paths": 3,
+          "excerpts_selected": 2,
+          "excluded_binaries": 0,
+          "excluded_generated": 1,
+          "excluded_paths": 2,
+          "excluded_secrets": 1,
+          "excluded_unsafe_paths": 0,
+          "files_not_scanned": 0,
+          "files_omitted": 1,
+          "files_scanned": 3,
+          "files_selected": 2,
+          "inventory_paths": 5,
+          "inventory_truncated": false,
+          "lines_selected": 5,
+          "omitted_long_lines": 0,
+          "output_limited": false,
+          "truncated_files": 0,
+          "unreadable_files": 0
+        },
+        "tokens": null,
+        "warnings": []
+      }
+    },
+    {
+      "name": "pack-excludes-known-secrets-vendor-untracked",
+      "passed": true,
+      "detail": "# Local repository context\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\nQuery (JSON): \"refund cancellation retries\"\nScope: tracked files only; paths are relative to the supplied repository directory.\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\n\n--- FILE \"src/Orders.cs\" (lexical score 1000008) ---\nL1 | public sealed class Orders {\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\nL3 |     private void RefundOnce() {}\nL4 | }\n--- END FILE ---\n\n--- FILE \"tests/OrdersTests.cs\" (lexical score 2) ---\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\n--- END FILE ---\n\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\n"
+    },
+    {
+      "name": "pack-byte-budget-and-unknown-token-count",
+      "passed": true,
+      "detail": {
+        "bytes": 1115,
+        "context": "# Local repository context\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\nQuery (JSON): \"refund cancellation retries\"\nScope: tracked files only; paths are relative to the supplied repository directory.\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\n\n--- FILE \"src/Orders.cs\" (lexical score 1000008) ---\nL1 | public sealed class Orders {\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\nL3 |     private void RefundOnce() {}\nL4 | }\n--- END FILE ---\n\n--- FILE \"tests/OrdersTests.cs\" (lexical score 2) ---\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\n--- END FILE ---\n\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\n",
+        "ranking": "lexical terms, paths and declaration heuristics; no embeddings or semantic index",
+        "selected": [
+          {
+            "end_line": 4,
+            "file_truncated": false,
+            "path": "src/Orders.cs",
+            "score": 1000008,
+            "start_line": 1
+          },
+          {
+            "end_line": 1,
+            "file_truncated": false,
+            "path": "tests/OrdersTests.cs",
+            "score": 2,
+            "start_line": 1
+          }
+        ],
+        "stats": {
+          "bytes_scanned": 231,
+          "changed_files": 0,
+          "eligible_paths": 3,
+          "excerpts_selected": 2,
+          "excluded_binaries": 0,
+          "excluded_generated": 1,
+          "excluded_paths": 2,
+          "excluded_secrets": 1,
+          "excluded_unsafe_paths": 0,
+          "files_not_scanned": 0,
+          "files_omitted": 1,
+          "files_scanned": 3,
+          "files_selected": 2,
+          "inventory_paths": 5,
+          "inventory_truncated": false,
+          "lines_selected": 5,
+          "omitted_long_lines": 0,
+          "output_limited": false,
+          "truncated_files": 0,
+          "unreadable_files": 0
+        },
+        "tokens": null,
+        "warnings": []
+      }
+    },
+    {
+      "name": "repository-pack-repeat",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"context_tokens\": 16384,\n  \"note\": \"Exact tokens describe this pack only. Other history/tools/template must fit their reserve; /api/context checks the actual complete request. No generation was run.\",\n  \"output\": null,\n  \"pack\": {\n    \"bytes\": 1115,\n    \"context\": \"# Local repository context\\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\\nQuery (JSON): \\\"refund cancellation retries\\\"\\nScope: tracked files only; paths are relative to the supplied repository directory.\\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\\n\\n--- FILE \\\"src/Orders.cs\\\" (lexical score 1000008) ---\\nL1 | public sealed class Orders {\\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\\nL3 |     private void RefundOnce() {}\\nL4 | }\\n--- END FILE ---\\n\\n--- FILE \\\"tests/OrdersTests.cs\\\" (lexical score 2) ---\\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\\n--- END FILE ---\\n\\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\\n\",\n    \"ranking\": \"lexical terms, paths and declaration heuristics; no embeddings or semantic index\",\n    \"selected\": [\n      {\n        \"end_line\": 4,\n        \"file_truncated\": false,\n        \"path\": \"src/Orders.cs\",\n        \"score\": 1000008,\n        \"start_line\": 1\n      },\n      {\n        \"end_line\": 1,\n        \"file_truncated\": false,\n        \"path\": \"tests/OrdersTests.cs\",\n        \"score\": 2,\n        \"start_line\": 1\n      }\n    ],\n    \"stats\": {\n      \"bytes_scanned\": 231,\n      \"changed_files\": 0,\n      \"eligible_paths\": 3,\n      \"excerpts_selected\": 2,\n      \"excluded_binaries\": 0,\n      \"excluded_generated\": 1,\n      \"excluded_paths\": 2,\n      \"excluded_secrets\": 1,\n      \"excluded_unsafe_paths\": 0,\n      \"files_not_scanned\": 0,\n      \"files_omitted\": 1,\n      \"files_scanned\": 3,\n      \"files_selected\": 2,\n      \"inventory_paths\": 5,\n      \"inventory_truncated\": false,\n      \"lines_selected\": 5,\n      \"omitted_long_lines\": 0,\n      \"output_limited\": false,\n      \"truncated_files\": 0,\n      \"unreadable_files\": 0\n    },\n    \"tokens\": null,\n    \"warnings\": []\n  },\n  \"pack_token_budget\": null,\n  \"preset\": \"code\",\n  \"reserved_other_tokens\": 2048,\n  \"reserved_output_tokens\": 4096,\n  \"schema\": \"forge9070.code-context.v1\",\n  \"tokenizer_model\": null\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "pack-is-deterministic",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "repository-untracked-opt-in",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--include-untracked",
+        "--include",
+        "src/Untracked.cs",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"context_tokens\": 16384,\n  \"note\": \"Exact tokens describe this pack only. Other history/tools/template must fit their reserve; /api/context checks the actual complete request. No generation was run.\",\n  \"output\": null,\n  \"pack\": {\n    \"bytes\": 1256,\n    \"context\": \"# Local repository context\\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\\nQuery (JSON): \\\"refund cancellation retries\\\"\\nScope: tracked and non-ignored untracked files; paths are relative to the supplied repository directory.\\nScan: 4 eligible paths; 4 files inspected; 272 bytes read; 0 paths not scanned; inventory capped: false.\\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\\n\\n--- FILE \\\"src/Orders.cs\\\" (lexical score 1000008) ---\\nL1 | public sealed class Orders {\\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\\nL3 |     private void RefundOnce() {}\\nL4 | }\\n--- END FILE ---\\n\\n--- FILE \\\"src/Untracked.cs\\\" (lexical score 1000002) ---\\nL1 | public class UntrackedRefundEndpoint { }\\n--- END FILE ---\\n\\n--- FILE \\\"tests/OrdersTests.cs\\\" (lexical score 2) ---\\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\\n--- END FILE ---\\n\\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\\n\",\n    \"ranking\": \"lexical terms, paths and declaration heuristics; no embeddings or semantic index\",\n    \"selected\": [\n      {\n        \"end_line\": 4,\n        \"file_truncated\": false,\n        \"path\": \"src/Orders.cs\",\n        \"score\": 1000008,\n        \"start_line\": 1\n      },\n      {\n        \"end_line\": 1,\n        \"file_truncated\": false,\n        \"path\": \"src/Untracked.cs\",\n        \"score\": 1000002,\n        \"start_line\": 1\n      },\n      {\n        \"end_line\": 1,\n        \"file_truncated\": false,\n        \"path\": \"tests/OrdersTests.cs\",\n        \"score\": 2,\n        \"start_line\": 1\n      }\n    ],\n    \"stats\": {\n      \"bytes_scanned\": 272,\n      \"changed_files\": 0,\n      \"eligible_paths\": 4,\n      \"excerpts_selected\": 3,\n      \"excluded_binaries\": 0,\n      \"excluded_generated\": 1,\n      \"excluded_paths\": 2,\n      \"excluded_secrets\": 1,\n      \"excluded_unsafe_paths\": 0,\n      \"files_not_scanned\": 0,\n      \"files_omitted\": 1,\n      \"files_scanned\": 4,\n      \"files_selected\": 3,\n      \"inventory_paths\": 6,\n      \"inventory_truncated\": false,\n      \"lines_selected\": 6,\n      \"omitted_long_lines\": 0,\n      \"output_limited\": false,\n      \"truncated_files\": 0,\n      \"unreadable_files\": 0\n    },\n    \"tokens\": null,\n    \"warnings\": []\n  },\n  \"pack_token_budget\": null,\n  \"preset\": \"code\",\n  \"reserved_other_tokens\": 2048,\n  \"reserved_output_tokens\": 4096,\n  \"schema\": \"forge9070.code-context.v1\",\n  \"tokenizer_model\": null\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "untracked-included-only-on-request",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "token-cap-needs-tokenizer",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--budget-tokens",
+        "100"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: --budget-tokens requires --model for exact tokenizer counts\n",
+      "passed": true
+    },
+    {
+      "name": "exact-token-pack",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--model",
+        "<temporary-directory>/forge-code-context-3rufg85_/tokenizer-fixture.gguf",
+        "--preset",
+        "code-long",
+        "--budget-tokens",
+        "2048",
+        "--output",
+        "<temporary-directory>/forge-code-context-3rufg85_/context.txt",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"context_tokens\": 32768,\n  \"note\": \"Exact tokens describe this pack only. Other history/tools/template must fit their reserve; /api/context checks the actual complete request. No generation was run.\",\n  \"output\": \"<temporary-directory>/forge-code-context-3rufg85_/context.txt\",\n  \"pack\": {\n    \"bytes\": 1115,\n    \"context\": \"# Local repository context\\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\\nQuery (JSON): \\\"refund cancellation retries\\\"\\nScope: tracked files only; paths are relative to the supplied repository directory.\\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\\n\\n--- FILE \\\"src/Orders.cs\\\" (lexical score 1000008) ---\\nL1 | public sealed class Orders {\\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\\nL3 |     private void RefundOnce() {}\\nL4 | }\\n--- END FILE ---\\n\\n--- FILE \\\"tests/OrdersTests.cs\\\" (lexical score 2) ---\\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\\n--- END FILE ---\\n\\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\\n\",\n    \"ranking\": \"lexical terms, paths and declaration heuristics; no embeddings or semantic index\",\n    \"selected\": [\n      {\n        \"end_line\": 4,\n        \"file_truncated\": false,\n        \"path\": \"src/Orders.cs\",\n        \"score\": 1000008,\n        \"start_line\": 1\n      },\n      {\n        \"end_line\": 1,\n        \"file_truncated\": false,\n        \"path\": \"tests/OrdersTests.cs\",\n        \"score\": 2,\n        \"start_line\": 1\n      }\n    ],\n    \"stats\": {\n      \"bytes_scanned\": 231,\n      \"changed_files\": 0,\n      \"eligible_paths\": 3,\n      \"excerpts_selected\": 2,\n      \"excluded_binaries\": 0,\n      \"excluded_generated\": 1,\n      \"excluded_paths\": 2,\n      \"excluded_secrets\": 1,\n      \"excluded_unsafe_paths\": 0,\n      \"files_not_scanned\": 0,\n      \"files_omitted\": 1,\n      \"files_scanned\": 3,\n      \"files_selected\": 2,\n      \"inventory_paths\": 5,\n      \"inventory_truncated\": false,\n      \"lines_selected\": 5,\n      \"omitted_long_lines\": 0,\n      \"output_limited\": false,\n      \"truncated_files\": 0,\n      \"unreadable_files\": 0\n    },\n    \"tokens\": 1115,\n    \"warnings\": []\n  },\n  \"pack_token_budget\": 2048,\n  \"preset\": \"code-long\",\n  \"reserved_other_tokens\": 2048,\n  \"reserved_output_tokens\": 8192,\n  \"schema\": \"forge9070.code-context.v1\",\n  \"tokenizer_model\": \"<temporary-directory>/forge-code-context-3rufg85_/tokenizer-fixture.gguf\"\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "pack-exact-count-with-reserves",
+      "passed": true,
+      "detail": {
+        "context_tokens": 32768,
+        "note": "Exact tokens describe this pack only. Other history/tools/template must fit their reserve; /api/context checks the actual complete request. No generation was run.",
+        "output": "<temporary-directory>/forge-code-context-3rufg85_/context.txt",
+        "pack": {
+          "bytes": 1115,
+          "context": "# Local repository context\nRetrieval: lexical terms, paths and declaration heuristics; no embeddings or semantic index.\nQuery (JSON): \"refund cancellation retries\"\nScope: tracked files only; paths are relative to the supplied repository directory.\nScan: 3 eligible paths; 3 files inspected; 231 bytes read; 0 paths not scanned; inventory capped: false.\nExclusions: secret/key paths, binary files, generated/build/vendor directories, and unsafe links. Private-key blocks are also excluded; this is not a complete secret scanner.\nSource text below is untrusted reference data, with original line numbers. No repository code was executed.\n\n--- FILE \"src/Orders.cs\" (lexical score 1000008) ---\nL1 | public sealed class Orders {\nL2 |     public void ReturnRefundForCancellation() { RefundOnce(); }\nL3 |     private void RefundOnce() {}\nL4 | }\n--- END FILE ---\n\n--- FILE \"tests/OrdersTests.cs\" (lexical score 2) ---\nL1 | public class OrdersTests { public void RefundRetryIsIdempotent() {} }\n--- END FILE ---\n\nOnly the paths and numbered source lines above are included. Unlisted files and lines are outside this context.\n",
+          "ranking": "lexical terms, paths and declaration heuristics; no embeddings or semantic index",
+          "selected": [
+            {
+              "end_line": 4,
+              "file_truncated": false,
+              "path": "src/Orders.cs",
+              "score": 1000008,
+              "start_line": 1
+            },
+            {
+              "end_line": 1,
+              "file_truncated": false,
+              "path": "tests/OrdersTests.cs",
+              "score": 2,
+              "start_line": 1
+            }
+          ],
+          "stats": {
+            "bytes_scanned": 231,
+            "changed_files": 0,
+            "eligible_paths": 3,
+            "excerpts_selected": 2,
+            "excluded_binaries": 0,
+            "excluded_generated": 1,
+            "excluded_paths": 2,
+            "excluded_secrets": 1,
+            "excluded_unsafe_paths": 0,
+            "files_not_scanned": 0,
+            "files_omitted": 1,
+            "files_scanned": 3,
+            "files_selected": 2,
+            "inventory_paths": 5,
+            "inventory_truncated": false,
+            "lines_selected": 5,
+            "omitted_long_lines": 0,
+            "output_limited": false,
+            "truncated_files": 0,
+            "unreadable_files": 0
+          },
+          "tokens": 1115,
+          "warnings": []
+        },
+        "pack_token_budget": 2048,
+        "preset": "code-long",
+        "reserved_other_tokens": 2048,
+        "reserved_output_tokens": 8192,
+        "schema": "forge9070.code-context.v1",
+        "tokenizer_model": "<temporary-directory>/forge-code-context-3rufg85_/tokenizer-fixture.gguf"
+      }
+    },
+    {
+      "name": "pack-cannot-consume-answer-reserve",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "context",
+        "--repo",
+        "<temporary-directory>/forge-code-context-3rufg85_/repo",
+        "--query",
+        "refund cancellation retries",
+        "--include",
+        "src/Orders.cs",
+        "--max-bytes",
+        "4096",
+        "--model",
+        "<temporary-directory>/forge-code-context-3rufg85_/tokenizer-fixture.gguf",
+        "--preset",
+        "code-long",
+        "--budget-tokens",
+        "30000"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: --budget-tokens must be positive and fit context after both reserves (22528 tokens available)\n",
+      "passed": true
+    },
+    {
+      "name": "model-context-limit-before-compute",
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "generate",
+        "--cpu",
+        "--model",
+        "<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf",
+        "--ctx",
+        "1024",
+        "--max-tokens",
+        "4",
+        "--prompt",
+        "hello"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Error: --ctx 1024 exceeds this model's training context 512; select a context no larger than 512. Context extension is not enabled by this engine.\n",
+      "passed": true
+    },
+    {
+      "name": "private-cpu-server-ready",
+      "passed": true,
+      "detail": {
+        "dir": "<temporary-directory>/forge-code-context-3rufg85_/models",
+        "excluded_count": 0,
+        "models": [
+          {
+            "bytes": 188256,
+            "compatibility": {
+              "active_experts_per_token": 2,
+              "architecture": "qwen3moe",
+              "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation.",
+              "compression": {
+                "routed_expert_elements": 24576,
+                "routed_expert_tensors": 3,
+                "sub4bit_elements": 0,
+                "sub4bit_formats": [],
+                "sub4bit_routed_expert_elements": 0,
+                "sub4bit_routed_expert_tensors": 0,
+                "sub4bit_tensors": 0,
+                "tensor_elements": 45664,
+                "unknown_type_tensors": 0
+              },
+              "experts_per_layer": 4,
+              "issues": [],
+              "layers": 1,
+              "policy": "sparse_moe_only",
+              "quantization_histogram": {
+                "F32": 15
+              },
+              "shards": 1,
+              "supported_metadata": true,
+              "tensor_weight_bytes": 182656,
+              "tensors": 15,
+              "weight_memory": {
+                "lazy_embedding_bytes": 0,
+                "other_weight_bytes": 84352,
+                "routed_expert_bytes": 98304
+              }
+            },
+            "id": "fixture.gguf",
+            "image": false,
+            "loaded": false
+          }
+        ],
+        "options": {
+          "cache_ram": 0,
+          "calibrated": null,
+          "chunk": 32,
+          "concurrency_reason": "no model loaded",
+          "context_max": 131072,
+          "context_min": 128,
+          "ctx": 512,
+          "ctx_train": null,
+          "decode_cache_policy": "not_applicable_cpu",
+          "default_max_tokens": 64,
+          "expert_ram": "1",
+          "expert_tail_min_rank": 0,
+          "expert_warmup": true,
+          "gpu": false,
+          "inference_overrides": {},
+          "kv": "f16",
+          "llama_numerics": false,
+          "max_parallel": 4,
+          "max_ram": 0,
+          "max_tokens": 64,
+          "model_identity": null,
+          "mtp": 0,
+          "parallel": 1,
+          "parallel_mode": "auto",
+          "preserve_thinking": true,
+          "ram_margin": 0,
+          "temperature": 0.0,
+          "think": true,
+          "threads": 2,
+          "top_k": 20,
+          "top_p": 0.949999988079071,
+          "vram_margin": "2048"
+        },
+        "policy": "moe_only"
+      }
+    },
+    {
+      "name": "fixture-loaded",
+      "passed": true,
+      "detail": {
+        "loaded": "fixture.gguf"
+      }
+    },
+    {
+      "name": "api-reports-actual-overrides-and-limits",
+      "passed": true,
+      "detail": {
+        "cache_ram": 0,
+        "calibrated": null,
+        "chunk": 32,
+        "concurrency_reason": "CPU execution generates one reply at a time; additional requests queue",
+        "context_max": 131072,
+        "context_min": 128,
+        "ctx": 512,
+        "ctx_train": 512,
+        "decode_cache_policy": "not_applicable_cpu",
+        "default_max_tokens": 64,
+        "expert_ram": "1",
+        "expert_tail_min_rank": 0,
+        "expert_warmup": true,
+        "gpu": false,
+        "inference_overrides": {},
+        "kv": "f16",
+        "llama_numerics": false,
+        "max_parallel": 4,
+        "max_ram": 0,
+        "max_tokens": 64,
+        "model_identity": "8a0f89d1cdaf19783e8bad24d0ed5998c6b644f4673ff05779bda8f54b887ff3",
+        "mtp": 0,
+        "parallel": 1,
+        "parallel_mode": "auto",
+        "preserve_thinking": true,
+        "ram_margin": 0,
+        "temperature": 0.0,
+        "think": true,
+        "threads": 2,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "vram_margin": "2048"
+      }
+    },
+    {
+      "name": "complete-request-preview",
+      "passed": true,
+      "detail": {
+        "available_output_tokens": 482,
+        "context_max": 131072,
+        "context_tokens": 512,
+        "error": null,
+        "fits": true,
+        "model": "fixture.gguf",
+        "model_context_tokens": 512,
+        "output_tokens": 4,
+        "prompt_tokens": 30,
+        "requested_output_tokens": 4,
+        "server_max_tokens": 64,
+        "system_tokens": 0
+      }
+    },
+    {
+      "name": "preview-does-not-run-inference",
+      "passed": true,
+      "detail": {
+        "before": {
+          "admission": {
+            "active": 0,
+            "cancelled_total": 0,
+            "capacity": 1,
+            "queue_capacity": 32,
+            "queue_timeout_seconds": 120.0,
+            "queued": 0,
+            "rejected_full_total": 0,
+            "reserved": 0,
+            "timed_out_total": 0
+          },
+          "backend": "cpu",
+          "busy": 0,
+          "cached_tokens": 0,
+          "completion_tokens": 0,
+          "concurrency": {
+            "ceiling": 4,
+            "mode": "auto",
+            "reason": "CPU execution generates one reply at a time; additional requests queue",
+            "slots": 1
+          },
+          "ctx": 512,
+          "device": "",
+          "drafts": null,
+          "expert_ram": {
+            "admissions": 4,
+            "allocation_failures": 0,
+            "budget_bytes": 98304,
+            "buffered_reads": 0,
+            "bypasses": 0,
+            "direct_reads": 12,
+            "evictions": 0,
+            "hits": 0,
+            "misses": 0,
+            "owned_source_copies": 0,
+            "peak_bytes": 98304,
+            "prefill_bypasses": 0,
+            "prefill_hits": 0,
+            "resident_bytes": 98304,
+            "resident_experts": 4,
+            "warm_admissions": 4,
+            "warm_bypasses": 0
+          },
+          "expert_tail": {
+            "min_rank": 0,
+            "skipped_assignments": 0,
+            "skipped_expert_groups": 0
+          },
+          "experts": null,
+          "live_tokens": 0,
+          "loading": false,
+          "model": "fixture.gguf",
+          "mtp_drafts": 0,
+          "prompt_tokens": 0,
+          "ram_cap": 10451423232,
+          "recent": [],
+          "requests": 0,
+          "slots": 1,
+          "system": {
+            "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+            "cpu_pct": 4.882943644330416,
+            "ram_total": 10451423232,
+            "ram_used": 2612793344,
+            "rss": 11001856,
+            "threads": 9
+          },
+          "uptime_s": 0,
+          "vram": null
+        },
+        "after": {
+          "admission": {
+            "active": 0,
+            "cancelled_total": 0,
+            "capacity": 1,
+            "queue_capacity": 32,
+            "queue_timeout_seconds": 120.0,
+            "queued": 0,
+            "rejected_full_total": 0,
+            "reserved": 0,
+            "timed_out_total": 0
+          },
+          "backend": "cpu",
+          "busy": 0,
+          "cached_tokens": 0,
+          "completion_tokens": 0,
+          "concurrency": {
+            "ceiling": 4,
+            "mode": "auto",
+            "reason": "CPU execution generates one reply at a time; additional requests queue",
+            "slots": 1
+          },
+          "ctx": 512,
+          "device": "",
+          "drafts": null,
+          "expert_ram": {
+            "admissions": 4,
+            "allocation_failures": 0,
+            "budget_bytes": 98304,
+            "buffered_reads": 0,
+            "bypasses": 0,
+            "direct_reads": 12,
+            "evictions": 0,
+            "hits": 0,
+            "misses": 0,
+            "owned_source_copies": 0,
+            "peak_bytes": 98304,
+            "prefill_bypasses": 0,
+            "prefill_hits": 0,
+            "resident_bytes": 98304,
+            "resident_experts": 4,
+            "warm_admissions": 4,
+            "warm_bypasses": 0
+          },
+          "expert_tail": {
+            "min_rank": 0,
+            "skipped_assignments": 0,
+            "skipped_expert_groups": 0
+          },
+          "experts": null,
+          "live_tokens": 0,
+          "loading": false,
+          "model": "fixture.gguf",
+          "mtp_drafts": 0,
+          "prompt_tokens": 0,
+          "ram_cap": 10451423232,
+          "recent": [],
+          "requests": 0,
+          "slots": 1,
+          "system": {
+            "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+            "cpu_pct": 33.333333333333336,
+            "ram_total": 10451423232,
+            "ram_used": 2612793344,
+            "rss": 11165696,
+            "threads": 9
+          },
+          "uptime_s": 0,
+          "vram": null
+        }
+      }
+    },
+    {
+      "name": "preview-requires-server-auth",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "preview-token-count-matches-generation",
+      "passed": true,
+      "detail": {
+        "choices": [
+          {
+            "finish_reason": "length",
+            "index": 0,
+            "message": {
+              "content": "AAAA",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1794876706,
+        "id": "chatcmpl-1794876706-7",
+        "model": "fixture.gguf",
+        "object": "chat.completion",
+        "timings": {
+          "cache_n": 0,
+          "predicted_ms": 2.029569,
+          "predicted_n": 4,
+          "predicted_per_second": 1970.8617938094246,
+          "predicted_per_token_ms": 0.50739225,
+          "prompt_ms": 14.307131,
+          "prompt_n": 30,
+          "prompt_per_second": 2096.8564557072973,
+          "prompt_per_token_ms": 0.4769043666666667
+        },
+        "usage": {
+          "completion_tokens": 4,
+          "prompt_tokens": 30,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 34
+        }
+      }
+    },
+    {
+      "name": "preview-explains-output-cap",
+      "passed": true,
+      "detail": {
+        "available_output_tokens": 482,
+        "context_max": 131072,
+        "context_tokens": 512,
+        "error": {
+          "code": "output_limit_exceeded",
+          "message": "requested 65 output tokens exceeds this server's --max-tokens 64. The prompt uses 30 of 512 context tokens, leaving 482. Lower max_tokens/max_completion_tokens or restart the server with a larger output cap.",
+          "type": "invalid_request_error"
+        },
+        "fits": false,
+        "model": "fixture.gguf",
+        "model_context_tokens": 512,
+        "output_tokens": 65,
+        "prompt_tokens": 30,
+        "requested_output_tokens": 65,
+        "server_max_tokens": 64,
+        "system_tokens": 0
+      }
+    },
+    {
+      "name": "oversize-output-before-stream-False",
+      "passed": true,
+      "detail": {
+        "budget": {
+          "available_output_tokens": 482,
+          "context_tokens": 512,
+          "error": {
+            "code": "output_limit_exceeded",
+            "message": "requested 65 output tokens exceeds this server's --max-tokens 64. The prompt uses 30 of 512 context tokens, leaving 482. Lower max_tokens/max_completion_tokens or restart the server with a larger output cap.",
+            "type": "invalid_request_error"
+          },
+          "fits": false,
+          "output_tokens": 65,
+          "prompt_tokens": 30,
+          "requested_output_tokens": 65,
+          "server_max_tokens": 64
+        },
+        "error": {
+          "code": "output_limit_exceeded",
+          "message": "requested 65 output tokens exceeds this server's --max-tokens 64. The prompt uses 30 of 512 context tokens, leaving 482. Lower max_tokens/max_completion_tokens or restart the server with a larger output cap.",
+          "type": "invalid_request_error"
+        }
+      }
+    },
+    {
+      "name": "oversize-output-before-stream-True",
+      "passed": true,
+      "detail": {
+        "budget": {
+          "available_output_tokens": 482,
+          "context_tokens": 512,
+          "error": {
+            "code": "output_limit_exceeded",
+            "message": "requested 65 output tokens exceeds this server's --max-tokens 64. The prompt uses 30 of 512 context tokens, leaving 482. Lower max_tokens/max_completion_tokens or restart the server with a larger output cap.",
+            "type": "invalid_request_error"
+          },
+          "fits": false,
+          "output_tokens": 65,
+          "prompt_tokens": 30,
+          "requested_output_tokens": 65,
+          "server_max_tokens": 64
+        },
+        "error": {
+          "code": "output_limit_exceeded",
+          "message": "requested 65 output tokens exceeds this server's --max-tokens 64. The prompt uses 30 of 512 context tokens, leaving 482. Lower max_tokens/max_completion_tokens or restart the server with a larger output cap.",
+          "type": "invalid_request_error"
+        }
+      }
+    },
+    {
+      "name": "preview-catches-prompt-plus-answer-overflow",
+      "passed": true,
+      "detail": {
+        "available_output_tokens": 17,
+        "context_max": 131072,
+        "context_tokens": 512,
+        "error": {
+          "code": "context_length_exceeded",
+          "message": "the prompt uses 495 of 512 context tokens, leaving 17 for output, but 64 were requested. Shorten the prompt/history, reduce max_tokens/max_completion_tokens to at most 17, or reload with a supported larger --ctx.",
+          "type": "invalid_request_error"
+        },
+        "fits": false,
+        "model": "fixture.gguf",
+        "model_context_tokens": 512,
+        "output_tokens": 64,
+        "prompt_tokens": 495,
+        "requested_output_tokens": 64,
+        "server_max_tokens": 64,
+        "system_tokens": 0
+      }
+    },
+    {
+      "name": "overflow-rejected-without-silent-truncation",
+      "passed": true,
+      "detail": {
+        "budget": {
+          "available_output_tokens": 17,
+          "context_tokens": 512,
+          "error": {
+            "code": "context_length_exceeded",
+            "message": "the prompt uses 495 of 512 context tokens, leaving 17 for output, but 64 were requested. Shorten the prompt/history, reduce max_tokens/max_completion_tokens to at most 17, or reload with a supported larger --ctx.",
+            "type": "invalid_request_error"
+          },
+          "fits": false,
+          "output_tokens": 64,
+          "prompt_tokens": 495,
+          "requested_output_tokens": 64,
+          "server_max_tokens": 64
+        },
+        "error": {
+          "code": "context_length_exceeded",
+          "message": "the prompt uses 495 of 512 context tokens, leaving 17 for output, but 64 were requested. Shorten the prompt/history, reduce max_tokens/max_completion_tokens to at most 17, or reload with a supported larger --ctx.",
+          "type": "invalid_request_error"
+        }
+      }
+    },
+    {
+      "name": "api-reload-enforces-model-context",
+      "passed": true,
+      "detail": {
+        "error": {
+          "message": "--ctx 1024 exceeds this model's training context 512; select a context no larger than 512. Context extension is not enabled by this engine.",
+          "type": "incompatible_model"
+        }
+      }
+    },
+    {
+      "name": "failed-reload-keeps-active-model-and-context",
+      "passed": true,
+      "detail": {
+        "dir": "<temporary-directory>/forge-code-context-3rufg85_/models",
+        "excluded_count": 0,
+        "models": [
+          {
+            "bytes": 188256,
+            "compatibility": {
+              "active_experts_per_token": 2,
+              "architecture": "qwen3moe",
+              "caveat": "Metadata verified against implemented architecture/expert/quantization paths. Compression is reported from actual tensor types, not evaluated answer quality. GPU memory fit, numerical fidelity, model accuracy and speed require separate execution/evaluation.",
+              "compression": {
+                "routed_expert_elements": 24576,
+                "routed_expert_tensors": 3,
+                "sub4bit_elements": 0,
+                "sub4bit_formats": [],
+                "sub4bit_routed_expert_elements": 0,
+                "sub4bit_routed_expert_tensors": 0,
+                "sub4bit_tensors": 0,
+                "tensor_elements": 45664,
+                "unknown_type_tensors": 0
+              },
+              "experts_per_layer": 4,
+              "issues": [],
+              "layers": 1,
+              "policy": "sparse_moe_only",
+              "quantization_histogram": {
+                "F32": 15
+              },
+              "shards": 1,
+              "supported_metadata": true,
+              "tensor_weight_bytes": 182656,
+              "tensors": 15,
+              "weight_memory": {
+                "lazy_embedding_bytes": 0,
+                "other_weight_bytes": 84352,
+                "routed_expert_bytes": 98304
+              }
+            },
+            "id": "fixture.gguf",
+            "image": false,
+            "loaded": true
+          }
+        ],
+        "options": {
+          "cache_ram": 0,
+          "calibrated": null,
+          "chunk": 32,
+          "concurrency_reason": "CPU execution generates one reply at a time; additional requests queue",
+          "context_max": 131072,
+          "context_min": 128,
+          "ctx": 512,
+          "ctx_train": 512,
+          "decode_cache_policy": "not_applicable_cpu",
+          "default_max_tokens": 64,
+          "expert_ram": "1",
+          "expert_tail_min_rank": 0,
+          "expert_warmup": true,
+          "gpu": false,
+          "inference_overrides": {},
+          "kv": "f16",
+          "llama_numerics": false,
+          "max_parallel": 4,
+          "max_ram": 0,
+          "max_tokens": 64,
+          "model_identity": "8a0f89d1cdaf19783e8bad24d0ed5998c6b644f4673ff05779bda8f54b887ff3",
+          "mtp": 0,
+          "parallel": 1,
+          "parallel_mode": "auto",
+          "preserve_thinking": true,
+          "ram_margin": 0,
+          "temperature": 0.0,
+          "think": true,
+          "threads": 2,
+          "top_k": 20,
+          "top_p": 0.949999988079071,
+          "vram_margin": "2048"
+        },
+        "policy": "moe_only"
+      }
+    },
+    {
+      "name": "valid-generation-after-budget-rejections",
+      "passed": true,
+      "detail": {
+        "choices": [
+          {
+            "finish_reason": "length",
+            "index": 0,
+            "message": {
+              "content": "AAAA",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1794876706,
+        "id": "chatcmpl-1794876706-15",
+        "model": "fixture.gguf",
+        "object": "chat.completion",
+        "timings": {
+          "cache_n": 0,
+          "predicted_ms": 1.639283,
+          "predicted_n": 4,
+          "predicted_per_second": 2440.0911862076287,
+          "predicted_per_token_ms": 0.40982075,
+          "prompt_ms": 12.303704,
+          "prompt_n": 30,
+          "prompt_per_second": 2438.2901279159514,
+          "prompt_per_token_ms": 0.41012346666666666
+        },
+        "usage": {
+          "completion_tokens": 4,
+          "prompt_tokens": 30,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 34
+        }
+      }
+    },
+    {
+      "name": "server-log",
+      "passed": true,
+      "command": [
+        "<workspace>/<project>/target/release/forge9070",
+        "serve",
+        "--cpu",
+        "--preset",
+        "code-long",
+        "--models-dir",
+        "<temporary-directory>/forge-code-context-3rufg85_/models",
+        "--port",
+        "44829",
+        "--ctx",
+        "512",
+        "--chunk",
+        "32",
+        "--threads",
+        "2",
+        "--max-tokens",
+        "64",
+        "--temperature",
+        "0",
+        "--expert-ram",
+        "1",
+        "--ram-margin",
+        "0",
+        "--cache-ram",
+        "0"
+      ],
+      "output": "Forge9070: CPU (explicit) | context 512 per request | chunk 32 | KV f16 | MTP 0 | slots awaiting model\nCapacity policy auto (auto ceiling 4): resolved when a model is loaded\nStarting preset: code-long (explicit flags override it; hardware speed is unmeasured)\nAll selected experts retained. KV precision and checkpoint quantization remain explicit choices.\nUses RustingStrata by Vasyl Trefilov. ROCm is not used.\nlistening on http://127.0.0.1:44829/ (models folder: <temporary-directory>/forge-code-context-3rufg85_/models)\nloading <temporary-directory>/forge-code-context-3rufg85_/models/fixture.gguf\nserving capacity: 1 slots (CPU execution generates one reply at a time; additional requests queue) | queue 32 | timeout 120s\nhost available: 7.30 GiB; expert payload 0.00 GiB; owned expert ceiling 0.00 GiB (all expert payloads fit the ceiling)\nhost reserve: 0.00 GiB OS + 1.00 GiB runtime + 0.00 GiB prompt cache; 0.00 GiB sparse embeddings stay lazy\nexpert RAM warmup: 4 experts, 0.00 GiB loaded in 0.00 s; 0.00 GiB resident (layer order)\nchat template: Xml\nloaded fixture.gguf\nrequest: POST /v1/chat/completions key=admin model=fixture.gguf prompt=30 tok stream=false tools=0\ndone: key=admin model=fixture.gguf prompt=30 tok (0 cached) -> 4 tok in 0.00 s, decode 1970.9 tok/s, prefill 2096.9 tok/s, finish=length\nrequest: POST /v1/chat/completions key=admin model=fixture.gguf prompt=30 tok stream=false tools=0\ndone: key=admin model=fixture.gguf prompt=30 tok (0 cached) -> 4 tok in 0.00 s, decode 2440.1 tok/s, prefill 2438.3 tok/s, finish=length\nstopped\nexpert RAM: 0.00/0.00 GiB, 4 experts, 16 hits / 0 misses, 0 evictions, 0 mapped bypasses; matrix reads direct=12 buffered=0\n"
+    }
+  ]
+}

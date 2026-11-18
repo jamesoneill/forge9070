@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: '0'
+  # Override the local target-cpu=native setting. Hosted-runner binaries must
+  # not accidentally depend on that runner's particular CPU instruction set.
+  RUSTFLAGS: '-C target-cpu=x86-64'
+  PYTHONUTF8: '1'
+
+jobs:
+  source:
+    name: Source and shader checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Check Python, JavaScript and shell syntax
+        shell: bash
+        run: |
+          python -m compileall -q .github/scripts scripts tests
+          node --check crates/forge-engine/src/ui/app.js
+          node --check scripts/validate-code-ui-helpers.cjs
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Check existing UI helper regressions
+        run: node scripts/validate-code-ui-helpers.cjs
+      - name: Check release gates and portable archive integrity
+        run: python .github/scripts/test-release.py
+      - name: Install shader validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes glslang-tools spirv-tools
+      - name: Compile shader source and validate SPIR-V
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          glslangValidator -V --target-env vulkan1.1 \
+            -Icrates/forge-engine/shaders crates/forge-engine/shaders/ops.comp \
+            -o artifacts/forge-ops.spv
+          spirv-val --target-env vulkan1.1 artifacts/forge-ops.spv
+          spirv-val --target-env vulkan1.1 crates/forge-engine/src/vulkan/ops.spv
+          # Compiler versions can produce different valid bytecode. This checks
+          # both representations; it makes no GPU execution/performance claim.
+
+  native:
+    name: Native engine checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            executable: forge-engine
+            frontend: forge9070
+          - os: windows-2025
+            executable: forge-engine.exe
+            frontend: forge9070.exe
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Install the pinned Rust toolchain
+        run: |
+          FORGE_TOOLCHAIN="$(python -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')"
+          rustup toolchain install "$FORGE_TOOLCHAIN" --profile minimal
+          rustc --version --verbose
+      - name: Test the independent engine
+        run: cargo test --locked -p forge-engine --lib --bins
+      - name: Check numerical parity against the compatibility implementation
+        if: runner.os == 'Linux'
+        run: cargo test --locked -p forge9070 --test new_engine_parity --test new_quant_parity --test new_qwen38_parity
+      - name: Build both documented release entry points
+        run: cargo build --release --locked -p forge-engine -p forge9070
+      - name: Check CLI execution with synthetic models
+        run: python scripts/validate-forge-engine.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
+      - name: Check HTTP, streaming, queues and cancellation
+        run: python scripts/validate-native-api.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-api.json
+      - name: Check configuration UI API and persisted settings
+        if: runner.os == 'Windows'
+        run: python scripts/validate-native-ui.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-ui.json
+      - name: Install the pinned browser test runtime
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install --disable-pip-version-check -r .github/scripts/requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Exercise the served UI in desktop and mobile Chromium
+        if: runner.os == 'Linux'
+        run: |
+          FORGE_CHROMIUM="$(python -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          python scripts/validate-native-ui.py --binary target/release/${{ matrix.executable }} \
+            --browser --chromium "$FORGE_CHROMIUM" --screenshots artifacts/ui \
+            --output artifacts/ci-ui.json
+      - name: Install the software Vulkan correctness runtime
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes libvulkan1 mesa-vulkan-drivers
+          python -c 'import glob, os; paths = glob.glob("/usr/share/vulkan/icd.d/lvp_icd*.json"); assert len(paths) == 1, paths; open(os.environ["GITHUB_ENV"], "a").write("VK_ICD_FILENAMES=" + paths[0] + "\n")'
+      - name: Check Vulkan numerical execution and all-expert retention
+        if: runner.os == 'Linux'
+        env:
+          FORGE_VULKAN_TEST: '1'
+        run: |
+          cargo test --locked -p forge-engine --lib software_vulkan -- --ignored --test-threads=1
+          cargo test --locked -p forge9070 --test new_qwen38_parity hybrid_vulkan -- --ignored --test-threads=1
+          python scripts/validate-native-gpu-api.py --binary target/release/forge-engine --output artifacts/ci-vulkan-api.json
+      - name: Parse Windows launch scripts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem scripts -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_ }; $failed = $true }
+          }
+          if ($failed) { exit 1 }
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: validation-${{ matrix.os }}
+          path: |
+            artifacts/ci-*.json
+            artifacts/ui/*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
+  required:
+    # Keep this exact job name stable: configure it as the required status
+    # check on main. Its dependencies include BOTH operating-system jobs.
+    name: required
+    if: always()
+    needs: [source, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every validation job to succeed
+        env:
+          SOURCE_RESULT: ${{ needs.source.result }}
+          NATIVE_RESULT: ${{ needs.native.result }}
+        run: |
+          test "$SOURCE_RESULT" = success
+          test "$NATIVE_RESULT" = success

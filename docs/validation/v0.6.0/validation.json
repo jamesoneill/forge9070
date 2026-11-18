@@ -1,0 +1,75 @@
+{
+  "version": "0.6.0",
+  "checked_at_utc": "2026-11-17T00:07:57.235569+00:00",
+  "status": "validated_with_documented_environment_limits",
+  "unit_tests": {
+    "passed": 231,
+    "failed": 0,
+    "targets": [
+      34,
+      197,
+      0
+    ],
+    "record": "rust-tests-0.6.0.json"
+  },
+  "linux_release_build": {
+    "passed": true,
+    "elapsed_seconds": 146.924,
+    "record": "build-release-0.6.0.json"
+  },
+  "integration": {
+    "code_context_commands_and_assertions": 33,
+    "expert_ram_commands_and_assertions": 21,
+    "smoke_checks": 9,
+    "records": [
+      "code-context-integration-0.6.0.json",
+      "expert-ram-integration-0.6.0.json",
+      "smoke-0.6.0.json"
+    ],
+    "captured_logs_counted_as_checks": false
+  },
+  "ui_helpers": {
+    "passed": 7,
+    "scope": "Actual JavaScript helpers in Node VM with minimal element/store stubs; not DOM or rendered browser",
+    "record": "code-ui-helpers-0.6.0.json"
+  },
+  "ui_syntax": {
+    "passed": true,
+    "record": "code-ui-syntax-0.6.0.json"
+  },
+  "browser": {
+    "status": "blocked_before_page_creation",
+    "browser_assertions_run": 0,
+    "reason": "Chromium process-singleton socket failed with EPERM",
+    "record": "code-browser-integration-0.6.0.json"
+  },
+  "qwen_context_memory_estimates": {
+    "source_derived": true,
+    "hardware_measurement": false,
+    "record": "context-memory-estimates-0.6.0.json"
+  },
+  "hardware": {
+    "windows_build_tested": false,
+    "rx9070xt_inference_tested": false,
+    "native_wsl_vulkan_tested": false,
+    "full_qwen38_downloaded_or_inferred": false,
+    "token_rate_claimed": false
+  },
+  "previous_release_records": [
+    "v0.5.0/validation.json",
+    "v0.4.1/validation.json"
+  ],
+  "source_sha256": {
+    "Cargo.toml": "5d4722d703753d9510ef49c00340a69406d4f9e11efde2855eed28c18c28387e",
+    "Cargo.lock": "2a09b6729010cab07d860cbe537c1b3fc410e9ca43b5b80aafb5dc5bb80bd617",
+    "src/main.rs": "c9995ee2128616b09dcbdd17c12cd03213e3e901da65b3d1c7fbe8efdcf91220",
+    "src/profile.rs": "7be625019c1f24da8545c90d3e6e47e79a330c5993978134b89135b782e66909",
+    "src/code_context.rs": "7cc317e95eab282f896093d8bbe0a604aa9f66998d0c24b2375158f39523ba16",
+    "vendor/rusting-strata/src/cli.rs": "07779cb4d1f5eb6e73b11d41c72feea2ebf2b4fbf4b7b7b30f7a6e7f399e349e",
+    "vendor/rusting-strata/src/serve.rs": "741acd9021b9c3248a09389866fb481d3da8b31fc4d11e8156509ef9e4775158",
+    "vendor/rusting-strata/src/chat.rs": "411a7e33cf026708c535b8ee4a7e6b065100aaa7e9ad774055f8928c88cdec72",
+    "vendor/rusting-strata/src/gpu_model.rs": "ee38440e42eacfe4c90487d50a585c6feea2dd30642ea0443d88f17b87638f9f",
+    "vendor/rusting-strata/src/gpu_model/prompt_cache.rs": "143f30a9ddfe9d59f5510ab5eacda9b4b76066b6e34ebefe192e762b170284fb",
+    "vendor/rusting-strata/src/web/index.html": "0aa6d3ee9cfd013841d5b0e69538b541802e23ea1f1e1ece6794bb709c32a962"
+  }
+}

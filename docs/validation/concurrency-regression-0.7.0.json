@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "tests/concurrency_cli.py",
+    "--binary",
+    "target/release/forge9070"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 1.3799281120300293,
+  "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"Unsupported CPU concurrency/MTP and conflicting GPU options fail explicitly\",\n    \"CPU server reports one compute slot rather than parallel GPU execution\",\n    \"Four overlapping clients are admitted while health remains responsive\",\n    \"Four concurrent clients receive isolated complete replies, including two SSE streams\",\n    \"All four requests and 256 completion tokens are counted exactly once\",\n    \"Bounded admission returns HTTP 503 with Retry-After when all eight connections are held\",\n    \"Disconnected incomplete clients release capacity and service recovers\",\n    \"Concurrency benchmark measures actual usage, excludes warmup, labels aggregate rate and reports one CPU slot\",\n    \"Benchmark configuration snapshot detects a KV change even when the active model ID stays the same\"\n  ],\n  \"overlapping_clients\": 4,\n  \"compute_backend_tested\": \"cpu\",\n  \"compute_slots_tested\": 1,\n  \"gpu_parallel_compute_tested\": false,\n  \"wsl_kernel_tested\": false\n}\n",
+  "stderr": ""
+}

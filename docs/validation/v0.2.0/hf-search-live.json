@@ -1,0 +1,64 @@
+[
+  {
+    "id": "mradermacher/Qwen3-VL-8B-Instruct-abliterated-GGUF",
+    "downloads": 480048,
+    "likes": 25,
+    "gated": false,
+    "private": false,
+    "tags": [
+      "transformers",
+      "gguf",
+      "text-generation-inference",
+      "abliterated",
+      "v1.0",
+      "en",
+      "base_model:prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1",
+      "base_model:quantized:prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v1",
+      "license:apache-2.0",
+      "endpoints_compatible",
+      "region:us",
+      "conversational"
+    ]
+  },
+  {
+    "id": "mradermacher/Huihui-Qwen3-8B-abliterated-v2-GGUF",
+    "downloads": 94393,
+    "likes": 29,
+    "gated": false,
+    "private": false,
+    "tags": [
+      "transformers",
+      "gguf",
+      "chat",
+      "abliterated",
+      "uncensored",
+      "en",
+      "base_model:huihui-ai/Huihui-Qwen3-8B-abliterated-v2",
+      "base_model:quantized:huihui-ai/Huihui-Qwen3-8B-abliterated-v2",
+      "license:apache-2.0",
+      "endpoints_compatible",
+      "region:us"
+    ]
+  },
+  {
+    "id": "mradermacher/Qwen3-VL-8B-Instruct-abliterated-v2.0-GGUF",
+    "downloads": 34327,
+    "likes": 68,
+    "gated": false,
+    "private": false,
+    "tags": [
+      "transformers",
+      "gguf",
+      "text-generation-inference",
+      "abliterated",
+      "v2.0",
+      "en",
+      "base_model:prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v2",
+      "base_model:quantized:prithivMLmods/Qwen3-VL-8B-Instruct-abliterated-v2",
+      "license:apache-2.0",
+      "endpoints_compatible",
+      "region:us",
+      "conversational"
+    ]
+  }
+]

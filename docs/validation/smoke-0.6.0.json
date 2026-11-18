@@ -1,0 +1,13 @@
+{
+  "version": "0.6.0",
+  "checked_at_utc": "2026-11-17T00:04:06.090444+00:00",
+  "command": [
+    "python3",
+    "tests/smoke.py",
+    "--binary",
+    "target/release/forge9070"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": [\n    \"CPU generation executes real model and emits AAAA\",\n    \"HTTP health waits until real model is loaded\",\n    \"Configured API key is enforced\",\n    \"OpenAI model listing returns loaded model\",\n    \"OpenAI chat returns exact text, token count and finish reason\",\n    \"OpenAI SSE stream returns exact text and DONE marker\",\n    \"Server rejects a 32-token request above its 16-token cap before inference\",\n    \"Malformed chat request returns HTTP 400\",\n    \"Unsupported output-changing sampling options fail explicitly instead of being silently ignored\"\n  ],\n  \"fixture\": \"<workspace>/<project>/tests/fixtures/tiny-qwen3moe.gguf\",\n  \"backend_tested\": \"cpu\",\n  \"rx9070xt_gpu_tested\": false,\n  \"large_moe_model_tested\": false\n}\n",
+  "stderr": ""
+}

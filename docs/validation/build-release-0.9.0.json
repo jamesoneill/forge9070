@@ -1,0 +1,18 @@
+{
+  "command": [
+    "<build-home>/.cargo/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "forge-engine",
+    "-p",
+    "forge9070"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 99.5894936170007,
+  "checked_at_utc": "2026-11-17T20:04:20.527360+00:00",
+  "stdout": "",
+  "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   <workspace>/<project>/vendor/rusting-strata/Cargo.toml\nworkspace: <workspace>/<project>/Cargo.toml\n   Compiling httparse v1.10.1\n   Compiling hashbrown v0.17.1\n   Compiling equivalent v1.0.3\n   Compiling ureq-proto v0.7.1\n   Compiling indexmap v2.14.2\n   Compiling ureq v3.5.1\n   Compiling minijinja v3.1.0\n   Compiling rusting_strata v1.2.4 (<workspace>/<project>/vendor/rusting-strata)\n   Compiling minijinja-contrib v3.1.0\n   Compiling forge-engine v0.2.0 (<workspace>/<project>/crates/forge-engine)\n   Compiling forge9070 v0.9.0 (<workspace>/<project>)\n    Finished `release` profile [optimized] target(s) in 1m 39s\n"
+}

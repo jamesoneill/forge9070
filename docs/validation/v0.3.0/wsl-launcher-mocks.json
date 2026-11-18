@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "tests": 6,
+  "actual_wsl_kernel": false,
+  "actual_windows_interoperability": false,
+  "scope": "Argument/environment and executable-order mocks"
+}

@@ -1,0 +1,318 @@
+{
+  "checked_at_utc": "2026-11-17T00:42:46.772Z",
+  "node_version": "v24.22.1",
+  "source": "<workspace>/<project>/vendor/rusting-strata/src/web/index.html",
+  "source_sha256": "8064ad3391b3e8386b71557389442031e77da88c71a6cf0e4b7f442a552e80d3",
+  "extracted_blocks": [
+    "numberLabel",
+    "setControl",
+    "requestMessages",
+    "engineFields",
+    "engineOpts",
+    "showOpts",
+    "presetHandler",
+    "admissionView"
+  ],
+  "scope": "Actual UI JavaScript helper unit validation using Node VM and minimal element/store stubs. No DOM, browser rendering, layout, events, HTTP, GPU, or model-quality validation.",
+  "passed": 13,
+  "failure": null,
+  "records": [
+    {
+      "name": "whole-shipped-ui-script-parses",
+      "passed": true,
+      "detail": {
+        "scope": "Syntax compilation only; the full script was not executed in a browser."
+      }
+    },
+    {
+      "name": "requestMessages-keeps-earlier-reasoning-and-open-code-whitespace",
+      "passed": true,
+      "detail": [
+        {
+          "role": "user",
+          "content": "Write Rust."
+        },
+        {
+          "role": "assistant",
+          "content": "Earlier.",
+          "reasoning_content": "Earlier fixture reasoning."
+        },
+        {
+          "role": "user",
+          "content": "Continue."
+        },
+        {
+          "role": "assistant",
+          "content": "```rust\nfn answer() {\n    \t",
+          "reasoning_content": "Current fixture reasoning."
+        }
+      ]
+    },
+    {
+      "name": "showOpts-inherits-server-defaults-without-writing-user-overrides",
+      "passed": true,
+      "detail": {
+        "output": 8192,
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 20,
+        "think": true,
+        "ctx": 32768,
+        "ctx_min": 128,
+        "ctx_max": 131072,
+        "output_max": 8192
+      }
+    },
+    {
+      "name": "showOpts-preserves-stored-sampling-and-pending-context-edits",
+      "passed": true,
+      "detail": {
+        "output": 12,
+        "temperature": 0.25,
+        "top_p": 0.8,
+        "top_k": 7,
+        "think": false,
+        "ctx": 16384,
+        "ctx_min": 128,
+        "ctx_max": 131072,
+        "output_max": 8192
+      }
+    },
+    {
+      "name": "showOpts-sets-model-context-and-output-cap-bounds",
+      "passed": true,
+      "detail": {
+        "belowForgeCap": {
+          "output": 4095,
+          "temperature": 1,
+          "top_p": 0.95,
+          "top_k": 20,
+          "think": true,
+          "ctx": 4096,
+          "ctx_min": 128,
+          "ctx_max": 8192,
+          "output_max": 4095
+        },
+        "aboveForgeCap": {
+          "output": 8192,
+          "temperature": 1,
+          "top_p": 0.95,
+          "top_k": 20,
+          "think": true,
+          "ctx": 65536,
+          "ctx_min": 128,
+          "ctx_max": 131072,
+          "output_max": 8192
+        },
+        "limitation": "Checks assigned bounds, not browser range-value sanitization."
+      }
+    },
+    {
+      "name": "code-preset-refuses-immutable-output-cap-without-staging-changes",
+      "passed": true,
+      "detail": {
+        "message": "This preset reserves 8192 output tokens, but the server cap is 64. Restart serve with --preset code-long or --max-tokens 8192, then stage the preset.",
+        "staged": {},
+        "serverCap": 64
+      }
+    },
+    {
+      "name": "code-preset-refuses-unavailable-gpu-and-short-model-context",
+      "passed": true,
+      "detail": {
+        "cpu": "Code presets require a GPU server; start Forge with --preset code.",
+        "context": "This model allows at most 512 context tokens; choose a supported smaller context."
+      }
+    },
+    {
+      "name": "code-presets-stage-declared-options-only-on-explicit-action",
+      "passed": true,
+      "detail": [
+        {
+          "preset": "code",
+          "staged": {
+            "ctx": 16384,
+            "mtp": 0,
+            "kv": "f16",
+            "cache_ram": 1024,
+            "chunk": 256,
+            "parallel": 1,
+            "ram_margin": 6144
+          },
+          "output": 4096
+        },
+        {
+          "preset": "code-long",
+          "staged": {
+            "ctx": 32768,
+            "mtp": 0,
+            "kv": "f16",
+            "cache_ram": 1024,
+            "chunk": 256,
+            "parallel": 1,
+            "ram_margin": 6144
+          },
+          "output": 8192
+        }
+      ]
+    },
+    {
+      "name": "auto-selection-retains-effective-one-slot-model-capacity",
+      "passed": true,
+      "detail": {
+        "mode": "auto",
+        "ceiling": "4",
+        "note": "Current capacity: 1 active request. This model supports one active sequence; additional requests queue. Pending edits apply after reload."
+      }
+    },
+    {
+      "name": "load-options-encode-auto-as-string-and-fixed-as-number",
+      "passed": true,
+      "detail": {
+        "auto": "auto",
+        "fixed": 3,
+        "max_parallel": 2
+      }
+    },
+    {
+      "name": "pending-capacity-options-survive-refresh-and-backend-controls-remain-honest",
+      "passed": true,
+      "detail": {
+        "pending": {
+          "parallel": 2,
+          "max_parallel": 3
+        },
+        "disabledForCpu": true
+      }
+    },
+    {
+      "name": "request-counters-separate-admitted-reserved-and-queued-work",
+      "passed": true,
+      "detail": {
+        "status": "2 admitted · 7 queued",
+        "rows": [
+          [
+            "Generation capacity",
+            "4 slots"
+          ],
+          [
+            "Admitted requests",
+            "2"
+          ],
+          [
+            "Reserved slots",
+            "1"
+          ],
+          [
+            "Queued requests",
+            "7 / 32"
+          ],
+          [
+            "Queue wait limit",
+            "120 seconds"
+          ],
+          [
+            "Queue-full rejections",
+            "3"
+          ],
+          [
+            "Queue timeouts",
+            "2"
+          ],
+          [
+            "Cancelled before starting",
+            "5"
+          ]
+        ],
+        "note": "Admitted requests include preparation, prompt processing and replies. Reserved slots hold requests about to start. Queued requests wait for a free slot."
+      }
+    },
+    {
+      "name": "request-counters-handle-offline-and-immediate-admission-only-mode",
+      "passed": true,
+      "detail": {
+        "unavailable": {
+          "status": "Unavailable",
+          "rows": [],
+          "note": "Request counters are unavailable."
+        },
+        "zeroQueue": {
+          "status": "1 admitted · 0 queued",
+          "rows": [
+            [
+              "Generation capacity",
+              "1 slots"
+            ],
+            [
+              "Admitted requests",
+              "1"
+            ],
+            [
+              "Reserved slots",
+              "0"
+            ],
+            [
+              "Queued requests",
+              "0 / 0"
+            ],
+            [
+              "Queue wait limit",
+              "120 seconds"
+            ],
+            [
+              "Queue-full rejections",
+              "0"
+            ],
+            [
+              "Queue timeouts",
+              "0"
+            ],
+            [
+              "Cancelled before starting",
+              "0"
+            ]
+          ],
+          "note": "Admitted requests include preparation, prompt processing and replies. Reserved slots hold requests about to start. Waiting is disabled; requests need a free slot."
+        },
+        "malformed": {
+          "status": "– admitted · 0 queued",
+          "rows": [
+            [
+              "Generation capacity",
+              "– slots"
+            ],
+            [
+              "Admitted requests",
+              "–"
+            ],
+            [
+              "Reserved slots",
+              "–"
+            ],
+            [
+              "Queued requests",
+              "0 / –"
+            ],
+            [
+              "Queue wait limit",
+              "– seconds"
+            ],
+            [
+              "Queue-full rejections",
+              "–"
+            ],
+            [
+              "Queue timeouts",
+              "–"
+            ],
+            [
+              "Cancelled before starting",
+              "–"
+            ]
+          ],
+          "note": "Admitted requests include preparation, prompt processing and replies. Reserved slots hold requests about to start. Queued requests wait for a free slot."
+        }
+      }
+    }
+  ]
+}

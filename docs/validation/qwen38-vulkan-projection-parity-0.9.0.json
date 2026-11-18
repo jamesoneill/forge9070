@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "scope": "Synthetic Qwen3.8 full numerical trace with every projection forced through Vulkan; nonlinear/state computation remains CPU in this bridge test",
+  "checked_at_utc": "2026-11-17T19:34:37.550193+00:00",
+  "command": "FORGE_VULKAN_TEST=1 VK_DRIVER_FILES=<temporary-directory>/forge9070-vulkan-sdk/root/usr/share/vulkan/icd.d/lvp_icd.json cargo test --test new_qwen38_parity hybrid_vulkan_all_projection_full_trace --locked --offline -- --ignored --nocapture",
+  "passed": 1,
+  "failed": 0,
+  "software_vulkan": true,
+  "gpu_projection_calls": 5601,
+  "cpu_projection_fallbacks": 0,
+  "cache_hits": 5482,
+  "queue_submissions": 5720,
+  "runtime_seconds": 53.53,
+  "real_gpu_tested": false,
+  "pretrained_model_tested": false,
+  "performance_claimed": false,
+  "compared": [
+    "all logits",
+    "HC output head",
+    "recurrent convolution",
+    "recurrent matrix",
+    "attention K/V",
+    "raw QSA indexer keys",
+    "PLE history/previous tokens",
+    "reset/prefill replay"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "src/main.rs": "09dc20dc8ef71a137d18474b837f3774b07dd97b5de4efaea3b573c2072f923d",
+  "src/profile.rs": "355de35e55521a2409c06d6b2dbf3bd1d54d059633445974149ccba70b1d49e2",
+  "vendor/rusting-strata/src/cli.rs": "578efdb1713446d3ca70798d7ef2f816c4e7a84d058f253bdce46f9cc4d3d2e0",
+  "vendor/rusting-strata/src/serve.rs": "4e801990d03e00d3af5a02c621c35578ea869cb0b13d94d09d5b7e7ea8738cf5",
+  "vendor/rusting-strata/src/chat.rs": "99c73fcbac8e18d411d175b6d186c0b46a6d93719bb14766f633b68c51d20bac",
+  "vendor/rusting-strata/src/admission.rs": "fd9f3ac81d53c93b6c41b88dbcba0f487a3c99fc9ecb31a58f2154dc0631a367",
+  "vendor/rusting-strata/src/serving_policy.rs": "92cfb962036276f67795e8a746638ef00b381824c382287ad725b83d16fe76b7",
+  "vendor/rusting-strata/src/web/index.html": "8064ad3391b3e8386b71557389442031e77da88c71a6cf0e4b7f442a552e80d3"
+}

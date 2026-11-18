@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "checks": [
+    "Unsupported CPU concurrency/MTP and conflicting GPU options fail explicitly",
+    "CPU server reports one compute slot rather than parallel GPU execution",
+    "Four overlapping clients are admitted while health remains responsive",
+    "Four concurrent clients receive isolated complete replies, including two SSE streams",
+    "All four requests and 256 completion tokens are counted exactly once",
+    "Bounded admission returns HTTP 503 with Retry-After when all eight connections are held",
+    "Disconnected incomplete clients release capacity and service recovers",
+    "Concurrency benchmark measures actual usage, excludes warmup, labels aggregate rate and reports one CPU slot"
+  ],
+  "overlapping_clients": 4,
+  "compute_backend_tested": "cpu",
+  "compute_slots_tested": 1,
+  "gpu_parallel_compute_tested": false,
+  "wsl_kernel_tested": false
+}

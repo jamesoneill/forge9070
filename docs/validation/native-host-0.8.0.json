@@ -1,0 +1,14 @@
+{
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "cpu": {
+    "model": "AMD EPYC 9V74 80-Core Processor",
+    "avx2": true,
+    "fma": true,
+    "f16c": true
+  },
+  "logical_cpus": 9,
+  "available_cpu_affinity": 9,
+  "compiler": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "gpu_tested": false
+}
