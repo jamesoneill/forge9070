@@ -693,7 +693,7 @@ fn cancelled(progress: &Mutex<Progress>) -> anyhow::Result<()> {
     Ok(())
 }
 fn path_slashes(path: &Path) -> String { path.components().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join("/") }
-fn hex(bytes: &[u8]) -> String { bytes.iter().map(|b| format!("{b:02x}")).collect() }
+pub(crate) fn hex(bytes: &[u8]) -> String { bytes.iter().map(|b| format!("{b:02x}")).collect() }
 fn encode(s: &str) -> String {
     let mut result = String::new();
     for byte in s.bytes() {
