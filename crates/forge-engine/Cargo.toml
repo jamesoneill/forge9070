@@ -1,5 +1,6 @@
 [package]
 name = "forge-engine"
+default-run = "forge-engine"
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.100"
