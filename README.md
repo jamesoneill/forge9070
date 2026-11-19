@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="#watch-the-architecture-walkthrough">Video walkthrough</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#choose-a-model">Models</a> ·
   <a href="docs/NATIVE-ENGINE.md">Engine guide</a> ·
@@ -36,6 +37,18 @@ for WSL users.
 > recorded in [VALIDATION.md](VALIDATION.md). Full pretrained-model quality,
 > Windows GPU execution and RX 9070 XT throughput still require validation on
 > the target hardware. No token-rate claim is implied by a passing CI badge.
+
+## Watch the architecture walkthrough
+
+[**Forge9070 Explained: Inside a Rust & Vulkan Local AI Engine for AMD**](https://www.youtube.com/watch?v=NLr7lbs6Iwg)
+is a 14:25 technical walkthrough from [**the1darkj Tech Briefing**](https://www.youtube.com/@the1darkj).
+It explains expert caching across disk, RAM and VRAM, memory budgets, the native
+coding API and Windows/WSL launch paths, with upstream credits and source references.
+
+The episode covers the project as reviewed on **18 November 2026**. Read the
+[current architecture](docs/ARCHITECTURE.md) and [validation record](VALIDATION.md)
+alongside it: full pretrained-model quality and target RX 9070 XT performance
+remain to be measured. Passing CI does not establish those results.
 
 ## What makes Forge9070 different
 
@@ -241,3 +254,4 @@ See [third-party notices](THIRD_PARTY_NOTICES.md),
 Forge9070 is an independent project. It is not endorsed by AMD, Qwen, Avalon or
 RustingStrata. The original Forge9070 artwork is documented in the
 [brand guide](docs/BRAND.md).
+
