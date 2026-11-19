@@ -3,7 +3,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(
     version,
-    about = "Independent Forge CPU inference reference; GPU/Qwen3.8 are not implemented"
+    about = "Independent Forge inference with capability-selected Vulkan, CPU and diagnostic hybrid execution"
 )]
 struct Cli {
     #[command(flatten)]

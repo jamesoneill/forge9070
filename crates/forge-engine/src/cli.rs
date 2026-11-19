@@ -28,7 +28,7 @@ pub struct EngineArgs {
 pub enum EngineCommand {
     /// Serve the independent runtime through the OpenAI chat API and bounded FIFO queue.
     Serve(crate::server::ServeArgs),
-    /// Discover Vulkan adapters without accepting software as hardware.
+    /// Report CPU availability and eligible Vulkan adapters without claiming execution was verified.
     Doctor,
     /// Compare runtime-selected CPU dot kernels with their scalar numerical reference.
     KernelBench {
@@ -111,7 +111,7 @@ fn dispatch(command: EngineCommand) -> Result<()> {
         EngineCommand::Serve(_) => {
             unreachable!("serve dispatches with its own shared worker budget")
         }
-        EngineCommand::Doctor => print_json(&crate::vulkan::discover()?),
+        EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
         EngineCommand::KernelBench {
             width,
             rows,

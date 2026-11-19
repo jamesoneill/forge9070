@@ -5,7 +5,7 @@ use crate::{
     tokenizer::Tokenizer,
     vulkan::{DeviceOptions, GpuMatvecExecutor, GpuModel, GpuSequence},
 };
-use anyhow::{Result, bail, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use clap::{Args, ValueEnum};
 use serde::Serialize;
 use std::{path::Path, sync::Arc};
@@ -13,6 +13,8 @@ use std::{path::Path, sync::Arc};
 #[derive(Clone, Copy, Debug, Serialize, ValueEnum, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Backend {
+    /// Selection policy, resolved to an execution backend before memory planning.
+    Auto,
     Cpu,
     Vulkan,
     Hybrid,
@@ -23,7 +25,7 @@ pub struct BackendArgs {
     /// Explicit CPU execution (equivalent to --backend cpu).
     #[arg(long, conflicts_with = "backend")]
     pub cpu: bool,
-    /// cpu: host; vulkan: resident GPU graph; hybrid: CPU state with cached Vulkan projections.
+    /// auto: compatible Vulkan or reported CPU selection; cpu: host; vulkan: GPU; hybrid: diagnostic.
     #[arg(long, value_enum)]
     pub backend: Option<Backend>,
     /// Vulkan physical-device index reported by engine doctor.
@@ -52,7 +54,7 @@ impl BackendArgs {
         let backend = if self.cpu {
             Backend::Cpu
         } else {
-            self.backend.ok_or_else(||anyhow::anyhow!("Select --backend cpu, vulkan or hybrid (or --cpu). There is no implicit backend fallback."))?
+            self.backend.ok_or_else(||anyhow::anyhow!("Select --backend auto, cpu, vulkan or hybrid (or --cpu). CPU fallback during hardware selection requires auto; explicit backends never silently change."))?
         };
         ensure!(
             backend != Backend::Cpu
@@ -71,6 +73,102 @@ impl BackendArgs {
                 .ok_or_else(|| anyhow::anyhow!("VRAM budget overflow"))?,
         })
     }
+
+    fn resolve(&self) -> Result<ResolvedBackend> {
+        self.resolve_with_probe(crate::vulkan::select_device)
+    }
+
+    /// Resolve the policy before any backend-dependent host memory reservation.
+    /// Only adapter discovery can choose CPU. Device creation, shader compilation,
+    /// model validation, allocation and execution errors are never retried on CPU.
+    fn resolve_with_probe(
+        &self,
+        probe: impl FnOnce(&DeviceOptions) -> Result<Option<usize>>,
+    ) -> Result<ResolvedBackend> {
+        let requested = self.selected()?;
+        let mut device = self.device_options()?;
+        let (selected, reason) = if requested != Backend::Auto {
+            (requested, "Explicit backend selection".to_owned())
+        } else {
+            // An adapter index, allocation cap or software-test permission is
+            // deliberate GPU configuration. Never silently discard that intent.
+            let cpu_allowed =
+                self.device.is_none() && self.vram_mib == 0 && !self.allow_software_vulkan;
+            match probe(&device) {
+                Ok(Some(index)) => {
+                    device.device_index = Some(index);
+                    (
+                        Backend::Vulkan,
+                        format!("Compatible Vulkan adapter {index} selected by capabilities"),
+                    )
+                }
+                Ok(None) if cpu_allowed => (
+                    Backend::Cpu,
+                    "No compatible hardware Vulkan adapter is available; auto selected CPU".into(),
+                ),
+                Ok(None) => bail!(
+                    "auto found no compatible Vulkan adapter; explicit --device, --vram-mib or --allow-software-vulkan settings prevent CPU fallback"
+                ),
+                Err(error) if cpu_allowed => (
+                    Backend::Cpu,
+                    format!("Vulkan discovery unavailable; auto selected CPU: {error:#}"),
+                ),
+                Err(error) => {
+                    return Err(error).context(
+                        "auto cannot discard explicit Vulkan settings; CPU fallback is disabled",
+                    );
+                }
+            }
+        };
+        Ok(ResolvedBackend {
+            selection: BackendSelection {
+                requested,
+                selected,
+                automatic: requested == Backend::Auto,
+                reason,
+            },
+            device,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct BackendSelection {
+    requested: Backend,
+    selected: Backend,
+    automatic: bool,
+    reason: String,
+}
+
+struct ResolvedBackend {
+    selection: BackendSelection,
+    device: DeviceOptions,
+}
+
+/// Hardware discovery remains useful on CPU-only hosts without a Vulkan loader.
+/// Eligibility describes API limits, not successful model execution or speed.
+pub fn hardware_report() -> serde_json::Value {
+    use serde_json::json;
+    let mut report = match crate::vulkan::discover() {
+        Ok(mut report) => {
+            report["vulkan_available"] = json!(true);
+            report["vulkan_discovery_error"] = serde_json::Value::Null;
+            report
+        }
+        Err(error) => json!({
+            "engine": "forge-native-vulkan",
+            "adapters": [],
+            "vulkan_available": false,
+            "vulkan_discovery_error": format!("{error:#}"),
+            "software_allowed_by_default": false,
+            "compute_submitted": false,
+            "hardware_performance_verified": false
+        }),
+    };
+    report["platform"] = json!(std::env::consts::OS);
+    report["cpu_available"] = json!(cfg!(any(target_os = "linux", target_os = "windows")));
+    report["backend_policies"] = json!(["auto", "cpu", "vulkan", "hybrid"]);
+    report
 }
 
 enum Execution {
@@ -87,6 +185,7 @@ pub struct RuntimeModel {
     pub source: Arc<Gguf>,
     pub tokenizer: Tokenizer,
     backend: Backend,
+    selection: BackendSelection,
     host_plan: crate::memory::HostMemoryPlan,
     warmup: serde_json::Value,
 }
@@ -116,7 +215,11 @@ impl RuntimeSequence {
 
 impl RuntimeModel {
     pub fn load(path: &Path, context: usize, options: &BackendArgs) -> Result<Self> {
-        let backend = options.selected()?;
+        let resolved = options.resolve()?;
+        let backend = resolved.selection.selected;
+        if resolved.selection.automatic {
+            eprintln!("Forge backend: {backend:?}. {}", resolved.selection.reason);
+        }
         let mut g = Gguf::open(path)?;
         let routed_device_cache = backend != Backend::Vulkan
             || g.meta.get("general.architecture").and_then(|v| v.as_str()) == Some("qwen4exp");
@@ -141,16 +244,17 @@ impl RuntimeModel {
         let tokenizer = Tokenizer::from_gguf(&source)?;
         let execution = match backend {
             Backend::Cpu => Execution::Cpu(Model::load(source.clone(), context)?),
-            Backend::Vulkan => Execution::Vulkan(GpuModel::load(
-                source.clone(),
-                context,
-                options.device_options()?,
-            )?),
+            Backend::Vulkan => {
+                Execution::Vulkan(GpuModel::load(source.clone(), context, resolved.device)?)
+            }
             Backend::Hybrid => {
-                let executor = Arc::new(GpuMatvecExecutor::new(options.device_options()?)?);
+                let executor = Arc::new(GpuMatvecExecutor::new(resolved.device)?);
                 let model = Model::load_with_executor(source.clone(), context, executor.clone())?;
                 executor.pin_dense(&source)?;
                 Execution::Hybrid { model, executor }
+            }
+            Backend::Auto => {
+                bail!("automatic backend policy was not resolved before model loading")
             }
         };
         let warmup = if options.expert_warmup && routed_device_cache {
@@ -163,6 +267,7 @@ impl RuntimeModel {
             source,
             tokenizer,
             backend,
+            selection: resolved.selection,
             host_plan,
             warmup,
         };
@@ -220,7 +325,9 @@ impl RuntimeModel {
     }
     pub fn report(&self) -> serde_json::Value {
         let execution = match &self.execution {
-            Execution::Cpu(_) => serde_json::json!({"backend":"cpu","fallback":"none"}),
+            Execution::Cpu(_) => {
+                serde_json::json!({"backend":"cpu","fallback":if self.selection.automatic {"auto_selection_cpu"} else {"none"}})
+            }
             Execution::Vulkan(m) => {
                 serde_json::json!({"backend":"vulkan","fallback":"no_implicit_backend_or_external_runtime_fallback", "expert_budget_policy":"Qwen3.8 retains all selected experts; device-budget CPU expert executions are counted in memory statistics", "adapter":m.adapter_info(),"memory":m.memory_stats()})
             }
@@ -229,6 +336,7 @@ impl RuntimeModel {
             }
         };
         serde_json::json!({"engine":crate::ENGINE_ID,"version":crate::ENGINE_VERSION,"config":self.config(),
+            "backend_selection":self.selection,
             "host_memory_plan":self.host_plan,"expert_warmup":self.warmup,
             "execution":execution,"mapped_weight_bytes":self.source.mapped_bytes(),"shards":self.source.shard_paths(),
             "expert_cache":self.source.expert_cache_stats().map(|s|serde_json::to_value(s).unwrap_or_default()).unwrap_or_else(|e|serde_json::json!({"error":e.to_string()})),"kv_precision":"F32"})
@@ -247,4 +355,110 @@ pub fn greedy(logits: &[f32]) -> Result<u32> {
         }
     }
     Ok(u32::try_from(best)?)
+}
+
+#[cfg(test)]
+mod backend_selection_tests {
+    use super::*;
+
+    fn args(backend: Backend) -> BackendArgs {
+        BackendArgs {
+            cpu: false,
+            backend: Some(backend),
+            device: None,
+            allow_software_vulkan: false,
+            vram_mib: 0,
+            expert_ram_mib: Some(0),
+            ram_margin_mib: 0,
+            expert_warmup: false,
+            state_slots: 1,
+        }
+    }
+
+    #[test]
+    fn auto_uses_compatible_adapter_and_pins_its_index() {
+        let result = args(Backend::Auto)
+            .resolve_with_probe(|options| {
+                assert!(!options.allow_software);
+                assert_eq!(options.device_index, None);
+                Ok(Some(2))
+            })
+            .unwrap();
+        assert_eq!(result.selection.requested, Backend::Auto);
+        assert_eq!(result.selection.selected, Backend::Vulkan);
+        assert_eq!(result.device.device_index, Some(2));
+        assert!(result.selection.automatic);
+    }
+
+    #[test]
+    fn auto_selects_cpu_when_no_compatible_adapter_exists() {
+        let result = args(Backend::Auto)
+            .resolve_with_probe(|_| Ok(None))
+            .unwrap();
+        assert_eq!(result.selection.selected, Backend::Cpu);
+        assert!(result.selection.reason.contains("No compatible hardware"));
+        assert!(result.selection.automatic);
+    }
+
+    #[test]
+    fn auto_reports_loader_unavailability() {
+        let result = args(Backend::Auto)
+            .resolve_with_probe(|_| bail!("Vulkan loader is missing"))
+            .unwrap();
+        assert_eq!(result.selection.selected, Backend::Cpu);
+        assert!(result.selection.reason.contains("Vulkan loader is missing"));
+    }
+
+    #[test]
+    fn auto_never_discards_explicit_gpu_settings() {
+        let mut explicit_device = args(Backend::Auto);
+        explicit_device.device = Some(9);
+        let mut explicit_budget = args(Backend::Auto);
+        explicit_budget.vram_mib = 512;
+        let mut explicit_software = args(Backend::Auto);
+        explicit_software.allow_software_vulkan = true;
+        for options in [explicit_device, explicit_budget, explicit_software] {
+            assert!(options.resolve_with_probe(|_| Ok(None)).is_err());
+            assert!(
+                options
+                    .resolve_with_probe(|_| bail!("invalid/unavailable GPU"))
+                    .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_backends_never_probe_for_an_automatic_fallback() {
+        for backend in [Backend::Cpu, Backend::Vulkan, Backend::Hybrid] {
+            let result = args(backend)
+                .resolve_with_probe(|_| panic!("explicit backend must not run automatic selection"))
+                .unwrap();
+            assert_eq!(result.selection.requested, backend);
+            assert_eq!(result.selection.selected, backend);
+            assert!(!result.selection.automatic);
+        }
+    }
+
+    #[test]
+    fn cpu_gpu_option_conflicts_and_missing_policy_still_fail() {
+        let mut cpu = args(Backend::Cpu);
+        cpu.device = Some(0);
+        assert!(cpu.selected().is_err());
+        let mut omitted = args(Backend::Auto);
+        omitted.backend = None;
+        assert!(omitted.selected().is_err());
+        omitted.cpu = true;
+        assert_eq!(omitted.selected().unwrap(), Backend::Cpu);
+    }
+
+    #[test]
+    fn overflowing_memory_option_fails_before_probe() {
+        let mut options = args(Backend::Auto);
+        options.vram_mib = usize::MAX;
+        let error = options
+            .resolve_with_probe(|_| panic!("invalid budget must not reach discovery"))
+            .err()
+            .unwrap();
+        assert!(error.to_string().contains("VRAM budget overflow"));
+    }
 }
