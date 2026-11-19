@@ -2192,7 +2192,7 @@ struct TunePrompt {
 fn token_digest(ids: &[u32]) -> String {
     let mut hash = Sha256::new();
     for id in ids { hash.update(id.to_le_bytes()); }
-    format!("{:x}", hash.finalize())
+    crate::hf::hex(&hash.finalize())
 }
 
 fn tuning_prompts(g: &Gguf, tok: &Tokenizer, options: &TuneOptions, ctx: usize) -> anyhow::Result<Vec<TunePrompt>> {
@@ -2218,7 +2218,7 @@ fn tuning_prompts(g: &Gguf, tok: &Tokenizer, options: &TuneOptions, ctx: usize) 
         anyhow::ensure!(!ids.is_empty(), "tuning prompt {name} tokenized to an empty sequence");
         anyhow::ensure!(ids.len().checked_add(options.tg).is_some_and(|n| n <= ctx),
             "tuning prompt {name} has {} tokens plus {} requested output tokens, exceeding context {ctx}; increase context or shorten the prompt/output", ids.len(), options.tg);
-        Ok(TunePrompt { name, rendered_sha256: format!("{:x}", Sha256::digest(rendered.as_bytes())),
+        Ok(TunePrompt { name, rendered_sha256: crate::hf::hex(&Sha256::digest(rendered.as_bytes())),
             token_ids_sha256: token_digest(&ids), prompt_tokens: ids.len(), ids })
     }).collect()
 }
@@ -2393,7 +2393,7 @@ fn routing_seed(model: &Model) -> anyhow::Result<Option<String>> {
     let mut bytes = Vec::new();
     file.take(64 * 1024 * 1024 + 1).read_to_end(&mut bytes)?;
     anyhow::ensure!(bytes.len() <= 64 * 1024 * 1024, "routing profile grew beyond the size limit");
-    Ok(Some(format!("{:x}", Sha256::digest(&bytes))))
+    Ok(Some(crate::hf::hex(&Sha256::digest(&bytes))))
 }
 
 fn write_tune_report(path: &Path, report: &serde_json::Value) -> anyhow::Result<()> {
