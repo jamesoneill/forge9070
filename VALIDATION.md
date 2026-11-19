@@ -14,6 +14,41 @@ records, with ephemeral workspace paths redacted. See the
 [evidence policy and history](docs/validation/README.md). These are historical
 results, separate from subsequent GitHub Actions runs.
 
+## Native GPU portability — 19 November 2026
+
+The capability-based selection update was tested on Linux x86_64 with the
+pinned Rust 1.100.0 toolchain and locked, offline dependencies. It adds an
+explicit `auto` policy, capability-filtered vendor-neutral Vulkan selection,
+CPU-only diagnostics and configuration/reporting support. The local standalone
+binary was a development build, not a release-performance benchmark.
+
+| Check | Local result |
+| --- | --- |
+| Native library and binary tests | 90 passed, 0 failed; 4 explicit external-template/software-Vulkan gates ignored |
+| New adapter and backend-selection tests within that total | 15 passed |
+| Standalone CLI with real synthetic CPU inference | 18 checks passed, including automatic CPU selection with Vulkan disabled |
+| HTTP/SSE, model switching, queues and cancellation | 28 checks passed |
+| Configuration API and persisted automatic policy | 56 checks passed; optional browser group skipped |
+| Existing UI helper checks | 13 passed |
+| Release provenance/archive regression checks | 13 passed |
+
+Automatic CPU inference produced the same tokens as explicit CPU and reserved
+the same host-state budget. Explicit GPU settings failed instead of silently
+selecting CPU, and malformed checkpoints remained errors. Adapter tests use
+synthetic capability snapshots; their AMD/NVIDIA/Intel names are not hardware
+execution evidence.
+
+The local machine exposes no Vulkan ICD. A separate Chromium attempt passed
+47 API checks before the environment denied the browser's process-singleton
+socket creation; no browser page or screenshot was produced. The existing CI
+gates cover Windows/Linux, Chromium interaction and software Vulkan. Read their
+actual result for the PR revision; a configured gate is not a passing result.
+Physical GPU execution, speed and full pretrained-model acceptance remain
+unverified. See [hardware support](docs/HARDWARE-SUPPORT.md) and the concise
+[portability validation record](docs/validation/gpu-portability-2026-11-19.json).
+
+The older records below are retained as historical evidence.
+
 ## Publication hardening — 18 November 2026
 
 The publication review corrected native Host validation for wildcard listeners:

@@ -26,17 +26,20 @@
 
 ---
 
-**Forge9070** is a local inference project built around the **AMD Radeon RX 9070 XT**.
-Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
+**Forge9070** is a local inference project that started with the **AMD Radeon RX 9070 XT**.
+Its independent Rust engine selects compatible Vulkan hardware by capabilities,
+with CPU execution available through an explicit automatic-selection policy.
+It combines Vulkan compute, bounded mixture-of-experts
 caches, a browser configuration panel and an OpenAI-compatible coding API.
 Windows and Linux launchers are included, with an explicit Windows-host route
-for WSL users.
+for WSL users. See [hardware support](docs/HARDWARE-SUPPORT.md) for the AMD,
+NVIDIA and Intel execution path and its validation limits.
 
 > [!IMPORTANT]
 > **Experimental, with evidence attached.** CPU and software-Vulkan tests are
 > recorded in [VALIDATION.md](VALIDATION.md). Full pretrained-model quality,
-> Windows GPU execution and RX 9070 XT throughput still require validation on
-> the target hardware. No token-rate claim is implied by a passing CI badge.
+> GPU execution across AMD, NVIDIA and Intel drivers, and target-card throughput,
+> still require hardware validation. No token-rate claim is implied by a passing CI badge.
 
 ## Watch the architecture walkthrough
 
@@ -55,6 +58,7 @@ remain to be measured. Passing CI does not establish those results.
 | Capability | What is implemented |
 | :--- | :--- |
 | **Independent Rust engine** | Model loading, sampling, CPU operations and native Vulkan shaders in `crates/forge-engine`; no Strata execution dependency for the standalone binary. |
+| **Capability-based hardware selection** | A shared Vulkan path for eligible GPUs, explicit CPU/Vulkan/hybrid choices and `--backend auto` with a reported selection reason. |
 | **Bounded MoE storage** | Owned expert RAM, a GPU expert cache, lazy PLE embedding rows and protected expert leases, informed by the Avalon source audit. |
 | **Every routed expert retained** | The native path computes every expert selected by the model. It does not omit expert tails for a speed headline. |
 | **A service you can configure** | Start without a model, scan complete GGUF shard sets, set context and memory limits, then save the configuration. |
@@ -88,14 +92,14 @@ scripts from a WSL network share can be blocked by Application Control.
 **Windows PowerShell**
 
 ```powershell
-.\target\release\forge-engine.exe serve --open-ui --backend vulkan `
+.\target\release\forge-engine.exe serve --open-ui --backend auto `
   --models-dir 'F:\Models' --settings-file '.\forge-service.json'
 ```
 
 **Linux**
 
 ```sh
-./target/release/forge-engine serve --open-ui --backend vulkan \
+./target/release/forge-engine serve --open-ui --backend auto \
   --models-dir /path/to/models --settings-file ./forge-service.json
 ```
 
@@ -104,6 +108,14 @@ Open **<http://127.0.0.1:9070/>**. Choose your actual model folder, select
 **Apply & load**. The panel can start before a model is available. The settings
 file saves successful configuration changes; an existing profile takes
 precedence over model/runtime command-line options.
+
+`auto` selects an eligible hardware Vulkan adapter, or CPU when one is unavailable.
+The status panel reports the actual backend and selection reason. An explicit
+device, nonzero VRAM cap or software-Vulkan testing option makes selection strict;
+model, shader, device-creation and allocation failures remain errors. Choose
+`--backend vulkan` when GPU execution is required. Run `forge-engine doctor`
+for native adapter eligibility; full details are in the
+[hardware guide](docs/HARDWARE-SUPPORT.md).
 
 <details>
 <summary><strong>Using WSL, or seeing llvmpipe?</strong></summary>
@@ -145,7 +157,9 @@ authentication, context limits and client behavior.
 > [!TIP]
 > **Use the correct command.** `forge-engine serve` and `forge9070 engine serve`
 > are the native service on port **9070**, with `--open-ui`.
-> `forge9070 serve` is the retained compatibility service on port **8080**.
+> `forge9070 serve` is the retained RX 9070 XT compatibility service on port **8080**.
+> `forge9070 doctor` also describes that compatibility path; use
+> `forge-engine doctor` or `forge9070 engine doctor` for native hardware discovery.
 > With `cargo run`, put `--` before `serve`.
 
 ## Choose a model
@@ -180,6 +194,7 @@ contexts can still make a configuration impractical. Start with the
 | Source | [`crates/forge-engine`](crates/forge-engine) | [`src`](src) and [`vendor/rusting-strata`](vendor/rusting-strata) |
 | Start | `forge-engine serve --open-ui` | `forge9070 serve` |
 | Default port | **9070** | **8080** |
+| Hardware selection | Eligible Vulkan hardware or CPU; optional `--backend auto` | RX 9070 XT GPU profile; explicit `--cpu` |
 | License | MIT, with retained third-party notices | RustingStrata License 1.0 |
 | Guide | [Native guide](docs/NATIVE-ENGINE.md) | [Compatibility guide](docs/COMPATIBILITY.md) |
 
