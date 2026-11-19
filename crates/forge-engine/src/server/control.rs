@@ -34,12 +34,13 @@ impl ServiceSettings {
     fn from_args(args: &ServeArgs) -> Result<Self> {
         let selected =
             if args.model.is_none() && !args.backend.cpu && args.backend.backend.is_none() {
-                Backend::Vulkan
+                Backend::Auto
             } else {
                 args.backend.selected()?
             };
         Ok(Self {
             backend: match selected {
+                Backend::Auto => "auto",
                 Backend::Cpu => "cpu",
                 Backend::Vulkan => "vulkan",
                 Backend::Hybrid => "hybrid",
@@ -60,10 +61,11 @@ impl ServiceSettings {
 
     fn backend(&self) -> Result<Backend> {
         Ok(match self.backend.as_str() {
+            "auto" => Backend::Auto,
             "cpu" => Backend::Cpu,
             "vulkan" => Backend::Vulkan,
             "hybrid" => Backend::Hybrid,
-            _ => bail!("backend must be cpu, vulkan or hybrid"),
+            _ => bail!("backend must be auto, cpu, vulkan or hybrid"),
         })
     }
 
@@ -605,14 +607,7 @@ pub(super) fn handle_control(
 ) -> Result<bool> {
     match (request.method.as_str(), request.path.as_str()) {
         ("GET", "/api/config") => json_response(stream, 200, &config_value(server))?,
-        ("GET", "/api/hardware") => match crate::vulkan::discover() {
-            Ok(report) => json_response(stream, 200, &report)?,
-            Err(error) => json_response(
-                stream,
-                503,
-                &error_value(&format!("Vulkan discovery failed: {error:#}")),
-            )?,
-        },
+        ("GET", "/api/hardware") => json_response(stream, 200, &crate::runtime::hardware_report())?,
         ("POST", "/api/models/scan") => {
             #[derive(Deserialize)]
             #[serde(deny_unknown_fields)]
