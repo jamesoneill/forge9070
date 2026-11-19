@@ -8,9 +8,10 @@ Start with the [project overview](../README.md) or go straight to the
 | Guide | Use it for |
 | --- | --- |
 | [Native engine](NATIVE-ENGINE.md) | Independent Rust engine, configuration UI, model discovery, API, Windows and WSL |
+| [Hardware support](HARDWARE-SUPPORT.md) | Native Vulkan eligibility across vendors, automatic selection, CPU execution and hardware-test limits |
 | [Model selection](QWEN3.8.md) | Exact Qwen3.8 GGUF revisions, shards, original and community variants |
 | [Architecture](ARCHITECTURE.md) | Request lifecycle, model storage and component boundaries |
-| [Compatibility application](COMPATIBILITY.md) | Earlier `forge9070 serve` and Strata commands, port 8080 |
+| [Compatibility application](COMPATIBILITY.md) | Earlier RX 9070 XT `forge9070 serve` and Strata commands, port 8080 |
 | [WSL details](WSL.md) | Environment diagnostics and compatibility-path launchers |
 
 ## Performance and correctness
