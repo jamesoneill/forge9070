@@ -34,7 +34,7 @@ if (-not (Test-Path -LiteralPath $ConfigDirectory -PathType Container)) {
 if (-not $ModelsDir -and (Test-Path -LiteralPath 'F:\' -PathType Container)) {
     $ModelsDir = 'F:\'
 }
-$EngineArguments = @('serve', '--backend', 'vulkan', '--settings-file', $SettingsFile, '--port', "$Port")
+$EngineArguments = @('serve', '--backend', 'auto', '--settings-file', $SettingsFile, '--port', "$Port")
 if ($ModelsDir) {
     if (-not (Test-Path -LiteralPath $ModelsDir -PathType Container)) {
         throw "The model folder does not exist: $ModelsDir"
