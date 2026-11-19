@@ -90,7 +90,7 @@
               <fieldset id="runtime-fields">
                 <legend class="sr-only">Runtime settings</legend>
                 <div class="form-grid">
-                  <div class="field"><label for="backend">Execution backend</label><select id="backend"><option value="vulkan">Vulkan · GPU</option><option value="cpu">CPU</option><option value="hybrid">Hybrid · diagnostic</option></select><p id="backend-help" class="field-help">Use Vulkan for the native GPU execution path.</p></div>
+                  <div class="field"><label for="backend">Execution backend</label><select id="backend"><option value="auto">Automatic · GPU or CPU</option><option value="vulkan">Vulkan · GPU</option><option value="cpu">CPU</option><option value="hybrid">Hybrid · diagnostic</option></select><p id="backend-help" class="field-help">Automatically use compatible GPU hardware, or CPU when none is available.</p></div>
                   <div class="field"><label for="device">Vulkan adapter</label><select id="device"><option value="">Automatic hardware selection</option></select><p class="field-help">Software adapters are not enabled by this console.</p></div>
                 </div>
                 <div class="form-divider"></div>
