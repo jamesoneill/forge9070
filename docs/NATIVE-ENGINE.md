@@ -8,7 +8,7 @@ available to the CLI and numerical tests.
 
 Use `forge-engine` or `forge9070 engine` to select this implementation. Existing
 root `forge9070 serve`, `generate`, `chat`, `bench` and browser commands continue
-to use the attributed compatibility engine. They do not silently become the
+to use the attributed RX 9070 XT compatibility engine. They do not silently become the
 new implementation. `cargo build -p forge-engine` builds the independent binary
 without compiling the Strata runtime. Its GGML codebook data is MIT-attributed
 in `crates/forge-engine/GGML-NOTICE.md`; existing distribution licences remain.
@@ -21,15 +21,29 @@ in `crates/forge-engine/GGML-NOTICE.md`; existing distribution licences remain.
 | Quantization | F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS |
 | Qwen3.8 | Hyper-connections, gated attention, DeltaNet recurrent state, QSA pooling/selection, lazy PLE histories, routed and shared experts |
 | CPU | Direct quantized rows, existing AVX2/FMA/F16C selection where implemented, reusable per-sequence working memory |
-| Vulkan | Packed weight kernels, device-owned model state, reusable command resources, independent sequences |
+| Vulkan | Capability-based adapter selection across vendors, packed weight kernels, device-owned model state, reusable command resources, independent sequences |
 | Native API | Chat Completions JSON/SSE, embedded model template, text/function-call histories, model catalogue and idle switching |
 | Configuration UI | Embedded browser panel, startup without a model, bounded folder scan, idle-only settings/load/unload and optional saved JSON profile |
 | Admission | One to four active requests, FIFO bounded wait queue, disconnect cancellation and deadlines |
 | Reuse | Exact executed-token prefix retains sequence state; unrelated histories reset state |
 | Numerical state | F32 KV and recurrent state; checkpoint quantization is retained |
 
-Every backend is explicit: `--backend cpu`, `--backend vulkan`, or
-`--backend hybrid`. `--cpu` is an alias for CPU. The hybrid backend is a
+Generation and benchmarking require an explicit policy: `--backend auto`,
+`--backend cpu`, `--backend vulkan`, or `--backend hybrid`. `--cpu` is an alias
+for CPU. `auto` selects eligible hardware Vulkan, or CPU when hardware discovery
+cannot supply a suitable adapter. The runtime reports the actual backend and
+selection reason. Explicit `--device`, nonzero `--vram-mib` or
+`--allow-software-vulkan` make `auto` strict: CPU fallback must not hide those
+settings. Model loading, device creation, shader and allocation failures remain
+errors. Explicit CPU, Vulkan and hybrid choices do not switch backends.
+
+The native Vulkan path uses device capabilities rather than an AMD model-name
+requirement. Eligible AMD, NVIDIA and Intel GPUs use the same kernels. Hardware
+execution and performance still need validation on each target configuration;
+this is not a promise that every GPU or model fits. See
+[hardware support and diagnostics](HARDWARE-SUPPORT.md).
+
+The hybrid backend is a
 diagnostic bridge with CPU state and cached GPU projections; its per-projection
 synchronization makes it unsuitable as the default performance route. The
 Vulkan Qwen3.8 path keeps state operations on the GPU and uses a bounded expert
@@ -49,6 +63,9 @@ The native server embeds its own HTML, CSS and JavaScript. It needs no frontend
 build, CDN or separate UI process. Both `forge-engine serve` and
 `forge9070 engine serve` expose it at `/`. A model is optional at startup, so
 you can find the files and configure the runtime before allocating GPU state.
+An unloaded service with no backend option starts with the `auto` policy.
+Existing saved profiles retain their selected policy and override runtime CLI
+settings; change the profile in the panel to adopt automatic selection.
 
 ### Windows
 
@@ -57,7 +74,7 @@ PowerShell in that project folder:
 
 ```powershell
 cargo build --release --locked -p forge-engine
-.\target\release\forge-engine.exe serve --open-ui --backend vulkan `
+.\target\release\forge-engine.exe serve --open-ui --backend auto `
   --models-dir 'F:\' --settings-file '.\forge-service.json'
 ```
 
@@ -107,8 +124,9 @@ to restore the previous configuration and model.
 
 ### What the panel controls
 
-- **Model and execution:** folder, selected GGUF checkpoint, backend and Vulkan
-  adapter. CPU and diagnostic hybrid execution are explicitly identified.
+- **Model and execution:** folder, selected GGUF checkpoint, execution policy and
+  Vulkan adapter. The panel distinguishes the configured policy from the actual
+  CPU, Vulkan or diagnostic hybrid execution and reports the selection reason.
 - **Context and output:** context window and default maximum response length.
   Responses must still fit inside the rendered prompt plus output budget.
 - **Admission:** one to four active requests, maximum queued requests and queue
@@ -272,7 +290,7 @@ result. Additional request states can evict unleased cache entries to fit.
 This release has no continuous batching, async CPU/GPU expert overlap, MTP or
 quantized KV. GPU queues share the physical card. Four independent requests can
 be active, but they compete for compute, memory bandwidth and cache capacity.
-Software-Vulkan parity validates computation, not AMD hardware speed.
+Software-Vulkan parity validates computation, not physical GPU speed on any vendor.
 
 ## Build on Windows and use from WSL
 
@@ -319,7 +337,9 @@ Native WSL GPU execution requires a real Vulkan device with the needed compute
 features. `/dev/dxg` alone is not proof. `llvmpipe` is rejected by default;
 `--allow-software-vulkan` exists only for explicit numerical diagnostics. It
 must not be used as a 9070 XT performance workaround. The native package does
-not initialize ROCm/HIP or install `amdgpu-dkms`.
+not initialize ROCm/HIP or install `amdgpu-dkms`. Use `--backend auto` to permit
+CPU execution when native WSL cannot expose eligible Vulkan hardware; use the
+Windows executable when the intended GPU is available only through Windows.
 
 ## Large coding projects and concurrency
 
@@ -373,7 +393,7 @@ requested tools and sends their results back.
 | `GET /api/config` | Effective runtime configuration, selected model and persistence status |
 | `POST /api/config` | Validate and apply settings/model changes while idle; optionally persist |
 | `POST /api/models/scan` | Read-only bounded folder scan with compatible models and rejection reasons |
-| `GET /api/hardware` | Vulkan discovery; no inference submitted |
+| `GET /api/hardware` | Vulkan adapter eligibility and rejection reasons; no inference submitted |
 | `GET /health` | Loaded/ready status |
 | `GET /v1/models` | Validated local MoE catalogue IDs |
 | `GET /v1/status` | Runtime, memory/cache counters and active/queued requests |
@@ -415,7 +435,7 @@ streaming is not claimed. Full queues return 429, queued timeouts 504, unavailab
 models 503, and invalid requests 400. Disconnected active or queued requests
 release their permits. Health/status requests do not acquire generation slots.
 
-## Measuring this card without substituting a synthetic result
+## Measuring the selected card
 
 Use a representative code prompt and the actual downloaded GGUF:
 
@@ -437,7 +457,7 @@ comes from prefill, so generated-token count can exceed decode calls by one.
 The synthetic tests check all logits, hidden/state vectors, quantized arithmetic,
 resets and independent requests. Header acceptance and those comparisons do not
 establish trained-model accuracy. Before calling this a fast production
-replacement, run the chosen model on the RX 9070 XT, compare full-vector outputs
+replacement, run the chosen model on the target GPU, compare full-vector outputs
 and useful code tasks, and measure one/two/four-request latency, memory and
 throughput after long prompts. See [VALIDATION.md](../VALIDATION.md) for exactly
 what was executed in this build.
