@@ -123,9 +123,9 @@ def dependency_notices(destination: Path, target: str) -> int:
 
 def usage(tag: str, engine_version: str, target: str) -> str:
     windows = target.endswith("windows-msvc")
-    command = (".\\forge-engine.exe serve --open-ui --backend vulkan --models-dir 'F:\\Models' "
+    command = (".\\forge-engine.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
                "--settings-file '.\\forge-service.json'" if windows else
-               "./forge-engine serve --open-ui --backend vulkan --models-dir \"$HOME/Models\" "
+               "./forge-engine serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
                "--settings-file ./forge-service.json")
     doctor = ".\\forge-engine.exe doctor" if windows else "./forge-engine doctor"
     return f"""# Forge9070 {tag} — independent native engine
@@ -145,7 +145,11 @@ open automatically, open that address yourself. Choose your model directory,
 the first shard of a complete compatible GGUF, and the runtime settings in the UI.
 Keep every shard of one checkpoint in the same directory.
 
-To inspect Vulkan adapters:
+Automatic mode chooses compatible Vulkan hardware, or CPU when no suitable
+adapter is available, and reports the choice. Existing saved profiles retain
+their settings. Explicit GPU choices and model-loading errors remain strict.
+
+To inspect CPU availability and Vulkan adapter requirements:
 
 ```{'powershell' if windows else 'bash'}
 {doctor}
