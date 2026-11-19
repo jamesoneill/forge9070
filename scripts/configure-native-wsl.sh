@@ -24,9 +24,10 @@ Examples:
     --windows-exe /mnt/c/code/forge9070/target/release/forge-engine.exe \
     --models-dir /mnt/f/Models
 
-The UI can open without a model or working GPU. Loading with Vulkan still
-requires a real compatible adapter. Windows mode runs inference on Windows;
-native Linux mode does not make an llvmpipe-only WSL GPU setup usable.
+New profiles use auto: a compatible hardware Vulkan adapter, otherwise CPU
+with the reason reported in the UI. Existing profiles keep their settings.
+Windows mode runs inference on Windows; native Linux mode uses only devices
+exposed to WSL. Auto on an llvmpipe-only WSL setup selects real CPU execution.
 EOF
 }
 
@@ -94,7 +95,7 @@ if $windows_mode; then
 else
     printf '%s\n' 'Running the native Linux inference process. Scan for models and choose a backend in the UI.'
 fi
-engine_args=(serve --backend vulkan --settings-file "$settings_file" --port "$port")
+engine_args=(serve --backend auto --settings-file "$settings_file" --port "$port")
 if [[ -n "$models_dir" ]]; then engine_args+=(--models-dir "$models_dir"); fi
 if $open_browser; then engine_args+=(--open-ui); fi
 exec "$binary" "${engine_args[@]}"
