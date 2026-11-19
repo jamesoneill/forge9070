@@ -51,7 +51,7 @@ pub fn file_identity(path: &Path, metadata: &Metadata) -> Result<String> {
     field(&mut hash, &[before_epoch]);
     field(&mut hash, &elapsed.as_secs().to_le_bytes());
     field(&mut hash, &elapsed.subsec_nanos().to_le_bytes());
-    Ok(format!("{:x}", hash.finalize()))
+    Ok(crate::hf::hex(&hash.finalize()))
 }
 
 /// Combine identities in their supplied order, with domain and length framing.
@@ -65,7 +65,7 @@ where
     field(&mut hash, b"forge9070-cache-identity-v1");
     field(&mut hash, domain.as_bytes());
     for identity in identities { field(&mut hash, identity.as_ref().as_bytes()); }
-    format!("{:x}", hash.finalize())
+    crate::hf::hex(&hash.finalize())
 }
 
 #[cfg(test)]
@@ -150,6 +150,8 @@ mod tests {
 
     #[test]
     fn combined_keys_preserve_domain_order_and_boundaries() {
+        // Preserve the on-disk key format across digest dependency upgrades.
+        assert_eq!(combine_identities("shards", ["a", "b"]), "df5d5a499eeb8bbebb093d0f24c3c06fa3a3c44b6acc7b58a65762a82ccf448c");
         assert_ne!(combine_identities("shards", ["a", "bc"]), combine_identities("shards", ["ab", "c"]));
         assert_ne!(combine_identities("shards", ["a", "b"]), combine_identities("shards", ["b", "a"]));
         assert_ne!(combine_identities("shards", ["a", "b"]), combine_identities("companion", ["a", "b"]));
