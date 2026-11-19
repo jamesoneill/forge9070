@@ -1,6 +1,6 @@
-# Forge9070 documentation
+# ForgeAI documentation
 
-Start with the [project overview](../README.md) or go straight to the
+Start with the [ForgeAI launch page](../site/index.html), [rename/compatibility guide](RENAME.md), or [project overview](../README.md) or go straight to the
 [native engine guide](NATIVE-ENGINE.md).
 
 ## Run and configure
