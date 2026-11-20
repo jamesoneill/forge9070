@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+<title id="title">Nextora</title><desc id="desc">A geometric six-sided orbit surrounding a flowing N monogram, with a bright teal node.</desc>
+<path d="M60 9 L104 34 L104 85 L60 110 L16 85 L16 34 Z" fill="none" stroke="#b99aff" stroke-width="7" stroke-linejoin="round"/>
+<path d="M36 81 V39 L84 81 V39" fill="none" stroke="#6ee7d4" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="60" cy="9" r="7" fill="#6ee7d4"/>
+</svg>
