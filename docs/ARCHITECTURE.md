@@ -1,6 +1,6 @@
 # Native engine architecture
 
-ForgeAI contains an independent native engine and a retained compatibility
+Nextora contains an independent native engine and a retained compatibility
 application. This page describes `forge-engine` 0.2.1. The native service is
 also reachable through `forge9070 engine` (legacy CLI); ordinary `forge9070 serve` selects
 the compatibility service.
