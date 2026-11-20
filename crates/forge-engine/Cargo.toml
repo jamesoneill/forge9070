@@ -4,7 +4,7 @@ default-run = "forge-engine"
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.100"
-description = "ForgeAI native Rust CPU and Vulkan inference engine"
+description = "Nextora native Rust CPU and Vulkan inference engine"
 license = "MIT"
 publish = false
 
@@ -29,4 +29,8 @@ path = "src/main.rs"
 
 [[bin]]
 name = "forgeai"
+path = "src/main.rs"
+
+[[bin]]
+name = "nextora"
 path = "src/main.rs"
