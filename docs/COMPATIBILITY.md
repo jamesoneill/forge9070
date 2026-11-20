@@ -1,4 +1,6 @@
-# Compatibility application guide
+# ForgeAI compatibility — legacy Forge9070 commands
+
+The former project name remains in CLI, package and filesystem identifiers to avoid breaking existing integrations. See [the rename guide](RENAME.md).
 
 This guide documents the retained `forge9070` compatibility commands, using
 RustingStrata. For the independent engine and configuration UI, start with the
