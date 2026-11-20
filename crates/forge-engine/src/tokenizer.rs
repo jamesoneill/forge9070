@@ -12,7 +12,7 @@
 use crate::gguf::{Gguf, Value};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::collections::{BTreeSet, HashMap, HashSet};
-use tokenizers::models::bpe::BPE;
+use tokenizers::models::bpe::{BPE, Vocab};
 use tokenizers::pre_tokenizers::{
     byte_level::ByteLevel,
     sequence::Sequence,
@@ -189,7 +189,7 @@ impl Tokenizer {
             !spellings.is_empty() && spellings.len() <= u32::MAX as usize,
             "vocabulary must contain between 1 and u32::MAX tokens"
         );
-        let mut vocabulary = HashMap::with_capacity(spellings.len());
+        let mut vocabulary = Vocab::with_capacity(spellings.len());
         for (index, spelling) in spellings.iter().enumerate() {
             ensure!(
                 !spelling.is_empty(),
@@ -285,7 +285,8 @@ impl Tokenizer {
         bpe.with_decoder(Some(tokenizers::decoders::byte_level::ByteLevel::default()));
         // register_literal_tokens keeps existing GGUF IDs; it does not append a
         // separate vocabulary. USER_DEFINED tokens stay non-special literals.
-        bpe.add_tokens(&literal_tokens);
+        bpe.add_tokens(literal_tokens)
+            .map_err(|error| anyhow!("cannot register GGUF literal tokens: {error}"))?;
         ensure!(
             bpe.get_vocab_size(true) == spellings.len(),
             "literal token registration changed the vocabulary size"
