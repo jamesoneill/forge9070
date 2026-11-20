@@ -10,7 +10,7 @@ The Nextora mark is a six-sided orbit enclosing a connected **N** monogram. It r
 | --- | --- |
 | [Nextora vector logo](assets/nextora-logo.svg) | Current product mark for documentation and launch page |
 | [Nextora logo](assets/nextora-logo.svg) | Retained for historical references |
-| [Nextora logo](assets/nextora-cli-logo.svg) | Retained for existing URLs and documentation |
+| [Nextora logo](assets/nextora-logo.svg) | Retained for existing URLs and documentation |
 
 ## Palette
 

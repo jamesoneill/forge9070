@@ -155,10 +155,10 @@ class ArchiveIntegrity(unittest.TestCase):
         self.stages = {}
         for target in sorted(package.TARGETS):
             windows = target.endswith("windows-msvc")
-            stem = f"nextora-cli-v0.9.1-{target}"
+            stem = f"nextora-v0.9.1-{target}"
             stage = self.root / stem
             stage.mkdir()
-            binary = stage / ("nextora-engine.exe" if windows else "nextora-engine")
+            binary = stage / ("nextora.exe" if windows else "nextora")
             binary.write_bytes(b"Synthetic archive integrity fixture; not an executable.")
             manifest = {"project_version": "0.9.1", "engine_version": self.engine_version,
                         "tag": "v0.9.1", "commit": COMMIT, "target": target,
@@ -194,7 +194,7 @@ class ArchiveIntegrity(unittest.TestCase):
 
     def test_tampered_executable_is_rejected_even_with_fresh_archive_checksum(self):
         target = "x86_64-unknown-linux-gnu"
-        (self.stages[target] / "nextora-engine").write_bytes(b"modified executable")
+        (self.stages[target] / "nextora").write_bytes(b"modified executable")
         self.write_archive(target)
         with self.assertRaisesRegex(ValueError, "Executable checksum mismatch"):
             self.verify()
@@ -228,7 +228,7 @@ class ArchiveIntegrity(unittest.TestCase):
                     self.assertTrue(all("\\" not in name for name in data.namelist()))
             else:
                 with tarfile.open(archive) as data:
-                    binary = data.getmember(self.stages[target].name + "/nextora-engine")
+                    binary = data.getmember(self.stages[target].name + "/nextora")
                     self.assertEqual(binary.mode, 0o755)
                     self.assertEqual((binary.uid, binary.gid), (0, 0))
 

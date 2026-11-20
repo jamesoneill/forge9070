@@ -125,9 +125,9 @@ def usage(tag: str, engine_version: str, target: str) -> str:
     windows = target.endswith("windows-msvc")
     command = (".\\nextora-engine.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
                "--settings-file '.\\forge-service.json'" if windows else
-               "./nextora-engine serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
+               "./nextora serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
                "--settings-file ./forge-service.json")
-    doctor = ".\\nextora-engine.exe doctor" if windows else "./nextora-engine doctor"
+    doctor = ".\\nextora-engine.exe doctor" if windows else "./nextora doctor"
     return f"""# Nextora {tag} — independent native engine
 
 Engine version: **{engine_version}**. Target: **{target}**.
@@ -173,7 +173,7 @@ or hardware token rates. See the source repository's validation documentation.
 
 ## Contents and attribution
 
-This archive contains `nextora-engine`, its embedded configuration UI and shaders,
+This archive contains `nextora`, its embedded configuration UI and shaders,
 the engine MIT license, GGML attribution, resolved dependency notices, and a
 build manifest. It does not contain model weights, the compatibility frontend,
 or the RustingStrata runtime. The complete source repository has separate
@@ -209,7 +209,7 @@ def archive(source: Path, output: Path, windows: bool, *, epoch: int) -> Path:
                     info.uid = info.gid = 0
                     info.uname = info.gname = ""
                     info.mtime = epoch
-                    info.mode = 0o755 if item.is_dir() or item.name == "nextora-engine" else 0o644
+                    info.mode = 0o755 if item.is_dir() or item.name == "nextora" else 0o644
                     if item.is_file():
                         with item.open("rb") as data:
                             handle.addfile(info, data)
@@ -229,7 +229,7 @@ def main() -> None:
     engine_version = version(ROOT / "crates/nextora-engine/Cargo.toml")
     binary = args.binary.resolve(strict=True)
     actual_version = run(str(binary), "--version")
-    if actual_version != f"nextora-engine {engine_version}":
+    if actual_version != f"nextora {engine_version}":
         raise ValueError(f"Unexpected executable version: {actual_version!r}")
     rustflags = os.environ.get("RUSTFLAGS", "")
     if os.environ.get("CARGO_ENCODED_RUSTFLAGS"):
@@ -237,11 +237,11 @@ def main() -> None:
     validate_rustflags(rustflags, args.target)
     windows = args.target.endswith("windows-msvc")
     epoch = int(run("git", "show", "-s", "--format=%ct", commit))
-    stem = f"nextora-cli-{args.tag}-{args.target}"
+    stem = f"nextora-{args.tag}-{args.target}"
     with tempfile.TemporaryDirectory(prefix="nextora-release-") as temporary:
         stage = Path(temporary) / stem
         stage.mkdir()
-        executable = stage / ("nextora-engine.exe" if windows else "nextora-engine")
+        executable = stage / ("nextora.exe" if windows else "nextora")
         shutil.copy2(binary, executable)
         executable.chmod(0o755)
         shutil.copyfile(ROOT / "crates/nextora-engine/LICENSE-MIT", stage / "LICENSE-MIT")

@@ -68,11 +68,11 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-            executable: nextora-engine
+            executable: nextora
             rustflags: '-C target-cpu=x86-64'
           - os: windows-2025
             target: x86_64-pc-windows-msvc
-            executable: nextora-engine.exe
+            executable: nextora.exe
             rustflags: '-C target-cpu=x86-64 -C target-feature=+crt-static'
     env:
       RUSTFLAGS: ${{ matrix.rustflags }}
@@ -107,7 +107,7 @@ jobs:
         env:
           NEXTORA_BINARY: target/${{ matrix.target }}/release/${{ matrix.executable }}
         run: |
-          python scripts/validate-nextora-engine.py --binary "$NEXTORA_BINARY" --output artifacts/release-cli.json
+          python scripts/validate-nextora.py --binary "$NEXTORA_BINARY" --output artifacts/release-cli.json
           python scripts/validate-native-api.py --binary "$NEXTORA_BINARY" --output artifacts/release-api.json
           python scripts/validate-native-ui.py --binary "$NEXTORA_BINARY" --output artifacts/release-ui.json
       - name: Package binary, usage guide, licenses and checksums

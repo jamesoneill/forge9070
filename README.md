@@ -82,14 +82,14 @@ GPU execution also needs a working Vulkan driver exposing the required device
 features. Ordinary builds use the checked-in shader binaries.
 
 ```sh
-git clone https://github.com/jamesoneill/forge9070.git
-cd nextora-cli
+git clone https://github.com/jamesoneill/forge9070.git nextora
+cd nextora
 cargo build --release --locked -p nextora-engine
-# produces nextora, nextora and nextora-engine executable entry points
+# produces the nextora executable
 ```
 
 On Windows, clone onto a **local Windows drive**, for example
-`C:\code\nextora-cli`, and build in Windows PowerShell. Executing Windows build
+`C:\code\nextora`, and build in Windows PowerShell. Executing Windows build
 scripts from a WSL network share can be blocked by Application Control.
 
 ### 2. Open the configuration panel
@@ -104,7 +104,7 @@ scripts from a WSL network share can be blocked by Application Control.
 **Linux**
 
 ```sh
-./target/release/nextora-engine serve --open-ui --backend auto \
+./target/release/nextora serve --open-ui --backend auto \
   --models-dir /path/to/models --settings-file ./forge-service.json
 ```
 
@@ -124,7 +124,7 @@ the Windows binary first, then run:
 
 ```sh
 bash scripts/configure-native-wsl.sh \
-  --windows-exe /mnt/c/code/nextora-cli/target/release/nextora-engine.exe \
+  --windows-exe /mnt/c/code/nextora/target/release/nextora.exe \
   --models-dir /mnt/f/Models
 ```
 
@@ -154,8 +154,8 @@ batching or a four-times speed guarantee. See the
 authentication, context limits and client behavior.
 
 > [!TIP]
-> **Use the native command.** `nextora serve`, `nextora serve`,
-> `nextora-engine serve` and `nextora-cli serve` enter the same service on port
+> **Use the native command.** `nextora serve`,
+> `nextora-cli serve` enter the same service on port
 > **9070**, with `--open-ui`. The former `nextora-cli engine` prefix is retired.
 > With `cargo run`, put `--` before `serve`.
 

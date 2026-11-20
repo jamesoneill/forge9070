@@ -74,10 +74,10 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            executable: nextora-engine
+            executable: nextora
             frontend: nextora-cli
           - os: windows-2025
-            executable: nextora-engine.exe
+            executable: nextora.exe
             frontend: nextora-cli.exe
     defaults:
       run:
@@ -103,7 +103,7 @@ jobs:
       - name: Build native engine and legacy command alias
         run: cargo build --release --locked -p nextora-engine -p nextora-cli
       - name: Check CLI execution with synthetic models
-        run: python scripts/validate-nextora-engine.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
+        run: python scripts/validate-nextora.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
       - name: Check HTTP, streaming, queues and cancellation
         run: python scripts/validate-native-api.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-api.json
       - name: Check configuration UI API and persisted settings
@@ -138,7 +138,7 @@ jobs:
           NEXTORA_VULKAN_TEST: '1'
         # Hosted software Vulkan checks correctness; allow its four simultaneous
         # requests to finish without treating this as a hardware speed target.
-        run: python scripts/validate-native-gpu-api.py --binary target/release/nextora-engine --request-timeout 600 --output artifacts/ci-vulkan-api.json
+        run: python scripts/validate-native-gpu-api.py --binary target/release/nextora --request-timeout 600 --output artifacts/ci-vulkan-api.json
       - name: Parse Windows launch scripts
         if: runner.os == 'Windows'
         shell: pwsh
