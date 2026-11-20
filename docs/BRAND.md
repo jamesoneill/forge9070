@@ -1,47 +1,29 @@
-# ForgeAI brand
+# Nextora — visual identity
 
-The identity combines an angular **F**, three interlocking planes and a square
-spark. It reflects the project's name and its focus on explicit, inspectable
-compute. It does not incorporate AMD, Rust, Qwen or Avalon corporate marks.
+**Nextora** is the current public brand for the Rust-based local inference engine. ForgeAI and Forge9070 are historical names retained for compatibility.
 
-## Assets
+## Identity
 
-| File | Use and publication status |
+The Nextora mark is a six-sided orbit enclosing a connected **N** monogram. It represents hardware-independent routing and local inference. The palette deliberately separates Nextora from the original Forge project's orange visual language.
+
+| Asset | Use |
 | --- | --- |
-| [Vector logo](assets/forge9070-logo.svg) | Sharp, scalable mark for documentation and small icons |
-| `assets/forge9070-logo.png` | Pending publication: transparent logo for raster applications and presentation layouts |
-| `assets/forge9070-banner.png` | Pending publication: repository introduction and wide announcement artwork |
-| `assets/forge9070-social.jpg` | Pending publication: compact JPEG social preview |
-| `assets/forge9070-social.png` | Pending publication: PNG social preview |
+| [Nextora vector logo](assets/nextora-logo.svg) | Current product mark for documentation and launch page |
+| [ForgeAI logo](assets/forgeai-logo.svg) | Retained for historical references |
+| [Forge9070 logo](assets/forge9070-logo.svg) | Retained for existing URLs and documentation |
 
-The README and website use the published SVG mark with the project title and tagline as
-live text. The four raster files will be linked here when they are published.
+## Palette
 
-Preserve the mark's proportions. Keep at least one spark-width of clear space
-around it. Use the vector at small sizes. Place the full-color logo on charcoal
-or a neutral light background; avoid busy imagery and additional glow effects.
-
-## Palette and typography
-
-| Role | Color |
+| Role | Value |
 | --- | --- |
-| Forge orange | `#F46A3C` |
-| Spark amber | `#FFAB62` |
-| Burnt orange | `#BA3E20` |
-| Charcoal background | `#10151D` |
-| Warm white | `#F1F3F5` |
-| Muted slate | `#8995A8` |
+| Orbit violet | `#B99AFF` |
+| Signal teal | `#6EE7D4` |
+| Deep indigo | `#0C1018` |
+| Main text | `#F5F6F8` |
+| Supporting text | `#AAB4C6` |
 
-Documentation uses the reader's GitHub/system typography. Keep headings short,
-use monospace for commands and paths, and communicate capability and validation
-status in text rather than decorative badges alone.
+Keep the mark sharp, high contrast, and surrounded by clear space. Use text for capability and test status; do not imply all GPUs are supported merely because the brand is hardware-neutral.
 
-## Creation and reuse
+## Attribution
 
-The raster logo and banner were created for this project with the built-in
-image-generation tool. The SVG is a clean geometric interpretation of that
-mark. [The prompt record](assets/brand-prompts.md) describes the generation
-briefs. Published original project artwork is provided under the
-[included MIT terms](assets/LICENSE-MIT); third-party names and marks retain
-their own terms. Artwork does not imply hardware vendor endorsement or
-validated model performance.
+The new mark is an original geometric vector in this repository. It does not incorporate any hardware vendor or model publisher logos. Existing original artwork remains available under [its MIT terms](assets/LICENSE-MIT). Third-party notices and source attribution are unchanged.
