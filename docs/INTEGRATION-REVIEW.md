@@ -1,18 +1,29 @@
-# Integration review — ForgeAI staged GPU portability
+# ForgeAI integration review
 
-This is a **merge reconciliation** against main commit `9478e6b45c6e47442e57f05dfedadff1d74536d4`, which already includes PR #8. The staging PR incorporates the GPU-portability diff from #7 while preserving ForgeAI branding, the executable alias and governance content already on main. It does **not** claim to have unified the application or imported the earlier unpublished native GLM/cache changes.
+The single-runtime refactor is on draft PR #9. It includes the GPU portability
+logic from PR #7, the ForgeAI branding already merged through PR #8,
+automatic Rust host-cache resizing, and migration of the old root command
+alias and context packer onto the independent native engine.
 
-## Included
-- Source/runtime/CLI/UI/scripts/CI evidence from PR #7.
-- ForgeAI brand and static page **from main**, not duplicate content from #8.
-- Hardware and architecture documentation merged by hand to preserve the new project name.
-- No additional merge permission, build target or C++ inference backend.
+The root no longer links RustingStrata; the vendored source, retired
+launcher/test files and old Cargo dependencies have been removed.
+Original upstream licence text and attribution are retained separately.
 
-## Required before merge
-1. Recover and integrate the original native single-service, cache controller and GLM/Llama/Qwen2 graph sources; currently unavailable on the public repository.
-2. Eliminate the retained Strata compatibility service, preserve applicable licence/notice obligations, and converge on one executable/runtime.
-3. Reconcile auto-device selection with architecture-specific CPU-only graphs, and validate failed load rollback, concurrent state, eviction and strict security.
-4. Run branch-specific CI (Windows, Linux, source/shader, native numerical and service suites) and then execute real model/hardware acceptance separately.
-5. Confirm the live branch ruleset: it currently permits a GitHub integration to bypass update restrictions through pull requests as well as the repository owner. Restoring owner-only bypass requires a separately approved ruleset change.
+## Validation and release blockers
 
-The reconciled branch is a **staging PR**, not merge-ready. Do not merge this independently alongside #7.
+1. The required Windows/Linux source, native, API, Vulkan, UI and release
+   gates must pass **on this exact head**. CI of an earlier head is not enough.
+2. Complete pretrained checkpoint acceptance, physical GPU throughput and
+   target Windows/WSL hardware execution remain unverified.
+3. The earlier native GLM/Llama/Qwen2 graphs were written in an unpublished
+   prior workspace; those exact sources and their numerical evidence have not
+   been integrated. Only advertised architectures are supported.
+4. Auditing old documentation and model-profile migrations is required before
+   telling existing users that all old provider options still work.
+5. Live main-branch ruleset permits a GitHub integration PR bypass in addition
+   to the owner. The connector cannot update this ruleset; exclusive owner-only
+   merge authority must be configured separately.
+
+Do **not** auto-merge or mark the draft ready until the owner reviews the
+completed checks. All executable names route to the same Rust engine;
+the 8080 Strata service is gone.

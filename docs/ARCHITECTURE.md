@@ -80,7 +80,8 @@ the inference service does not execute arbitrary client tools.
 
 The native crate is [`crates/forge-engine`](../crates/forge-engine).
 Server control and UI code are under its `src/server` and `src/ui` directories.
-The root [`src`](../src) holds the compatibility frontend and hardware profile;
-[`vendor/rusting-strata`](../vendor/rusting-strata) retains the pinned upstream
-engine and its original terms. [Third-party notices](../THIRD_PARTY_NOTICES.md)
-explain those licensing boundaries.
+The historical command alias lives at [`src/main.rs`](../src/main.rs),
+while the bounded local context packer remains at
+[`src/code_context.rs`](../src/code_context.rs) and compiles into the native
+crate. The old Strata runtime has been deleted. Historical attribution and
+licence text are retained in [third-party notices](../THIRD_PARTY_NOTICES.md).
