@@ -9,16 +9,16 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 }
 Push-Location $ProjectRoot
 try {
-    $BuildArgs = @('build', '--locked')
+    $BuildArgs = @('build', '--locked', '-p', 'forge-engine', '-p', 'forge9070')
     if (-not $DebugBuild) { $BuildArgs += '--release' }
     & cargo @BuildArgs
     if ($LASTEXITCODE -ne 0) { throw 'Cargo build failed. Confirm the Visual Studio C++ Build Tools and Windows SDK are installed.' }
     $Profile = if ($DebugBuild) { 'debug' } else { 'release' }
-    $Executable = Join-Path $ProjectRoot "target\$Profile\forge9070.exe"
+    $Executable = Join-Path $ProjectRoot "target\$Profile\forgeai.exe"
     & $Executable doctor
     if ($LASTEXITCODE -ne 0) { throw 'The hardware diagnostic command failed.' }
     Write-Host "Built $Executable"
-    Write-Host 'Uses RustingStrata by Vasyl Trefilov.'
+    Write-Host 'ForgeAI native Rust runtime. RustingStrata credited as historical inspiration.'
 } finally {
     Pop-Location
 }

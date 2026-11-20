@@ -45,8 +45,7 @@ shards and its tokenizer/template metadata.
 ## Configure the service in a browser
 
 The native server embeds its own HTML, CSS and JavaScript. It needs no frontend
-build, CDN or separate UI process. Both `forge-engine serve` and
-`forge9070 engine serve` expose it at `/`. A model is optional at startup, so
+build, CDN or separate UI process. All executable names enter one native service, exposed at `/`. A model is optional at startup, so
 you can find the files and configure the runtime before allocating GPU state.
 
 ### Windows

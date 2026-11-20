@@ -1,19 +1,24 @@
-# Runtime consolidation status
+# Native-only application consolidation
 
-The root `forge9070` Cargo package is now a thin native-engine CLI alias. Its
-runtime no longer imports `rusting_strata`. The `forge-engine` crate owns
-the only execution pipeline, model state, queue, API and Vulkan/CPU backends.
+ForgeAI now exposes **one native Rust inference implementation**. The
+`forgeai` and `forge-engine` binaries share the native crate entry point.
+The `forge9070` binary is a thin CLI shim calling that same crate.
 
-The previous standalone repository-context utility is available as
-`forgeai context --repo <path> --query <text>` and from either alias.
-Its source remains `src/code_context.rs` but is compiled into the native
-library and shares Forge's GGUF tokenizer for exact counts.
+There is no Strata runtime dependency, provider execution path or second
+HTTP server. The default native service runs on port 9070 and manages
+Vulkan/CPU selection and bounded expert caching in Rust. The old Strata
+service on port 8080 and its CLI-only features were intentionally retired.
 
-**Pending:** The vendored RustingStrata source tree remains as historical
-source until the lockfile, third-party licence inventory, and build/test
-dependencies are verified and it can be removed safely. It is not a workspace
-member or runtime dependency. The earlier unpublished GLM, Llama, Qwen2 model
-graphs are not imported here; only existing native architectures are supported.
+The bounded, Git-tracked local source-context packer is compiled into the
+native library and available as `forgeai context --repo PATH --query TEXT`.
+An optional `--model` supplies the native GGUF tokenizer for exact counts.
 
-Do not claim release readiness until branch-specific Windows/Linux CI and the
-release-notice audit succeed.
+Historical Strata attribution and upstream licence receipts are preserved,
+but the vendored source tree is no longer part of the repository.
+
+**Limits:** The native-model work from the earlier unpublished local branch
+(Qwen2, Llama, GLM-5.2) has not been incorporated. Supported native GGUF
+architectures remain those explicitly listed by `forgeai capabilities`.
+A passing CI run does not certify pretrained model output or physical GPU
+throughput. The live repository rulesets require separate audit to enforce
+exclusive owner-only merge authority.

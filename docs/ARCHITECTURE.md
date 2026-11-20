@@ -1,9 +1,8 @@
 # Native engine architecture
 
-ForgeAI contains an independent native engine and a retained compatibility
-application. This page describes `forge-engine` 0.2.1. The native service is
-also reachable through `forge9070 engine` (legacy CLI); ordinary `forge9070 serve` selects
-the compatibility service.
+ForgeAI contains **one native Rust inference runtime**, with historical
+`forge9070` and `forge-engine` executable aliases entering the same implementation.
+The Strata compatibility service and port 8080 have been retired.
 
 ## Execution policy and hardware
 

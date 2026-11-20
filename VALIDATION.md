@@ -1,4 +1,4 @@
-# Forge9070 0.9.1 validation record
+> **Migration note (20 November 2026):** The previous native/Strata parity reports in this file describe the earlier two-runtime repository. The current PR #9 removes the Strata runtime and relies on independent native numerical tests. New merged-branch CI is required before treating the consolidation as validated.\n\n# Forge9070 0.9.1 validation record
 
 Validated 17 November 2026. The independent package is `forge-engine` 0.2.1;
 the encompassing project is Forge9070 0.9.1.

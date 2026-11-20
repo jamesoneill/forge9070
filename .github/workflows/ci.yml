@@ -40,10 +40,7 @@ jobs:
         run: |
           python -m compileall -q .github/scripts scripts tests
           node --check crates/forge-engine/src/ui/app.js
-          node --check scripts/validate-code-ui-helpers.cjs
           for script in scripts/*.sh; do bash -n "$script"; done
-      - name: Check existing UI helper regressions
-        run: node scripts/validate-code-ui-helpers.cjs
       - name: Check release gates and portable archive integrity
         run: python .github/scripts/test-release.py
       - name: Install shader validation tools

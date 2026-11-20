@@ -183,20 +183,23 @@ weights to move through host memory and GPU memory, while cold reads and large
 contexts can still make a configuration impractical. Start with the
 [model guide](docs/QWEN3.8.md) and the native memory controls.
 
-## Two clearly separated paths
+## One Rust application
 
-| | Native engine — primary path | Compatibility application |
-| :--- | :--- | :--- |
-| Package | `forge-engine` **0.2.1** | `forge9070` **0.9.1** |
-| Source | [`crates/forge-engine`](crates/forge-engine) | [`src`](src) and [`vendor/rusting-strata`](vendor/rusting-strata) |
-| Start | `forge-engine serve --open-ui` | `forge9070 serve` |
-| Default port | **9070** | **8080** |
-| License | MIT, with retained third-party notices | RustingStrata License 1.0 |
-| Guide | [Native guide](docs/NATIVE-ENGINE.md) | [Compatibility guide](docs/COMPATIBILITY.md) |
+All three documented executable names enter the **same native Rust inference
+service**, sharing a single GGUF loader, cache manager, scheduler and API.
+`forgeai` is the public-facing name, `forge-engine` is the native package's
+original executable, and `forge9070` is a thin historical command alias.
+There is no separate Strata serving backend or port 8080.
 
-The compatibility path retains the earlier Hugging Face browser/downloader,
-repository-context tooling and Strata features. Its architecture restrictions,
-API options and concurrency behavior differ from the independent engine.
+```sh
+cargo build --release --locked -p forge-engine -p forge9070
+./target/release/forgeai serve --open-ui --backend auto
+```
+
+The native `context` command preserves the local tracked-file source packer.
+See [migration](docs/COMPATIBILITY.md) for unsupported former Strata commands,
+and [native runtime](docs/NATIVE-ENGINE.md) for the supported API and model
+architectures. Only the native configurations are supported.
 
 ## Engineering principles
 
@@ -219,8 +222,8 @@ records the actual relationship to the reference project.
 | Path | Purpose |
 | :--- | :--- |
 | [`crates/forge-engine/`](crates/forge-engine) | Independent inference runtime, Vulkan kernels and embedded service UI |
-| [`src/`](src) | RX 9070 XT profile and retained compatibility commands |
-| [`vendor/`](vendor) | Pinned third-party source and attribution |
+| [`src/`](src) | Historical CLI alias and shared local repository context packer |
+| [`vendor/`](vendor) | Historical Avalon policy notice; Strata runtime source removed |
 | [`scripts/`](scripts) | Launchers, validators and release helpers |
 | [`tests/`](tests) | Original fixtures and repeatable regression checks |
 | [`docs/`](docs/README.md) | Architecture, platforms, model formats and operational guides |
@@ -238,8 +241,10 @@ aggregate check for branch protection. Tagged/manual release automation prepares
 does not establish GPU or large-checkpoint performance. See
 [the pipeline guide](docs/PIPELINES.md) for the exact gates and release process.
 
-**Authorised maintainers and the configured GitHub integration may merge pull requests into
-`main`.** Automatic merging is disabled by the repository setup. Ownership and
+**Merge policy requires owner review.** The live GitHub ruleset currently also
+permits an integration to bypass update restrictions through pull requests;
+that permission must be reviewed separately before claiming strict owner-only
+merges. Automatic merging is disabled. Ownership and
 required checks are configured separately; see
 [repository governance](docs/REPOSITORY-GOVERNANCE.md). CODEOWNERS routes review
 requests but is not, by itself, a merge-permission control.
@@ -248,19 +253,21 @@ requests but is not, by itself, a merge-permission control.
 
 ## Credits and licences
 
-The independent native engine is [MIT-licensed](crates/forge-engine/LICENSE-MIT).
-The root compatibility application and vendored engine retain
-[RustingStrata License 1.0](LICENSE.md), including its commercial-resale
-restriction. **The repository as a whole is not MIT-licensed.**
+The single native runtime and historical command alias are licensed under
+[MIT](LICENSE.md). Third-party components retain their own notices.
 
-**Uses RustingStrata by Vasyl Trefilov.**
+**Inspired by and credited to RustingStrata by Vasyl Trefilov.** The retired
+compatibility engine's original licence is preserved as
+[historical licence text](LICENSE-RUSTINGSTRATA-HISTORICAL.md) alongside
+[upstream provenance](UPSTREAM.json); **no RustingStrata inference runtime is
+included or linked**. The project does not claim authorship of RustingStrata.
 
-[Avalon](https://github.com/freriadoc/Avalon) informed the MoE storage work;
-[GGML / llama.cpp](https://github.com/ggml-org/llama.cpp) material retains its
-notices. Qwen and the model publishers own their respective model releases.
-See [third-party notices](THIRD_PARTY_NOTICES.md),
-[modification history](MODIFICATIONS.md), [sources](SOURCES.md) and
-[pinned upstream metadata](UPSTREAM.json).
+[Avalon](https://github.com/freriadoc/Avalon) informed the MoE storage
+architecture, and [GGML / llama.cpp](https://github.com/ggml-org/llama.cpp)
+informed GGUF and quantization support; retain their applicable notices.
+See [third-party notices](THIRD_PARTY_NOTICES.md) and
+[source references](SOURCES.md). Check every redistributable component's
+licence individually, especially after dependencies change.
 
 ForgeAI is an independent project. It is not endorsed by AMD, Qwen, Avalon or
 RustingStrata. The original ForgeAI artwork is documented in the
