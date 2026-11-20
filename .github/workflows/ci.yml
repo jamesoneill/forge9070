@@ -95,10 +95,9 @@ jobs:
           rustc --version --verbose
       - name: Test the independent engine
         run: cargo test --locked -p forge-engine --lib --bins
-      - name: Check numerical parity against the compatibility implementation
-        if: runner.os == 'Linux'
-        run: cargo test --locked -p forge9070 --test new_engine_parity --test new_quant_parity --test new_qwen38_parity
-      - name: Build both documented release entry points
+      - name: Test the legacy command alias forwards to the same native engine
+        run: cargo test --locked -p forge9070 --bin forge9070
+      - name: Build native engine and legacy command alias
         run: cargo build --release --locked -p forge-engine -p forge9070
       - name: Check CLI execution with synthetic models
         run: python scripts/validate-forge-engine.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
@@ -130,11 +129,6 @@ jobs:
         env:
           FORGE_VULKAN_TEST: '1'
         run: cargo test --locked -p forge-engine --lib software_vulkan -- --ignored --test-threads=1
-      - name: Check Vulkan Qwen numerical parity
-        if: runner.os == 'Linux'
-        env:
-          FORGE_VULKAN_TEST: '1'
-        run: cargo test --locked -p forge9070 --test new_qwen38_parity hybrid_vulkan -- --ignored --test-threads=1
       - name: Check Vulkan HTTP concurrency correctness
         if: runner.os == 'Linux'
         env:

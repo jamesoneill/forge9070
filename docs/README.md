@@ -11,7 +11,7 @@ Start with the [ForgeAI launch page](../site/index.html), [rename/compatibility 
 | [Hardware support](HARDWARE-SUPPORT.md) | Capability-based Vulkan selection, automatic CPU fallback and GPU-validation limitations |
 | [Model selection](QWEN3.8.md) | Exact Qwen3.8 GGUF revisions, shards, original and community variants |
 | [Architecture](ARCHITECTURE.md) | Request lifecycle, model storage and component boundaries |
-| [Compatibility application](COMPATIBILITY.md) | Earlier `forge9070 serve` and Strata commands, port 8080 |
+| [Compatibility migration](COMPATIBILITY.md) | Retired Strata commands and the unified native service on port 9070 |
 | [WSL details](WSL.md) | Environment diagnostics and compatibility-path launchers |
 
 ## Performance and correctness

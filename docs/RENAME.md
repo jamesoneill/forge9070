@@ -1,35 +1,17 @@
-# ForgeAI naming and compatibility
+# ForgeAI naming and backwards compatibility
 
-ForgeAI is the public project name. **Forge9070** is the original project name and a retained compatibility identifier.
+The public project name is ForgeAI. The GitHub repository remains
+`jamesoneill/forge9070` to preserve existing links.
 
-## Stable interfaces
+- **Canonical executable:** `forgeai`, built from the `forge-engine` Rust crate.
+- **Native executable alias:** `forge-engine`, same Rust entry point.
+- **Historical executable alias:** `forge9070`, a thin wrapper invoking the
+  same native Rust CLI; it no longer selects a separate Strata runtime.
+- **Unified command:** `serve` (port 9070), `generate`, `bench`, `doctor`,
+  `inspect`, `context`, and `capabilities` are provided by the native CLI.
+- Models and native service profiles are not deleted or automatically rewritten.
+  Incompatible legacy Strata profiles require deliberate migration.
 
-| Existing interface | Policy |
-| --- | --- |
-| `https://github.com/jamesoneill/forge9070` | Remains the canonical repository address until an intentional GitHub repository rename with redirects is separately verified. Existing clone URLs keep working. |
-| Cargo package `forge9070` | Retained to avoid breaking Cargo.lock, package selectors and dependent scripts. This is the legacy CLI and hardware profile. |
-| Cargo package `forge-engine` | Retained as the independent native engine library and executable. |
-| New executable `forgeai` | Alias for the same `crates/forge-engine/src/main.rs` entry point. |
-| `forge9070 engine ...`, `forge9070 serve` | Retained; latter is the older compatibility service. |
-| API base URL and ports | Unchanged. Native service remains on port 9070. |
-| Files, model directories and settings | Do not rename automatically; existing paths/configuration continue to work. |
-| Existing logo at `docs/assets/forge9070-logo.svg` | Retained for historic links; `forgeai-logo.svg` is the new public asset. |
-
-This rebrand makes **no new hardware-support claims**. Native Vulkan requires a capable adapter and suitable driver. Some paths and documentation still describe RX 9070 XT validation because that is their historical context.
-
-## Build and run
-
-```sh
-git clone https://github.com/jamesoneill/forge9070.git
-cd forge9070
-cargo build --release --locked -p forge-engine
-./target/release/forgeai serve --help
-```
-
-The `forge-engine` binary remains valid. To build only the new alias: `cargo build --release --locked -p forge-engine --bin forgeai`.
-
-**Migration guidance:** Existing scripts should keep running. New scripts may use `forgeai` for the native runtime. Do not rename the root Cargo package or release artefacts until downstream build scripts and CI/release contracts are deliberately migrated and tested.
-
-## Launch page
-
-The static [ForgeAI launch page](../site/index.html) links to source, docs, releases, and the status evidence. It is designed to work as an ordinary static file and can be deployed with GitHub Pages after the site's deployment workflow is reviewed.
+No source or runtime from RustingStrata is linked in the native applications.
+Credit for its role in the project history remains in documentation.
+See [compatibility migration](COMPATIBILITY.md).

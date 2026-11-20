@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=ROOT / "target/release/forge-engine")
-    parser.add_argument("--frontend", type=Path, help="Also validate forge9070 engine dispatch")
+    parser.add_argument("--frontend", type=Path, help="Also validate the forge9070 alias uses the same native engine")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     binary = args.binary.resolve()
@@ -241,11 +241,11 @@ def main() -> None:
     if args.frontend:
         frontend = args.frontend.resolve()
         assert frontend.is_file()
-        forwarded = document(["capabilities"], executable=frontend, prefix=("engine",))
+        forwarded = document(["capabilities"], executable=frontend)
         assert forwarded == capabilities
-        via_frontend = document(generation, executable=frontend, prefix=("engine",))
+        via_frontend = document(generation, executable=frontend)
         assert via_frontend["engine"] == "forge-native" and via_frontend["token_ids"] == [65] * 4
-        checks.append("Forge9070 engine subcommand selects the independent engine and executes generation")
+        checks.append("Historical forge9070 executable aliases the same native engine and executes generation")
 
     result = {"status": "passed", "checks_passed": len(checks), "checks": checks,
               "checks_skipped": len(skipped), "skipped": skipped,

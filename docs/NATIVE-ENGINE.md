@@ -6,12 +6,7 @@ Vulkan shaders without a RustingStrata execution dependency. It supports checked
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `forgeai`, `forge-engine` or `forge9070 engine` to select this implementation. Existing
-root `forge9070 serve`, `generate`, `chat`, `bench` and browser commands continue
-to use the attributed compatibility engine. They do not silently become the
-new implementation. `cargo build -p forge-engine` builds the independent binary
-without compiling the Strata runtime. Its GGML codebook data is MIT-attributed
-in `crates/forge-engine/GGML-NOTICE.md`; existing distribution licences remain.
+Use `forgeai`, `forge-engine`, or `forge9070` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
 ## Implemented scope
 

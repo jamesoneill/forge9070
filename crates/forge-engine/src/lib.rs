@@ -6,6 +6,9 @@
 //! and measured target-hardware performance are separate acceptance criteria.
 
 pub mod cli;
+// Preserve the existing bounded, tracked-only repository context packer.
+#[path = "../../../src/code_context.rs"]
+pub mod context;
 pub mod gguf;
 pub mod math;
 pub mod memory;

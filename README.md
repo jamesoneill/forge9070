@@ -26,7 +26,7 @@
 
 ---
 
-**ForgeAI** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The legacy RX 9070 XT-specific profile remains for compatibility.
+**ForgeAI** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The old Strata runtime is retired; legacy executable names forward to the native engine.
 Its independent Rust engine selects eligible hardware Vulkan adapters by capabilities (not vendor or model name), and supports explicit automatic CPU fallback when no compatible adapter is available. See [hardware support](docs/HARDWARE-SUPPORT.md) for the validated scope.
 Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
 caches, a browser configuration panel and an OpenAI-compatible coding API.
@@ -43,7 +43,7 @@ for WSL users.
 
 The public-facing [ForgeAI landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
 
-**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`, with a new `forgeai` executable alias. Existing `forge9070` and `forge-engine` commands remain available. See [the rename guide](docs/RENAME.md).
+**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`, with a `forgeai` executable alias. The historical `forge9070` executable now invokes that **same** native Rust engine. See [the rename guide](docs/RENAME.md).
 
 ## Watch the architecture walkthrough
 
@@ -154,9 +154,9 @@ batching or a four-times speed guarantee. See the
 authentication, context limits and client behavior.
 
 > [!TIP]
-> **Use the correct command.** `forge-engine serve` and `forge9070 engine serve`
+> **Use the correct command.** `forge-engine serve` and `forge9070 serve`
 > are the native service on port **9070**, with `--open-ui`.
-> `forge9070 serve` is the retained compatibility service on port **8080**.
+> `forge9070 serve` now enters the same native service on port **9070**.
 > With `cargo run`, put `--` before `serve`.
 
 ## Choose a model
