@@ -1,17 +1,17 @@
 > **Historical compatibility guide:** The previous Strata-based application
-> and port 8080 have been retired from ForgeAI. The original documentation
+> and port 8080 have been retired from Nextora. The original documentation
 > below is retained solely as migration reference and may describe commands,
 > cache settings or API behaviour that the native Rust service does not offer.
 > For the active runtime, use [the native guide](NATIVE-ENGINE.md) and
 > [migration details](COMPATIBILITY.md).
 
-# Running Forge9070 from WSL2
+# Running Nextora from WSL2
 
 **Scope:** this guide documents the existing compatibility application. For the
 independent Forge 0.9 runtime, its Vulkan/CPU settings, coding API and queue,
 use [NATIVE-ENGINE.md](NATIVE-ENGINE.md). Flags and endpoints differ.
 
-Forge9070 now has a native Linux build and launch workflow for WSL. The model
+Nextora now has a native Linux build and launch workflow for WSL. The model
 catalogue, Hugging Face downloads, browser interface and model switching use the
 same application in Linux and Windows. Select the compute route explicitly:
 
@@ -29,7 +29,7 @@ It does not disguise a Windows process as native WSL computation.
 ## 1. Build the native Linux application
 
 Extract or copy the project into the WSL filesystem, for example
-`~/code/forge9070`. Microsoft recommends keeping Linux build files in the Linux
+`~/code/nextora-cli`. Microsoft recommends keeping Linux build files in the Linux
 filesystem for performance. Open the WSL shell in that directory:
 
 ```bash
@@ -60,9 +60,9 @@ open a new WSL shell. The project uses its pinned toolchain. Then build:
 bash scripts/setup-wsl.sh --build
 ```
 
-The executable is `target/release/forge9070`. The script prints the hardware
+The executable is `target/release/nextora-cli`. The script prints the hardware
 doctor report after compilation. To build a development executable, add
-`--debug` and pass `--bin target/debug/forge9070` to the launchers below.
+`--debug` and pass `--bin target/debug/nextora-cli` to the launchers below.
 
 ## 2. Native WSL CPU mode
 
@@ -73,12 +73,12 @@ and choose/download models through the browser:
 bash scripts/serve-wsl.sh --backend cpu
 ```
 
-Set `FORGE9070_MODELS_DIR` to use a shared default catalogue for the model CLI
+Set `NEXTORA_MODELS_DIR` to use a shared default catalogue for the model CLI
 and native WSL launcher. An explicit `--models-dir` takes precedence. Without
 that environment override, the default catalogue is:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/forge9070/models
+${XDG_DATA_HOME:-$HOME/.local/share}/nextora-cli/models
 ```
 
 Open <http://localhost:8080> in a Windows browser. Microsoft documents Windows
@@ -110,8 +110,8 @@ that limit automatically.
 Run the actual discovery check inside WSL:
 
 ```bash
-./target/release/forge9070 doctor --json
-./target/release/forge9070 doctor --require-gpu
+./target/release/nextora-cli doctor --json
+./target/release/nextora-cli doctor --require-gpu
 ```
 
 If a real RX 9070 XT exposes the necessary Vulkan 1.3 features, start:
@@ -143,7 +143,7 @@ change ICD files, or bypass the engine's feature checks.
 
 ROCm 6.3.4 does not officially support this RX 9070 XT WSL combination. AMD's
 ROCDXG table includes the card with newer ROCm versions, including the
-7.2.x/ROCDXG 1.2.0 pairing. **Forge9070's inference backend is Vulkan; updating
+7.2.x/ROCDXG 1.2.0 pairing. **Nextora's inference backend is Vulkan; updating
 ROCm does not add a HIP backend to this build.**
 
 ## 4. Control the Windows GPU process from WSL
@@ -154,7 +154,7 @@ practical. For example, use `D:\Models` (seen as `/mnt/d/Models` in WSL):
 
 ```bash
 bash scripts/serve-wsl-windows.sh \
-  --exe '/mnt/c/code/forge9070/target/release/forge9070.exe' \
+  --exe '/mnt/c/code/nextora-cli/target/release/nextora-cli.exe' \
   --models-dir '/mnt/d/Models'
 ```
 
@@ -162,14 +162,14 @@ An initial model is optional:
 
 ```bash
 bash scripts/serve-wsl-windows.sh \
-  --exe '/mnt/c/code/forge9070/target/release/forge9070.exe' \
+  --exe '/mnt/c/code/nextora-cli/target/release/nextora-cli.exe' \
   --models-dir '/mnt/d/Models' \
   --model '/mnt/d/Models/your-compatible-model.gguf' \
   -- --ctx 4096
 ```
 
 The launcher converts paths with `wslpath -w`, checks the Windows GPU, then
-executes `forge9070.exe` directly. It never constructs a PowerShell or cmd
+executes `nextora-cli.exe` directly. It never constructs a PowerShell or cmd
 command string from model names, so spaces and punctuation remain literal
 argument data. The process stays attached to this terminal and can be stopped
 with Ctrl+C.
@@ -226,7 +226,7 @@ with multiple slots. More slots leave less VRAM for expert weights; measure
 aggregate throughput and each client's latency separately.
 
 For the fastest individual-reply baseline, keep `--parallel 1 --mtp 0 --kv f16`.
-Use `forge9070 tune --model /path/model.gguf` on a working GPU to compare
+Use `nextora-cli tune --model /path/model.gguf` on a working GPU to compare
 generation settings and tested output fidelity. Every selected expert is
 retained; the current Forge profile rejects nonzero expert-tail omission.
 See [PERFORMANCE.md](PERFORMANCE.md) for

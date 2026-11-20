@@ -8,7 +8,7 @@ of the original mark for small, crisp applications.
 
 ## Logo refinement
 
-Use case: precise-object-edit, logo-brand. Refine this original Forge9070 logo
+Use case: precise-object-edit, logo-brand. Refine this original Nextora logo
 for a polished open-source project. Preserve exactly the angular capital F
 silhouette, three interlocking planes, proportions, separated square spark and
 orange/amber color identity. Make it impeccably FLAT vector-like. Remove every
@@ -27,14 +27,14 @@ raster interpretation retains slight shading; use the SVG for solid-color work.
 ## README banner
 
 Use case: logo-brand. Create a spectacular but restrained GitHub README
-masthead / repository social card for the independent Rust project Forge9070.
+masthead / repository social card for the independent Rust project Nextora.
 Use the attached orange angular F logo and square spark as the exact identity
 reference, preserving its distinctive silhouette. WIDE landscape 3:1
 composition suitable for a full-width GitHub README banner. Deep charcoal
 #10151D matte background, subtle precision grid and a few minimal dark geometric
 tiles hinting at GPU compute, no busy circuitry. One large clean orange F symbol
 on the left third; on the right two thirds, impeccable modern geometric
-sans-serif typography, exact large title text "Forge9070" in warm white, then
+sans-serif typography, exact large title text "Nextora" in warm white, then
 exact smaller subtitle "Local inference. Built in Rust." Beneath it three small
 understated labels, exact text "VULKAN   /   MIXTURE OF EXPERTS   /   CODING API".
 Give the title generous spacing and perfectly aligned left baselines.
@@ -47,12 +47,12 @@ tasteful very subtle background light only.
 
 ## Social preview
 
-Use case: logo-brand. Adapt the supplied Forge9070 banner into a polished 2:1
+Use case: logo-brand. Adapt the supplied Nextora banner into a polished 2:1
 GitHub repository social preview, target 1280 by 640 pixels. Preserve the orange
-angular F mark with square spark, the exact Forge9070 name, dark charcoal
+angular F mark with square spark, the exact Nextora name, dark charcoal
 technical-grid background and premium clean typography. Recompose to fit the
 2:1 aspect ratio with spacious safe margins: logo on the left, large exact title
-"Forge9070" on the right, subtitle on two carefully spaced lines "Local
+"Nextora" on the right, subtitle on two carefully spaced lines "Local
 inference." and "Built in Rust." Below in smaller uppercase text "VULKAN / MOE /
 CODING API". No added text, numbers, icons, performance promises, corporate logos,
 screenshots, badges or watermark. Make the type immediately legible at thumbnail
