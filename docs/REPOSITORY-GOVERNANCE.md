@@ -1,6 +1,6 @@
 # Repository governance
 
-**Only [@jamesoneill](https://github.com/jamesoneill) merges pull requests into `main`.**
+**Only explicitly authorised maintainers and integrations may merge pull requests into `main` through the protected PR workflow.**
 Contributions arrive through pull requests, run CI, and wait for the maintainer's
 decision. Automatic merging is disabled. Bots and assistants must not merge PRs
 on the owner's behalf without a subsequent explicit instruction.
@@ -12,17 +12,17 @@ The intended live configuration has two active branch rulesets targeting
 
 | Ruleset | Enforcement |
 | --- | --- |
-| `main - owner merges only` | Restricts updates. Only GitHub user `3801829` (`jamesoneill`) has bypass authority, and only for pull requests. |
+| `main - authorized PR merges` | Restricts updates. GitHub user `3801829` (`jamesoneill`) and integration `1144995` have pull-request-only bypass authority; neither bypasses the separate quality rules. |
 | `main - pull requests and checks` | Requires a PR, the successful `required` GitHub Actions check, an up-to-date branch, and resolved review threads. Blocks force pushes and deletion. No bypass actors. |
 
-Keeping the rulesets separate lets the owner merge while retaining the quality
+Keeping the rulesets separate lets authorised actors merge while retaining the quality
 requirements. The CI workflow is displayed as **CI / required**; its actual
 status-check context is **`required`**. The setup script discovers and binds the
 GitHub Actions integration ID from a real check run instead of trusting any
 provider that submits the same check name.
 
 The required approval count is zero because GitHub does not allow authors to
-approve their own PRs. The owner's exclusive merge authority remains the human
+approve their own PRs. The authorised merge controls' merge authority remains the human
 decision point. [CODEOWNERS](../.github/CODEOWNERS) requests the maintainer's
 attention; that file alone does not restrict who can merge.
 

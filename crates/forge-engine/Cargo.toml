@@ -1,9 +1,10 @@
 [package]
 name = "forge-engine"
+default-run = "forge-engine"
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.100"
-description = "Independent Forge CPU and Vulkan inference engine"
+description = "ForgeAI native Rust CPU and Vulkan inference engine"
 license = "MIT"
 publish = false
 
@@ -20,8 +21,12 @@ rayon = "1"
 same-file = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+tokenizers = { version = "0.23", default-features = false, features = ["onig"] }
 
 [[bin]]
 name = "forge-engine"
+path = "src/main.rs"
+
+[[bin]]
+name = "forgeai"
 path = "src/main.rs"
