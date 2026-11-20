@@ -1,6 +1,6 @@
 # Security policy
 
-Forge9070 is experimental. Security fixes are developed on `main`; older
+Nextora is experimental. Security fixes are developed on `main`; older
 snapshots do not have a promised maintenance window or response-time guarantee.
 Check [VALIDATION.md](VALIDATION.md) for the limits of completed testing.
 
