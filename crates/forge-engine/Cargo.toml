@@ -1,9 +1,10 @@
 [package]
 name = "forge-engine"
+default-run = "forge-engine"
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.100"
-description = "Independent Forge CPU and Vulkan inference engine"
+description = "ForgeAI native Rust CPU and Vulkan inference engine"
 license = "MIT"
 publish = false
 
@@ -24,4 +25,8 @@ tokenizers = { version = "0.23", default-features = false, features = ["onig"] }
 
 [[bin]]
 name = "forge-engine"
+path = "src/main.rs"
+
+[[bin]]
+name = "forgeai"
 path = "src/main.rs"

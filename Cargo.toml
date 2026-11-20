@@ -3,7 +3,7 @@ name = "forge9070"
 version = "0.9.1"
 edition = "2024"
 rust-version = "1.100"
-description = "RX 9070 XT profile and diagnostics for native Rust GGUF inference"
+description = "ForgeAI legacy-compatible CLI: RX 9070 XT profile and diagnostics plus the native Forge engine"
 license-file = "LICENSE.md"
 publish = false
 

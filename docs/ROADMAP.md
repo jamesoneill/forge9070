@@ -1,6 +1,6 @@
 # Roadmap
 
-Forge9070 prioritizes measured token generation speed without silently changing
+ForgeAI prioritizes measured token generation speed without silently changing
 which routed experts contribute. This roadmap is a set of engineering priorities,
 not a delivery schedule or hardware support guarantee.
 
