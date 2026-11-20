@@ -60,12 +60,12 @@ def main():
         'function':{'name':'read_file','arguments':'{"path":"file'+str(n)+'"}'}} for n in [1,2]]},
         {'role':'tool','tool_call_id':'c1','content':'one'},{'role':'tool','tool_call_id':'c2','content':'two'}], False, [tool])
     started = time.monotonic()
-    command = [a.cargo,'test','-p','forge-engine','--lib','protocol::tests::external_template_byte_parity',
+    command = [a.cargo,'test','-p','nextora-engine','--lib','protocol::tests::external_template_byte_parity',
                '--locked','--offline','--','--ignored','--nocapture']
     with tempfile.TemporaryDirectory(prefix='forge-template-parity-') as td:
         reference = Path(td)/'cases.json'
         reference.write_text(json.dumps({'template':source,'cases':cases}, ensure_ascii=False))
-        result = subprocess.run(command, cwd=ROOT, env=dict(os.environ,FORGE_TEMPLATE_PARITY_JSON=str(reference)),
+        result = subprocess.run(command, cwd=ROOT, env=dict(os.environ,NEXTORA_TEMPLATE_PARITY_JSON=str(reference)),
                                 capture_output=True, text=True, timeout=300)
     report = {'status':'passed' if result.returncode == 0 else 'failed',
         'template_sha256':hashlib.sha256(source.encode()).hexdigest(),

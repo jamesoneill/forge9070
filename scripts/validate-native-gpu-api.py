@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Explicit software-Vulkan Qwen API/sequence concurrency correctness gate.
 
-Set FORGE_VULKAN_TEST=1 and select the intended ICD. This is not a speed test.
+Set NEXTORA_VULKAN_TEST=1 and select the intended ICD. This is not a speed test.
 """
 import argparse, concurrent.futures, hashlib, importlib.util, json, math, os, subprocess, threading, time
 from pathlib import Path
@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--request-timeout',type=positive_seconds,default=120.0,metavar='SECONDS',
                         help='HTTP response deadline for software-Vulkan requests (default: 120 seconds)')
     args=parser.parse_args()
-    assert os.environ.get('FORGE_VULKAN_TEST')=='1','Explicit FORGE_VULKAN_TEST=1 is required'
+    assert os.environ.get('NEXTORA_VULKAN_TEST')=='1','Explicit NEXTORA_VULKAN_TEST=1 is required'
     binary=args.binary.resolve();model=ROOT/'tests/fixtures/tiny-qwen38.gguf'
     bodies=[helpers.body(model.name,max_tokens=4,messages=[{'role':'user','content':f'{i}'}]) for i in range(4)]
     expected=[];started=time.monotonic()

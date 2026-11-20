@@ -86,7 +86,7 @@ if (( ! build )); then
 fi
 
 cd -- "$project_root"
-build_args=(build --locked -p forge-engine)
+build_args=(build --locked -p nextora-engine)
 profile=debug
 if (( ! debug )); then build_args+=(--release); profile=release; fi
 "$cargo_bin" "${build_args[@]}"

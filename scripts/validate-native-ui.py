@@ -3,7 +3,7 @@
 
 The optional Chromium checks use isolated browser storage and loopback-only
 networking. No model download, Windows execution or GPU performance is inferred.
-Requires a built forge-engine; --browser additionally requires Python Playwright.
+Requires a built nextora-engine; --browser additionally requires Python Playwright.
 """
 from __future__ import annotations
 
@@ -172,7 +172,7 @@ def main() -> None:
 
             with service(binary, config_file) as (origin, request, json_request):
                 status, headers, page = request('/', auth=False)
-                check('unloaded-public-ui-without-gpu-initialization', status == 200 and 'Forge9070' in page
+                check('unloaded-public-ui-without-gpu-initialization', status == 200 and 'Nextora' in page
                       and KEY not in page and not config_file.exists(), {'status': status})
                 csp = headers.get('content-security-policy', '')
                 check('ui-security-headers', headers.get('x-content-type-options') == 'nosniff'

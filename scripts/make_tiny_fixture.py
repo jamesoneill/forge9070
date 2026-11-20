@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic, untrained Qwen3 GGUFs used by Forge9070 tests.
+"""Generate deterministic, untrained Qwen3 GGUFs used by Nextora tests.
 
 The default is a one-layer dense transformer; --moe builds a four-expert,
 top-2-routed MoE. Both have nonzero attention and FFN weights. The output
@@ -64,7 +64,7 @@ def build_fixture(moe: bool = False) -> bytes:
                     + b"".join(string(value) for value in values))
 
     add_string("general.architecture", arch)
-    add_string("general.name", "Forge9070 synthetic CPU test fixture (untrained)")
+    add_string("general.name", "Nextora synthetic CPU test fixture (untrained)")
     add_int("general.alignment", 32)
     add_int(f"{arch}.block_count", 1)
     add_int(f"{arch}.embedding_length", dim)
