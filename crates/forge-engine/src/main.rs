@@ -3,7 +3,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(
     version,
-    about = "Independent Forge inference with capability-selected Vulkan, CPU and diagnostic hybrid execution"
+    about = "ForgeAI native Rust inference engine with CPU and Vulkan execution"
 )]
 struct Cli {
     #[command(flatten)]

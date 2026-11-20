@@ -1,30 +1,25 @@
 # Native engine architecture
 
-Forge9070 contains an independent native engine and a retained compatibility
+ForgeAI contains an independent native engine and a retained compatibility
 application. This page describes `forge-engine` 0.2.1. The native service is
-also reachable through `forge9070 engine`; ordinary `forge9070 serve` selects
-the RX 9070 XT compatibility service.
+also reachable through `forge9070 engine` (legacy CLI); ordinary `forge9070 serve` selects
+the compatibility service.
 
 ## Execution policy and hardware
 
 The native runtime keeps CPU, resident Vulkan and diagnostic hybrid execution
-behind one model interface. Vulkan adapter eligibility comes from the API
-version, compute queues, kernel limits and memory capabilities. Selection does
-not require an AMD vendor ID or an RX 9070 XT name. The same native kernels are
-the path for eligible AMD, NVIDIA and Intel hardware on Windows and Linux.
+behind one model interface. Vulkan adapter eligibility comes from API version,
+compute queues, kernel limits and memory capabilities, not a vendor ID or model
+name. The same native kernels target eligible AMD, NVIDIA and Intel hardware.
 
-`--backend auto` resolves to Vulkan when eligible hardware is available, or CPU
-when it is unavailable. This decision happens before host-memory planning, so
-CPU state and expert caches receive the correct budget. Reports retain both the
-requested policy and the actual backend, with a selection reason. Supplying an
-explicit device, nonzero VRAM cap or software-Vulkan test permission requires
-strict device selection. Explicit CPU/Vulkan/hybrid choices also remain strict.
-Model, device-creation, shader and allocation failures are returned to the caller.
+`--backend auto` resolves to Vulkan when eligible hardware exists, otherwise
+CPU. The resolution precedes host-memory planning, and reports the requested
+policy, chosen backend and reason. Explicit device, VRAM budget or software
+Vulkan test settings forbid silent fallback. Failures in model loading, shader
+compilation and device allocation remain errors.
 
-Automatic selection is a hardware policy, not a new kernel implementation.
-There are no native CUDA, HIP or Metal backends. Multi-vendor capability checks
-do not substitute for physical GPU execution, model acceptance or benchmarking.
-See [hardware support](HARDWARE-SUPPORT.md) for requirements and validation scope.
+This is capability selection, not a CUDA, HIP or Metal implementation or
+physical GPU performance proof. See [hardware support](HARDWARE-SUPPORT.md).
 
 ## Model storage and expert execution
 
@@ -55,8 +50,7 @@ as required. See [the native guide](NATIVE-ENGINE.md) and
 
 ## Service lifecycle
 
-1. The service can start without a model, exposing its configuration panel;
-   a fresh unloaded configuration defaults to the `auto` policy.
+1. The service can start without a model, exposing its configuration panel; fresh settings use the `auto` backend policy.
 2. The catalog scans a bounded folder tree and validates complete model sets.
 3. Configuration changes require an idle service. Loading applies the model
    and runtime settings; a failure attempts restoration of the previous state.
@@ -77,10 +71,10 @@ the inference service does not execute arbitrary client tools.
 | --- | --- |
 | One loaded checkpoint | A model ID in a chat request does not download or silently switch models. |
 | One to four active slots | Independent sequence capacity, subject to state and device budgets; not continuous batching. |
-| Vulkan adapter | Capability-based eligibility is distinct from actual kernel execution and model fit. |
-| Automatic policy | Resolves before loading; records its choice and does not mask load or execution failures. |
+| Vulkan adapter | Capability-based discovery is distinct from successful kernel execution and model fit. |
+| Automatic policy | Resolves before model loading and never masks model, shader or execution failures. |
 | WSL process type | A Linux process uses Linux paths and drivers; a Windows executable launched from WSL remains a Windows process. |
-| CPU/software Vulkan tests | Useful numerical and service checks, not physical GPU performance evidence. |
+| CPU/software Vulkan tests | Useful numerical and service checks, not real hardware performance evidence. |
 | Model file size | Disk footprint; not the same quantity as owned cache size or peak memory use. |
 
 ## Source map
