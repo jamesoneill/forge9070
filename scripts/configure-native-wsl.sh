@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# Launch the independent Forge configuration UI. No build/download or driver changes.
+# Launch the independent Nextora configuration UI. No build/download or driver changes.
 set -euo pipefail
 
 usage() {
     cat <<'EOF'
 Usage: bash scripts/configure-native-wsl.sh [options]
 
-  --bin PATH           Native Linux nextora-engine (default: target/release/nextora-engine)
-  --windows-exe PATH   Windows nextora-engine.exe, given as a WSL path (/mnt/c/...)
+  --bin PATH           Native Linux nextora-engine (default: target/release/nextora)
+  --windows-exe PATH   Windows nextora.exe, given as a WSL path (/mnt/c/...)
   --models-dir PATH    Optional model folder; defaults to /mnt/f when mounted
   --settings-file PATH Persistent JSON profile, given as a Linux/WSL path
   --port NUMBER        Loopback port (default: 9070)
   --no-browser         Print the address without opening a browser
 
-Native Linux stores settings in $XDG_CONFIG_HOME/nextora-cli/native-service.json
-(or $HOME/.config/nextora-cli/native-service.json). A Windows executable launched
+Native Linux stores settings in $XDG_CONFIG_HOME/nextora/native-service.json
+(or $HOME/.config/nextora/native-service.json). A Windows executable launched
 from WSL uses native-service.json beside the executable unless --settings-file
 is supplied. Windows mode converts the model/profile paths with wslpath.
 
 Examples:
   bash scripts/configure-native-wsl.sh --models-dir /mnt/f/Models
   bash scripts/configure-native-wsl.sh \
-    --windows-exe /mnt/c/code/nextora-cli/target/release/nextora-engine.exe \
+    --windows-exe /mnt/c/code/nextora/target/release/nextora.exe \
     --models-dir /mnt/f/Models
 
 New profiles use auto: a compatible hardware Vulkan adapter, otherwise CPU
@@ -32,7 +32,7 @@ EOF
 }
 
 project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-binary="$project_root/target/release/nextora-engine"
+binary="$project_root/target/release/nextora"
 windows_mode=false
 models_dir=''
 settings_file=''
@@ -82,7 +82,7 @@ if $windows_mode; then
 else
     [[ "$binary" != *.exe ]] || { printf '%s\n' 'Use --windows-exe for a Windows executable.' >&2; exit 2; }
     if [[ -z "$settings_file" ]]; then
-        settings_file="${XDG_CONFIG_HOME:-${HOME}/.config}/nextora-cli/native-service.json"
+        settings_file="${XDG_CONFIG_HOME:-${HOME}/.config}/nextora/native-service.json"
     fi
 fi
 settings_file=$(realpath -m -- "$settings_file")

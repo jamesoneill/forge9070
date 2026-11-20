@@ -21,9 +21,6 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-if (-not $IsWindows -and $PSVersionTable.PSEdition -eq 'Core') {
-    throw 'This launcher is for Windows PowerShell. In WSL, see docs/WINDOWS.md for the Windows-host or Linux alternatives.'
-}
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
     throw 'Run in Windows PowerShell or PowerShell 7 on Windows; use configure-native-wsl.sh on Linux.'
 }

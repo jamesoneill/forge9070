@@ -7,13 +7,14 @@ Start with the [Nextora launch page](../site/index.html), [rename/compatibility 
 
 | Guide | Use it for |
 | --- | --- |
+| [Windows quick start](WINDOWS.md) | Build on Windows, open the configuration UI, repair common startup errors |
 | [Native engine](NATIVE-ENGINE.md) | Independent Rust engine, configuration UI, model discovery, API, Windows and WSL |
 | [Hardware support](HARDWARE-SUPPORT.md) | Capability-based Vulkan selection, automatic CPU fallback and GPU-validation limitations |
 | [Loading quality and performance](MODEL-LOADING.md) | Startup stages, accuracy invariants, warmup trade-offs and reproducible benchmarks |
 | [Model selection](QWEN3.8.md) | Exact Qwen3.8 GGUF revisions, shards, original and community variants |
 | [Architecture](ARCHITECTURE.md) | Request lifecycle, model storage and component boundaries |
 | [Compatibility migration](COMPATIBILITY.md) | Retired Strata commands and the unified native service on port 9070 |
-| [WSL details](WSL.md) | Environment diagnostics and native Windows/WSL launchers |
+| [WSL details](WSL.md) | Historical WSL notes; see current Windows and native engine guides for supported commands |
 
 ## Performance and correctness
 
