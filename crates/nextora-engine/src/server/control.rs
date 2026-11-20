@@ -560,12 +560,12 @@ fn suggested_model_dirs() -> Vec<Value> {
     } else if in_wsl() {
         result.push(json!({"label":"Windows F: drive", "path":"/mnt/f"}));
     }
-    if let Some(path) = std::env::var_os("FORGE9070_MODELS_DIR") {
+    if let Some(path) = std::env::var_os("NEXTORA_MODELS_DIR") {
         result.push(json!({"label":"Configured Forge models", "path":PathBuf::from(path)}));
     }
     if cfg!(windows) {
         if let Some(path) = std::env::var_os("LOCALAPPDATA") {
-            result.push(json!({"label":"Forge download folder", "path":PathBuf::from(path).join("forge9070").join("models")}));
+            result.push(json!({"label":"Forge download folder", "path":PathBuf::from(path).join("nextora-cli").join("models")}));
             return result;
         }
     }
@@ -579,7 +579,7 @@ fn suggested_model_dirs() -> Vec<Value> {
                 .join("share")
         });
     result.push(
-        json!({"label":"Forge download folder", "path":data.join("forge9070").join("models")}),
+        json!({"label":"Forge download folder", "path":data.join("nextora-cli").join("models")}),
     );
     result
 }

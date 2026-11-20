@@ -38,7 +38,7 @@
         cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: controller.signal,
       });
     } catch (error) {
-      throw new ApiError(error.name === 'AbortError' ? 'The service did not respond in time. Check the terminal running Forge9070.' : 'Cannot reach the service. Check that Forge9070 is still running, then refresh.', 0);
+      throw new ApiError(error.name === 'AbortError' ? 'The service did not respond in time. Check the terminal running Nextora.' : 'Cannot reach the service. Check that Nextora is still running, then refresh.', 0);
     } finally {
       if (timer) clearTimeout(timer);
     }
