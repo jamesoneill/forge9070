@@ -47,7 +47,7 @@ The public-facing [Nextora landing page](site/index.html) links to the repositor
 
 ## Watch the architecture walkthrough
 
-[**Nextora Explained: Inside a Rust & Vulkan Local AI Engine for AMD** (archived video title)](https://www.youtube.com/watch?v=NLr7lbs6Iwg)
+[**Early architecture walkthrough** (archived, recorded before the rebrand)](https://www.youtube.com/watch?v=NLr7lbs6Iwg)
 is a 14:25 technical walkthrough from [**the1darkj Tech Briefing**](https://www.youtube.com/@the1darkj).
 It explains expert caching across disk, RAM and VRAM, memory budgets, the native
 coding API and Windows/WSL launch paths, with upstream credits and source references.
@@ -199,6 +199,14 @@ The native `context` command preserves the local tracked-file source packer.
 See [migration](docs/COMPATIBILITY.md) for unsupported former Strata commands,
 and [native runtime](docs/NATIVE-ENGINE.md) for the supported API and model
 architectures. Only the native configurations are supported.
+
+## Loading quality and performance
+
+Nextora checks GGUF and tokenizer metadata before probing or allocating Vulkan resources,
+and verifies vocabulary agreement before warming expert caches. Load reports expose
+per-stage timing so cold-start mapping, tokenizer work and optional warmup can
+be measured separately. See the [model-loading and quality guide](docs/MODEL-LOADING.md)
+for reproducible CPU/Vulkan comparisons, baseline acceptance and tuning trade-offs.
 
 ## Engineering principles
 
