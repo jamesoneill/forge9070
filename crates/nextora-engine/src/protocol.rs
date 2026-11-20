@@ -767,10 +767,10 @@ mod tests {
         assert_eq!(rendered, "{\"a\": \"café <>&\", \"b\": [1, true]}");
     }
     #[test]
-    #[ignore = "requires FORGE_TEMPLATE_PARITY_JSON with externally generated Python-Jinja reference cases"]
+    #[ignore = "requires NEXTORA_TEMPLATE_PARITY_JSON with externally generated Python-Jinja reference cases"]
     fn external_template_byte_parity() {
         let path =
-            std::env::var("FORGE_TEMPLATE_PARITY_JSON").expect("set FORGE_TEMPLATE_PARITY_JSON");
+            std::env::var("NEXTORA_TEMPLATE_PARITY_JSON").expect("set NEXTORA_TEMPLATE_PARITY_JSON");
         let data: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
         let mut g = Gguf::open(
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

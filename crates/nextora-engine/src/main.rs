@@ -7,9 +7,9 @@ use clap::Parser;
 )]
 struct Cli {
     #[command(flatten)]
-    engine: forge_engine::cli::EngineArgs,
+    engine: nextora_engine::cli::EngineArgs,
 }
 
 fn main() -> anyhow::Result<()> {
-    forge_engine::cli::run(Cli::parse().engine)
+    nextora_engine::cli::run(Cli::parse().engine)
 }
