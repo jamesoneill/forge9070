@@ -151,6 +151,10 @@ jobs:
             if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_ }; $failed = $true }
           }
           if ($failed) { exit 1 }
+      - name: Exercise Windows launcher with a synthetic native executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-windows-launcher.ps1
       - name: Upload validation reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

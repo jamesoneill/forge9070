@@ -1,4 +1,4 @@
-# Nextora — native engine 0.2.1 (historical Nextora 0.9.1)
+# Nextora — native engine 0.2.1
 
 The standalone `nextora-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
@@ -6,7 +6,7 @@ Vulkan shaders without a RustingStrata execution dependency. It supports checked
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `nextora`, `nextora`, `nextora-engine`, or `nextora-cli` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
+Use the `nextora` executable for the native engine. The auxiliary `nextora-cli` wrapper invokes the same native implementation. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
 ## Implemented scope
 
@@ -50,14 +50,13 @@ you can find the files and configure the runtime before allocating GPU state.
 
 ### Windows
 
-Build on a local Windows volume, for example `C:\code\nextora-cli`. From
-PowerShell in that project folder:
+For a reliable first run, use **[Windows setup and troubleshooting](WINDOWS.md)**. In Windows PowerShell on a local Windows drive, from the repository root:
 
 ```powershell
-cargo build --release --locked -p nextora-engine
-.\target\release\nextora-engine.exe serve --open-ui --backend auto `
-  --models-dir 'F:\' --settings-file '.\forge-service.json'
+.\scripts\configure-native-windows.ps1 -Build
 ```
+
+This creates `target\release\nextora.exe`, starts a server without requiring a model, and opens the configuration UI. It does not automatically search `F:\` or allocate GPU memory until you choose a compatible model.
 
 The URL is **http://127.0.0.1:9070/**. Keep the terminal running; stopping this
 process stops the UI and API. If the browser does not open, visit that address
@@ -158,16 +157,16 @@ inside WSL** uses the mounted path, normally `/mnt/f/Models`.
 For the Windows GPU process from WSL:
 
 ```bash
-/mnt/c/code/nextora-cli/target/release/nextora-engine.exe serve \
+/mnt/c/code/nextora/target/release/nextora.exe serve \
   --open-ui --backend vulkan --models-dir 'F:\' \
-  --settings-file 'C:\code\nextora-cli\forge-service.json'
+  --settings-file 'C:\code\nextora\nextora-service.json'
 ```
 
 For native Linux execution in WSL:
 
 ```bash
-./target/release/nextora-engine serve --open-ui --backend auto \
-  --models-dir /mnt/f --settings-file ./forge-service.json
+./target/release/nextora serve --open-ui --backend auto \
+  --models-dir /mnt/f --settings-file ./nextora-service.json
 ```
 
 The native WSL UI can start without a GPU model, but Vulkan inference still
@@ -186,7 +185,7 @@ bash scripts/configure-native-wsl.sh --models-dir /mnt/f/Models
 
 # Windows process, with path conversion performed by wslpath.
 bash scripts/configure-native-wsl.sh \
-  --windows-exe /mnt/c/code/nextora-cli/target/release/nextora-engine.exe \
+  --windows-exe /mnt/c/code/nextora/target/release/nextora.exe \
   --models-dir /mnt/f/Models
 ```
 
@@ -276,15 +275,15 @@ Native WSL execution requires a compatible Linux Vulkan adapter. If only llvmpip
 
 ## Build on Windows and use from WSL
 
-On Windows use a normal local Windows checkout such as `C:\code\nextora-cli`
+On Windows use a normal local Windows checkout such as `C:\code\nextora`
 and Developer PowerShell with the MSVC/C++ toolchain installed:
 
 ```powershell
-Set-Location C:\code\nextora-cli
+Set-Location C:\code\nextora
 cargo build --release --locked -p nextora-engine
-$Forge = (Resolve-Path .\target\release\nextora-engine.exe).Path
-& $Forge doctor
-& $Forge capabilities
+$Nextora = (Resolve-Path .\target\release\nextora.exe).Path
+& $Nextora doctor
+& $Nextora capabilities
 ```
 
 The earlier Windows error executed a generated Windows build program through
@@ -298,7 +297,7 @@ For a Windows GPU server launched from WSL, use the actual Windows executable
 and Windows model paths:
 
 ```bash
-/mnt/c/code/nextora-cli/target/release/nextora-engine.exe serve \
+/mnt/c/code/nextora/target/release/nextora.exe serve \
   --backend vulkan --model 'C:\Models\your-model-00001-of-00002.gguf' \
   --models-dir 'C:\Models' --ctx 16384 --max-tokens 4096 \
   --parallel 1 --max-queued 32 --port 9070
@@ -308,8 +307,8 @@ Inference in this route runs on Windows. For a native WSL build:
 
 ```bash
 cargo build --release --locked -p nextora-engine
-./target/release/nextora-engine doctor
-./target/release/nextora-engine serve --backend vulkan \
+./target/release/nextora doctor
+./target/release/nextora serve --backend vulkan \
   --model "$HOME/models/your-model-00001-of-00002.gguf" \
   --models-dir "$HOME/models" --ctx 16384 --max-tokens 4096 \
   --parallel 1 --max-queued 32 --port 9070
@@ -338,7 +337,7 @@ files and preserve conversation prefixes to benefit from exact state reuse.
 To accept four active requests with more work waiting:
 
 ```powershell
-& $Forge serve --backend vulkan --model $Model --models-dir C:\Models `
+& $Nextora serve --backend vulkan --model $Model --models-dir C:\Models `
   --ctx 16384 --max-tokens 4096 --parallel 4 --max-queued 32 `
   --queue-timeout-secs 120 --ram-margin-mib 8192 --port 9070
 ```
@@ -420,7 +419,7 @@ release their permits. Health/status requests do not acquire generation slots.
 Use a representative code prompt and the actual downloaded GGUF:
 
 ```powershell
-Get-Content -Raw .\code-prompt.txt | & $Forge --threads 8 bench `
+Get-Content -Raw .\code-prompt.txt | & $Nextora --threads 8 bench `
   --backend vulkan --model $Model --ctx 16384 --prompt - `
   --decode-steps 256 --requests 1 --warmup 1 --reps 5 `
   --json-out .\native-one-request.json

@@ -26,12 +26,17 @@
 
 ---
 
-**Nextora** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The old Strata runtime is retired; legacy executable names forward to the native engine.
-Its independent Rust engine selects eligible hardware Vulkan adapters by capabilities (not vendor or model name), and supports explicit automatic CPU fallback when no compatible adapter is available. See [hardware support](docs/HARDWARE-SUPPORT.md) for the validated scope.
-Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
-caches, a browser configuration panel and an OpenAI-compatible coding API.
-Windows and Linux launchers are included, with an explicit Windows-host route
-for WSL users.
+**Nextora** is an experimental, local-first AI inference engine written in
+Rust. It supports validated GGUF checkpoints with CPU execution and eligible
+Vulkan devices, a browser configuration panel, bounded mixture-of-experts caches
+and a local coding-client API. Hardware selection is based on Vulkan
+capabilities rather than the GPU brand or model name.
+
+The older Strata provider runtime has been retired. Both the public
+`nextora` executable and optional `nextora-cli` wrapper use the same native
+inference implementation. For the exact validated hardware and model scope,
+see [hardware support](docs/HARDWARE-SUPPORT.md) and
+[validation evidence](VALIDATION.md).
 
 > [!IMPORTANT]
 > **Experimental, with evidence attached.** CPU and software-Vulkan tests are
@@ -73,68 +78,88 @@ remain to be measured. Passing CI does not establish those results.
 
 ## Quick start
 
-### 1. Build the native engine
+### Windows: recommended first run
 
-Install the [Rust toolchain](https://rustup.rs/) and your platform's C/C++ build
-tools. The repository pins Rust **1.100.0**. Windows uses the MSVC toolchain and
-[Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
-GPU execution also needs a working Vulkan driver exposing the required device
-features. Ordinary builds use the checked-in shader binaries.
+The simplest way to start the local configuration UI on Windows is to run
+the Windows launcher from a **Windows PowerShell** terminal. You do not need
+WSL, Python, ROCm, a model download, or a separate frontend server just to
+open the UI.
 
-```sh
-git clone https://github.com/jamesoneill/forge9070.git nextora
-cd nextora
-cargo build --release --locked -p nextora-engine
-# produces the nextora executable
-```
-
-On Windows, clone onto a **local Windows drive**, for example
-`C:\code\nextora`, and build in Windows PowerShell. Executing Windows build
-scripts from a WSL network share can be blocked by Application Control.
-
-### 2. Open the configuration panel
-
-**Windows PowerShell**
+Install [Rustup](https://rustup.rs/) and [Visual Studio C++ Build
+Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the
+**Desktop development with C++** workload, including MSVC and the Windows SDK.
+Nextora pins its Rust toolchain in `rust-toolchain.toml`.
 
 ```powershell
-.\target\release\nextora.exe serve --open-ui --backend auto `
-  --models-dir 'F:\Models' --settings-file '.\nextora-service.json'
+New-Item -ItemType Directory -Force C:\code | Out-Null
+Set-Location C:\code
+git clone https://github.com/jamesoneill/forge9070.git nextora
+Set-Location .\nextora
+.\scripts\configure-native-windows.ps1 -Build
 ```
 
-**Linux**
+This builds the `nextora-engine` Rust package, which produces
+**`target\release\nextora.exe`** (not `nextora-engine.exe`). It starts the
+foreground server and attempts to open **http://127.0.0.1:9070/**. Keep
+PowerShell open while using the configuration UI. An initial model is optional.
+
+To start it again after building:
+
+```powershell
+.\scripts\configure-native-windows.ps1
+```
+
+Or launch it directly:
+
+```powershell
+.\target\release\nextora.exe serve --backend auto --open-ui
+```
+
+The launcher saves the current configuration under
+`%LOCALAPPDATA%\Nextora\native-service.json`. Existing saved model/runtime
+settings take precedence over CLI values. To diagnose a stale model or GPU
+setting without deleting your profile, use:
+
+```powershell
+.\scripts\configure-native-windows.ps1 -Backend cpu -Port 9071 `
+  -SettingsFile "$env:TEMP\nextora-troubleshoot.json"
+```
+
+Then open **http://127.0.0.1:9071/**. The model folder can be selected and
+scanned in the UI; specify `-ModelsDir 'F:\Models'` only if that directory
+exists on your computer.
+
+If `nextora.exe` is missing, Cargo fails, the browser cannot connect, or GPU
+discovery doesn't work, follow the
+**[Windows setup and troubleshooting guide](docs/WINDOWS.md)**. It includes
+the exact Rust/MSVC requirements, validation commands, saved-profile recovery,
+port conflicts and Windows Application Control limitations.
+
+### Linux and WSL
+
+For native Linux, build the Rust package and run the Linux binary:
 
 ```sh
-./target/release/nextora serve --open-ui --backend auto \
-  --models-dir /path/to/models --settings-file ./nextora-service.json
+cargo build --release --locked -p nextora-engine
+./target/release/nextora serve --backend auto --open-ui
 ```
 
-The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `nextora doctor` reports eligibility, not validated throughput.
+If you're working in WSL but want to use the **Windows GPU driver**, build
+and launch the Windows `nextora.exe` on a local Windows drive. WSL's
+`llvmpipe` Vulkan renderer is not a substitute for GPU hardware.
+See [Windows from WSL](docs/WINDOWS.md#working-with-wsl) and the
+[native guide](docs/NATIVE-ENGINE.md) for details.
 
-Open **<http://127.0.0.1:9070/>**. Choose your actual model folder, select
-**Scan models**, choose the first shard of a complete supported model, and use
-**Apply & load**. The panel can start before a model is available. The settings
-file saves successful configuration changes; an existing profile takes
-precedence over model/runtime command-line options.
+### Configure a model
 
-<details>
-<summary><strong>Using WSL, or seeing llvmpipe?</strong></summary>
-
-A Windows process launched from WSL still uses the Windows GPU driver. Build
-the Windows binary first, then run:
-
-```sh
-bash scripts/configure-native-wsl.sh \
-  --windows-exe /mnt/c/code/nextora/target/release/nextora.exe \
-  --models-dir /mnt/f/Models
-```
-
-Native Linux execution inside WSL needs an actual usable Vulkan hardware
-adapter. `llvmpipe` is a software renderer; `/dev/dxg` alone does not establish
-Vulkan support. The launchers do not change GPU drivers, DKMS or Windows
-Application Control. See the [native guide](docs/NATIVE-ENGINE.md) for path,
-network and platform details.
-
-</details>
+Open the running UI, select the actual folder containing your **complete
+GGUF checkpoint**, click **Scan models**, choose the first shard of a supported
+model and then **Apply & load**. Both the CPU backend and supported hardware
+Vulkan adapters are available; `auto` selects compatible Vulkan hardware
+during discovery, or CPU if no suitable adapter is found. Explicit GPU settings
+are strict: model, shader and device failures are not silently retried on CPU.
+Native quality and performance remain subject to checkpoint and hardware
+validation.
 
 ### 3. Connect a coding client
 
@@ -185,9 +210,10 @@ contexts can still make a configuration impractical. Start with the
 
 ## One Rust application
 
-All three documented executable names enter the **same native Rust inference
-service**, sharing a single GGUF loader, cache manager, scheduler and API.
-`nextora` is the public-facing name, `nextora-engine` is the native Rust package, and `nextora-cli` is a thin auxiliary command.
+Both executables use the **same native Rust inference service**, GGUF loader,
+cache manager, scheduler and API. `nextora` is the public executable,
+`nextora-engine` is the Cargo package, and `nextora-cli` is an optional
+thin wrapper.
 There is no separate Strata serving backend or port 8080.
 
 ```sh
