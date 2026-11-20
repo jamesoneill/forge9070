@@ -26,12 +26,17 @@
 
 ---
 
-**Nextora** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The old Strata runtime is retired; legacy executable names forward to the native engine.
-Its independent Rust engine selects eligible hardware Vulkan adapters by capabilities (not vendor or model name), and supports explicit automatic CPU fallback when no compatible adapter is available. See [hardware support](docs/HARDWARE-SUPPORT.md) for the validated scope.
-Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
-caches, a browser configuration panel and an OpenAI-compatible coding API.
-Windows and Linux launchers are included, with an explicit Windows-host route
-for WSL users.
+**Nextora** is an experimental, local-first AI inference engine written in
+Rust. It supports validated GGUF checkpoints with CPU execution and eligible
+Vulkan devices, a browser configuration panel, bounded mixture-of-experts caches
+and a local coding-client API. Hardware selection is based on Vulkan
+capabilities rather than the GPU brand or model name.
+
+The older Strata provider runtime has been retired. Both the public
+`nextora` executable and optional `nextora-cli` wrapper use the same native
+inference implementation. For the exact validated hardware and model scope,
+see [hardware support](docs/HARDWARE-SUPPORT.md) and
+[validation evidence](VALIDATION.md).
 
 > [!IMPORTANT]
 > **Experimental, with evidence attached.** CPU and software-Vulkan tests are
@@ -205,9 +210,10 @@ contexts can still make a configuration impractical. Start with the
 
 ## One Rust application
 
-All three documented executable names enter the **same native Rust inference
-service**, sharing a single GGUF loader, cache manager, scheduler and API.
-`nextora` is the public-facing name, `nextora-engine` is the native Rust package, and `nextora-cli` is a thin auxiliary command.
+Both executables use the **same native Rust inference service**, GGUF loader,
+cache manager, scheduler and API. `nextora` is the public executable,
+`nextora-engine` is the Cargo package, and `nextora-cli` is an optional
+thin wrapper.
 There is no separate Strata serving backend or port 8080.
 
 ```sh

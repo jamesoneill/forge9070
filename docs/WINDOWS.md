@@ -85,6 +85,7 @@ direct command. The helper creates it automatically.
 | `nextora.exe` is not recognised | Use `.\target\release\nextora.exe` in the repository root; do not type `nextora-engine.exe`. |
 | Executable missing | Run `.\scripts\configure-native-windows.ps1 -Build`; inspect the Cargo error if compilation fails. |
 | `cargo` not recognised | Install Rustup and reopen PowerShell; check `cargo --version`. |
+| PowerShell says scripts are disabled | Build directly with `cargo build --release --locked -p nextora-engine` and run `.\\target\\release\\nextora.exe serve --backend auto --open-ui`. For managed systems, consult your policy administrator rather than changing system-wide execution policy. |
 | `link.exe` or MSVC toolchain errors | Install Visual Studio C++ Build Tools and Windows SDK. Use native Windows MSVC, not a WSL Linux build. |
 | Windows Application Control blocks Rust build scripts | Build on a Windows-local path. If still blocked, your device's policy administrator must allow the signed/toolchain executables; the launcher does not disable security policy. |
 | Browser opens but cannot connect | Keep the server terminal open; read errors and check whether port 9070 is already in use. |

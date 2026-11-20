@@ -1,4 +1,4 @@
-# Nextora — native engine 0.2.1 (historical Nextora 0.9.1)
+# Nextora — native engine 0.2.1
 
 The standalone `nextora-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
