@@ -43,7 +43,7 @@ for WSL users.
 
 The public-facing [Nextora landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
 
-**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `nextora-engine`; `nextora`, `nextora`, and `nextora-engine` are executable aliases. The historical `nextora-cli` executable now invokes that **same** native Rust engine. Legacy Strata commands and provider profiles require migration. See [the rename guide](docs/RENAME.md).
+**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The public executable is `nextora` and its Rust package is `nextora-engine`. The auxiliary `nextora-cli` command forwards to the same native runtime. Legacy Strata commands and provider profiles require migration. See [the rename guide](docs/RENAME.md).
 
 ## Watch the architecture walkthrough
 
@@ -97,18 +97,18 @@ scripts from a WSL network share can be blocked by Application Control.
 **Windows PowerShell**
 
 ```powershell
-.\target\release\nextora-engine.exe serve --open-ui --backend auto `
-  --models-dir 'F:\Models' --settings-file '.\forge-service.json'
+.\target\release\nextora.exe serve --open-ui --backend auto `
+  --models-dir 'F:\Models' --settings-file '.\nextora-service.json'
 ```
 
 **Linux**
 
 ```sh
 ./target/release/nextora serve --open-ui --backend auto \
-  --models-dir /path/to/models --settings-file ./forge-service.json
+  --models-dir /path/to/models --settings-file ./nextora-service.json
 ```
 
-The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `nextora-engine doctor` reports eligibility, not validated throughput.
+The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `nextora doctor` reports eligibility, not validated throughput.
 
 Open **<http://127.0.0.1:9070/>**. Choose your actual model folder, select
 **Scan models**, choose the first shard of a complete supported model, and use
@@ -154,9 +154,9 @@ batching or a four-times speed guarantee. See the
 authentication, context limits and client behavior.
 
 > [!TIP]
-> **Use the native command.** `nextora serve`,
+> **Use the native command.** `nextora serve` or
 > `nextora-cli serve` enter the same service on port
-> **9070**, with `--open-ui`. The former `nextora-cli engine` prefix is retired.
+> **9070**, with `--open-ui`. The old nested `engine` prefix is no longer supported.
 > With `cargo run`, put `--` before `serve`.
 
 ## Choose a model
@@ -187,8 +187,7 @@ contexts can still make a configuration impractical. Start with the
 
 All three documented executable names enter the **same native Rust inference
 service**, sharing a single GGUF loader, cache manager, scheduler and API.
-`nextora` is the public-facing name, `nextora-engine` is the native package's
-original executable, and `nextora-cli` is a thin historical command alias.
+`nextora` is the public-facing name, `nextora-engine` is the native Rust package, and `nextora-cli` is a thin auxiliary command.
 There is no separate Strata serving backend or port 8080.
 
 ```sh
@@ -270,6 +269,6 @@ See [third-party notices](THIRD_PARTY_NOTICES.md) and
 licence individually, especially after dependencies change.
 
 Nextora is an independent project. It is not endorsed by AMD, Qwen, Avalon or
-RustingStrata. The original Nextora artwork is documented in the
+RustingStrata. The Nextora artwork is documented in the
 [brand guide](docs/BRAND.md).
 
