@@ -2,9 +2,8 @@
 
 use crate::gguf::Gguf;
 use anyhow::{Context, anyhow, bail};
-use std::collections::HashMap;
 use tokenizers::decoders::byte_level::ByteLevel as ByteLevelDecoder;
-use tokenizers::models::bpe::BPE;
+use tokenizers::models::bpe::{BPE, Vocab};
 use tokenizers::pre_tokenizers::byte_level::ByteLevel;
 use tokenizers::pre_tokenizers::sequence::Sequence;
 use tokenizers::pre_tokenizers::split::{Split, SplitPattern};
@@ -59,7 +58,7 @@ impl Tokenizer {
             .into_iter()
             .map(|m| m.split_once(' ').map(|(a, b)| (a.to_string(), b.to_string())).context("bad merge"))
             .collect::<anyhow::Result<Vec<_>>>()?;
-        let vocab: HashMap<String, u32> = tokens.iter().enumerate().map(|(i, t)| (t.clone(), i as u32)).collect();
+        let vocab: Vocab = tokens.iter().enumerate().map(|(i, t)| (t.clone(), i as u32)).collect();
         let bpe = BPE::builder().vocab_and_merges(vocab, merges).build().map_err(|e| anyhow!("{e}"))?;
 
         let mut inner = tokenizers::Tokenizer::new(bpe);
@@ -78,7 +77,7 @@ impl Tokenizer {
             .filter(|(_, t)| matches!(t.as_u64(), Some(3 | 4)))
             .map(|(i, _)| AddedToken::from(tokens[i].clone(), true))
             .collect();
-        inner.add_special_tokens(&special);
+        inner.add_special_tokens(special).map_err(|e| anyhow!("cannot register GGUF special tokens: {e}"))?;
 
         let mut eos: Vec<u32> = g.meta.get("tokenizer.ggml.eos_token_id").and_then(|v| v.as_u64()).map(|v| v as u32).into_iter().collect();
         if let Some(a) = g.meta.get("tokenizer.ggml.eog_token_ids").and_then(|v| v.as_arr()) {
@@ -105,10 +104,11 @@ impl Tokenizer {
         let merges = g.get("tokenizer.ggml.merges")?.as_arr().context("merges")?.iter()
             .map(|v| v.as_str().and_then(|m| m.split_once(' ')).map(|(a, b)| (a.to_string(), b.to_string())).context("bad merge"))
             .collect::<anyhow::Result<Vec<_>>>()?;
-        let vocab: HashMap<String, u32> = tokens.iter().enumerate().map(|(i, t)| (t.clone(), i as u32)).collect();
+        let vocab: Vocab = tokens.iter().enumerate().map(|(i, t)| (t.clone(), i as u32)).collect();
         let bpe = BPE::builder().vocab_and_merges(vocab, merges).byte_fallback(true).unk_token("<unk>".into()).build().map_err(|e| anyhow!("{e}"))?;
         let mut inner = tokenizers::Tokenizer::new(bpe);
-        inner.with_normalizer(Some(Replace::new(" ", "\u{2581}").map_err(|e| anyhow!("{e}"))?));
+        inner.with_normalizer(Some(Replace::new(" ", "\u{2581}").map_err(|e| anyhow!("{e}"))?))
+            .map_err(|e| anyhow!("cannot configure GGUF normalizer: {e}"))?;
         let split = Split::new(SplitPattern::Regex("[^\\n]+|[\\n]+".into()), SplitDelimiterBehavior::Isolated, false).map_err(|e| anyhow!("{e}"))?;
         inner.with_pre_tokenizer(Some(split));
         inner.with_decoder(Some(DSeq::new(vec![
@@ -121,7 +121,7 @@ impl Tokenizer {
             .filter(|(_, t)| matches!(t.as_u64(), Some(3 | 4)))
             .map(|(i, _)| AddedToken::from(tokens[i].clone(), true))
             .collect();
-        inner.add_special_tokens(&special);
+        inner.add_special_tokens(special).map_err(|e| anyhow!("cannot register GGUF special tokens: {e}"))?;
         let mut eos: Vec<u32> = g.meta.get("tokenizer.ggml.eos_token_id").and_then(|v| v.as_u64()).map(|v| v as u32).into_iter().collect();
         for t in ["<turn|>", "<eos>"] {
             if let Some(id) = inner.token_to_id(t) && !eos.contains(&id) { eos.push(id); }
