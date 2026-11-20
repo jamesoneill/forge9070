@@ -1,4 +1,4 @@
-# Forge9070 brand
+# ForgeAI brand
 
 The identity combines an angular **F**, three interlocking planes and a square
 spark. It reflects the project's name and its focus on explicit, inspectable
@@ -14,7 +14,7 @@ compute. It does not incorporate AMD, Rust, Qwen or Avalon corporate marks.
 | `assets/forge9070-social.jpg` | Pending publication: compact JPEG social preview |
 | `assets/forge9070-social.png` | Pending publication: PNG social preview |
 
-The README uses the published SVG mark with the project title and tagline as
+The README and website use the published SVG mark with the project title and tagline as
 live text. The four raster files will be linked here when they are published.
 
 Preserve the mark's proportions. Keep at least one spark-width of clear space
