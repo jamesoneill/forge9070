@@ -315,6 +315,58 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         connections: AtomicUsize::new(0),
         ids: AtomicU64::new(1),
     });
+    // Monitor memory even when no browser or inference client is connected.
+    // The controller owns no model; each sample looks up the current one.
+    let weak = Arc::downgrade(&state);
+    std::thread::spawn(move || {
+        let mut healthy_samples = 0u8;
+        loop {
+            std::thread::sleep(Duration::from_secs(1));
+            let Some(server) = weak.upgrade() else { break };
+            let loaded = match server.loaded.read() {
+                Ok(loaded) => loaded,
+                Err(_) => break,
+            };
+            let Some(model) = loaded.as_ref() else {
+                healthy_samples = 0;
+                continue;
+            };
+            let source = &model.model.source;
+            let Ok(stats) = source.expert_cache_stats() else { continue };
+            let Ok(available) = crate::memory::available_memory() else { continue };
+            let initial_ceiling = model.model.report()["host_memory_plan"]
+                ["expert_cache_capacity_bytes"].as_u64().unwrap_or(0);
+            let margin = model.model.report()["host_memory_plan"]
+                ["os_margin_bytes"].as_u64().unwrap_or(0)
+                .max(512 * 1024 * 1024);
+            // MemAvailable already includes current cached payload effects.
+            // Add that payload back before subtracting the reserve.
+            let sustainable = available.saturating_add(stats.resident_bytes as u64)
+                .saturating_sub(margin)
+                .min(initial_ceiling);
+            let current = stats.capacity_bytes as u64;
+            let target = if sustainable < current {
+                healthy_samples = 0;
+                sustainable
+            } else {
+                healthy_samples = healthy_samples.saturating_add(1);
+                if healthy_samples >= 3 {
+                    healthy_samples = 0;
+                    current.saturating_add(64 * 1024 * 1024).min(sustainable)
+                } else {
+                    current
+                }
+            };
+            if target != current {
+                if let Ok(target) = usize::try_from(target) {
+                    if let Err(error) = source.resize_expert_cache(target) {
+                        eprintln!("Forge expert-cache controller: {error:#}");
+                    }
+                }
+            }
+            // No warmup is scheduled on growth; demand fetches fill the cache.
+        }
+    });
     for incoming in listener.incoming() {
         let mut stream = incoming?;
         if state
