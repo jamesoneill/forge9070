@@ -1,5 +1,5 @@
 > **Historical compatibility guide:** The previous Strata-based application
-> and port 8080 have been retired from ForgeAI. The original documentation
+> and port 8080 have been retired from Nextora. The original documentation
 > below is retained solely as migration reference and may describe commands,
 > cache settings or API behaviour that the native Rust service does not offer.
 > For the active runtime, use [the native guide](NATIVE-ENGINE.md) and
@@ -11,7 +11,7 @@
 independent Forge 0.9 runtime, its Vulkan/CPU settings, coding API and queue,
 use [NATIVE-ENGINE.md](NATIVE-ENGINE.md). Flags and endpoints differ.
 
-Forge9070 0.6 targets an RX 9070 XT through native Rust/Vulkan. It has not been
+Nextora 0.6 targets an RX 9070 XT through native Rust/Vulkan. It has not been
 benchmarked on the target card. The objective is the best measured individual-reply
 performance for a specified model and execution configuration, subject to the
 included output-comparison gate. It is not a global hardware optimum or a
@@ -48,9 +48,9 @@ available vector instructions:
 
 ```bash
 bash scripts/setup-wsl.sh --build
-./target/release/forge9070 doctor --require-gpu
-./target/release/forge9070 inspect --model /path/model.gguf
-./target/release/forge9070 check --model /path/model.gguf
+./target/release/nextora-cli doctor --require-gpu
+./target/release/nextora-cli inspect --model /path/model.gguf
+./target/release/nextora-cli check --model /path/model.gguf
 ```
 
 `doctor` checks discovery/capabilities and `check` checks pipeline shared-memory
@@ -69,7 +69,7 @@ GPU/host memory fit or answer quality. No pretrained checkpoints are included.
 Use representative prompt text when available:
 
 ```bash
-./target/release/forge9070 bench --model /path/model.gguf \
+./target/release/nextora-cli bench --model /path/model.gguf \
   --ctx 4096 --pp 128,512 --tg 128 --reps 3 --warmup 1 \
   --kv f16 --mtp 0 --json-out baseline.json
 ```
@@ -91,7 +91,7 @@ Stop a separately running GPU server before using the CLI tuner, so both
 processes do not compete for VRAM and compute during measurement.
 
 ```bash
-./target/release/forge9070 tune --model /path/model.gguf \
+./target/release/nextora-cli tune --model /path/model.gguf \
   --ctx 4096 --kv f16 --tg 128 --reps 3 --warmup 1 \
   --json-out tuning.json
 ```
@@ -172,7 +172,7 @@ One checkpoint is shared by all slots; each active request has separate state.
 The default is one slot. For several clients:
 
 ```bash
-./target/release/forge9070 serve --model /path/model.gguf \
+./target/release/nextora-cli serve --model /path/model.gguf \
   --parallel 2 --mtp 0 --kv f16 --ctx 4096 --max-tokens 512
 ```
 

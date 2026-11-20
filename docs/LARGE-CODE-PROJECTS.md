@@ -1,11 +1,11 @@
 > **Historical compatibility guide:** The previous Strata-based application
-> and port 8080 have been retired from ForgeAI. The original documentation
+> and port 8080 have been retired from Nextora. The original documentation
 > below is retained solely as migration reference and may describe commands,
 > cache settings or API behaviour that the native Rust service does not offer.
 > For the active runtime, use [the native guide](NATIVE-ENGINE.md) and
 > [migration details](COMPATIBILITY.md).
 
-# Large code projects with Forge9070 0.6
+# Large code projects with Nextora 0.6
 
 **Scope:** this guide documents the existing compatibility application. For the
 independent Forge 0.9 runtime, its Vulkan/CPU settings, coding API and queue,
@@ -45,7 +45,7 @@ Start with `code` for a first hardware check. For larger edits and analysis,
 use `code-long` once loading and ordinary generation work:
 
 ```powershell
-$Forge = 'C:\code\forge9070-0.6.0\target-windows\x86_64-pc-windows-msvc\release\forge9070.exe'
+$Forge = 'C:\code\nextora-cli-0.6.0\target-windows\x86_64-pc-windows-msvc\release\nextora-cli.exe'
 & $Forge profile --preset code-long
 & $Forge serve --models-dir 'C:\Models' --preset code-long
 ```
