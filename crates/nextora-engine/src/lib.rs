@@ -22,7 +22,7 @@ pub mod server;
 pub mod tokenizer;
 pub mod vulkan;
 
-pub const ENGINE_ID: &str = "forge-native";
+pub const ENGINE_ID: &str = "nextora-native";
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn capabilities() -> serde_json::Value {

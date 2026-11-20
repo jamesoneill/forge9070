@@ -215,12 +215,16 @@ impl RuntimeSequence {
 
 impl RuntimeModel {
     pub fn load(path: &Path, context: usize, options: &BackendArgs) -> Result<Self> {
+        // Reject invalid GGUF and unsupported tokenizer metadata before probing
+        // drivers or allocating any Vulkan resources. This also prevents an
+        // unnecessary hardware probe on CPU-only hosts with an invalid model.
+        let mut g = Gguf::open(path)?;
+        let tokenizer = Tokenizer::from_gguf(&g)?;
         let resolved = options.resolve()?;
         let backend = resolved.selection.selected;
         if resolved.selection.automatic {
-            eprintln!("Forge backend: {backend:?}. {}", resolved.selection.reason);
+            eprintln!("Nextora backend: {backend:?}. {}", resolved.selection.reason);
         }
-        let mut g = Gguf::open(path)?;
         let routed_device_cache = backend != Backend::Vulkan
             || g.meta.get("general.architecture").and_then(|v| v.as_str()) == Some("qwen4exp");
         let host_plan = crate::memory::plan(
@@ -241,7 +245,6 @@ impl RuntimeModel {
             0
         })?;
         let source = Arc::new(g);
-        let tokenizer = Tokenizer::from_gguf(&source)?;
         let execution = match backend {
             Backend::Cpu => Execution::Cpu(Model::load(source.clone(), context)?),
             Backend::Vulkan => {
@@ -257,12 +260,22 @@ impl RuntimeModel {
                 bail!("automatic backend policy was not resolved before model loading")
             }
         };
+        let config_vocab_size = match &execution {
+            Execution::Cpu(model) | Execution::Hybrid { model, .. } => model.config().vocab_size,
+            Execution::Vulkan(model) => model.config().vocab_size,
+        };
+        ensure!(
+            tokenizer.vocab_size() == config_vocab_size,
+            "tokenizer vocabulary and model disagree"
+        );
+        // Warmup is potentially expensive: only perform it for an accepted
+        // tokenizer/model pair. Expert warmup never changes model precision.
         let warmup = if options.expert_warmup && routed_device_cache {
             serde_json::to_value(source.warm_expert_cache()?)?
         } else {
             serde_json::json!({"enabled":false})
         };
-        let result = Self {
+        Ok(Self {
             execution,
             source,
             tokenizer,
@@ -270,12 +283,7 @@ impl RuntimeModel {
             selection: resolved.selection,
             host_plan,
             warmup,
-        };
-        ensure!(
-            result.tokenizer.vocab_size() == result.config().vocab_size,
-            "tokenizer vocabulary and model disagree"
-        );
-        Ok(result)
+        })
     }
     pub fn config(&self) -> &Config {
         match &self.execution {
