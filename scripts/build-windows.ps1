@@ -18,7 +18,7 @@ try {
     & $Executable doctor
     if ($LASTEXITCODE -ne 0) { throw 'The hardware diagnostic command failed.' }
     Write-Host "Built $Executable"
-    Write-Host 'ForgeAI native Rust runtime. RustingStrata credited as historical inspiration.'
+    Write-Host 'Nextora native Rust runtime. RustingStrata credited as historical inspiration.'
 } finally {
     Pop-Location
 }

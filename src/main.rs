@@ -2,7 +2,7 @@
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(version, about = "ForgeAI native Rust inference (legacy forge9070 command alias)")]
+#[command(version, about = "Nextora native Rust inference (legacy forge9070 command alias)")]
 struct Cli {
     #[command(flatten)]
     engine: forge_engine::cli::EngineArgs,

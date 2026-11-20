@@ -357,12 +357,8 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
                     current
                 }
             };
-            if target != current {
-                if let Ok(target) = usize::try_from(target) {
-                    if let Err(error) = source.resize_expert_cache(target) {
-                        eprintln!("Forge expert-cache controller: {error:#}");
-                    }
-                }
+            if let Err(error) = apply_expert_cache_target(source, &stats, target) {
+                eprintln!("Forge expert-cache controller: {error:#}");
             }
             // No warmup is scheduled on growth; demand fetches fill the cache.
         }
@@ -399,6 +395,22 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
                 eprintln!("native request ended: {e}");
             }
         });
+    }
+    Ok(())
+}
+
+fn apply_expert_cache_target(
+    source: &crate::gguf::Gguf,
+    stats: &crate::gguf::ExpertCacheStats,
+    target: u64,
+) -> Result<()> {
+    // A shrink can leave active leases above the target. Retry on later samples
+    // even when the target is unchanged, so released leases are reclaimed while
+    // idle instead of waiting for another capacity change or cache admission.
+    if target != stats.capacity_bytes as u64 || stats.resident_bytes as u64 > target {
+        source.resize_expert_cache(
+            usize::try_from(target).context("expert cache target exceeds address range")?,
+        )?;
     }
     Ok(())
 }
@@ -978,6 +990,43 @@ fn generate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cache_controller_reclaims_released_leases_at_an_unchanged_target() {
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/tiny-qwen3moe.gguf");
+        let capacity = 1024 * 1024;
+        let source = crate::gguf::Gguf::open_with_cache(fixture, capacity).unwrap();
+        let lease = source.expert_cached("blk.0.ffn_gate_exps.weight", 0).unwrap();
+        assert!(lease.is_owned());
+        let payload = lease.tensor().bytes().to_vec();
+        let before = source.expert_cache_stats().unwrap();
+        assert!(before.resident_bytes > 0);
+
+        apply_expert_cache_target(&source, &before, 0).unwrap();
+        let pinned = source.expert_cache_stats().unwrap();
+        assert_eq!(pinned.capacity_bytes, 0);
+        assert_eq!(pinned.resident_bytes, before.resident_bytes);
+        assert_eq!(pinned.pinned_bytes, before.resident_bytes);
+        assert_eq!(lease.tensor().bytes(), payload);
+
+        // Simulate the next idle controller sample after generation releases
+        // its lease: no miss, warmup, new request or target change occurs.
+        drop(lease);
+        let released = source.expert_cache_stats().unwrap();
+        assert_eq!(released.pinned_bytes, 0);
+        apply_expert_cache_target(&source, &released, 0).unwrap();
+        let trimmed = source.expert_cache_stats().unwrap();
+        assert_eq!(trimmed.resident_bytes, 0);
+        assert_eq!(trimmed.resident_entries, 0);
+        assert_eq!(trimmed.payload_bytes_read, before.payload_bytes_read);
+
+        apply_expert_cache_target(&source, &trimmed, capacity as u64).unwrap();
+        let recovered = source.expert_cache_stats().unwrap();
+        assert_eq!(recovered.capacity_bytes, capacity);
+        assert_eq!(recovered.resident_bytes, 0);
+        assert_eq!(recovered.payload_bytes_read, before.payload_bytes_read);
+    }
+
     #[test]
     fn auth_and_hosts_are_exact() {
         assert!(authorized("Bearer abc", "abc"));

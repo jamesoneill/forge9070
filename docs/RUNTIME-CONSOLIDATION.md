@@ -1,6 +1,6 @@
 # Native-only application consolidation
 
-ForgeAI now exposes **one native Rust inference implementation**. The
+Nextora now exposes **one native Rust inference implementation**. The
 `forgeai` and `forge-engine` binaries share the native crate entry point.
 The `forge9070` binary is a thin CLI shim calling that same crate.
 

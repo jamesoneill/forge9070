@@ -41,6 +41,12 @@ jobs:
           python -m compileall -q .github/scripts scripts tests
           node --check crates/forge-engine/src/ui/app.js
           for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Check native validation scripts can load their helpers
+        shell: bash
+        run: |
+          python scripts/validate-native-api.py --help
+          python scripts/validate-native-ui.py --help
+          python scripts/validate-native-gpu-api.py --help
       - name: Check release gates and portable archive integrity
         run: python .github/scripts/test-release.py
       - name: Install shader validation tools

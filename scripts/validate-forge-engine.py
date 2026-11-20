@@ -3,7 +3,8 @@
 
 This validates CLI selection, strict capability failures, actual generation,
 and benchmark accounting. It is not a GPU or pretrained-model quality test.
-Full numerical cross-implementation parity lives in tests/new_engine_parity.rs.
+Native numerical cases live in the engine's Rust tests; retained tiny model
+fixtures live under tests/fixtures.
 """
 
 from __future__ import annotations

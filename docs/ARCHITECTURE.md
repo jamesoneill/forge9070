@@ -1,7 +1,8 @@
 # Native engine architecture
 
-ForgeAI contains **one native Rust inference runtime**, with historical
-`forge9070` and `forge-engine` executable aliases entering the same implementation.
+Nextora contains **one native Rust inference runtime**. The `nextora`,
+`forgeai`, `forge-engine`, and historical `forge9070` executable names all enter
+the same implementation.
 The Strata compatibility service and port 8080 have been retired.
 
 ## Execution policy and hardware

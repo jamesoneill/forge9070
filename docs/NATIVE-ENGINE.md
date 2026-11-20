@@ -1,4 +1,4 @@
-# ForgeAI — native engine 0.2.1 (historical Forge9070 0.9.1)
+# Nextora — native engine 0.2.1 (historical Forge9070 0.9.1)
 
 The standalone `forge-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
@@ -6,7 +6,7 @@ Vulkan shaders without a RustingStrata execution dependency. It supports checked
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `forgeai`, `forge-engine`, or `forge9070` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
+Use `nextora`, `forgeai`, `forge-engine`, or `forge9070` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
 ## Implemented scope
 
@@ -92,7 +92,7 @@ If you used the earlier `forge9070 models pull` command without
 | Linux / native WSL | `$XDG_DATA_HOME/forge9070/models`, or `$HOME/.local/share/forge9070/models` when unset |
 | Explicit override | `FORGE9070_MODELS_DIR`, if that environment variable was set |
 
-These are defaults from the existing download command, not confirmation that
+These were defaults of the retired download command, not confirmation that
 a download exists on your computer. A different downloader can use another
 cache location. Scans skip symbolic links and report skipped paths; put a
 complete, regular-file GGUF set in a chosen model folder when necessary.

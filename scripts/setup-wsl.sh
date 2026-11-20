@@ -28,7 +28,7 @@ for option in "$@"; do
 done
 
 project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-printf 'Forge9070 native Linux/WSL preparation\nProject: %s\n' "$project_root"
+printf 'Nextora native Linux/WSL preparation\nProject: %s\n' "$project_root"
 if [[ -r /proc/sys/kernel/osrelease ]]; then
     IFS= read -r kernel < /proc/sys/kernel/osrelease
     printf 'Kernel: %s\n' "$kernel"
@@ -78,7 +78,7 @@ if (( missing )); then
 fi
 printf 'Cargo: %s\n' "$cargo_bin"
 if ! command -v vulkaninfo >/dev/null 2>&1; then
-    printf '%s\n' 'vulkaninfo is optional for diagnostics; Forge9070 doctor performs its own Vulkan discovery.'
+    printf '%s\n' 'vulkaninfo is optional for diagnostics; The native engine doctor performs its own Vulkan discovery.'
 fi
 if (( ! build )); then
     printf '%s\n' 'Build prerequisites found. Use --build to compile; GPU support is not established by this check.'
@@ -86,11 +86,11 @@ if (( ! build )); then
 fi
 
 cd -- "$project_root"
-build_args=(build --locked)
+build_args=(build --locked -p forge-engine)
 profile=debug
 if (( ! debug )); then build_args+=(--release); profile=release; fi
 "$cargo_bin" "${build_args[@]}"
-"$project_root/target/$profile/forge9070" doctor
-printf 'Built native Linux executable: %s/target/%s/forge9070\n' "$project_root" "$profile"
-printf '%s\n' 'Next: scripts/serve-wsl.sh --backend cpu or --backend vulkan.'
+"$project_root/target/$profile/nextora" doctor
+printf 'Built native Linux executable: %s/target/%s/nextora\n' "$project_root" "$profile"
+printf 'Next: "%s/target/%s/nextora" serve --open-ui --backend auto\n' "$project_root" "$profile"
 
