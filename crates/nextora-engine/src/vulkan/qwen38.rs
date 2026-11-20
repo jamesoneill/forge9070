@@ -2293,7 +2293,7 @@ mod tests {
     #[test]
     #[ignore = "requires explicit Vulkan shader execution environment"]
     fn software_vulkan_qwen_budget_pressure_retains_every_expert() {
-        assert_eq!(std::env::var("FORGE_VULKAN_TEST").as_deref(), Ok("1"));
+        assert_eq!(std::env::var("NEXTORA_VULKAN_TEST").as_deref(), Ok("1"));
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../tests/fixtures/tiny-qwen38.gguf");
         let source = Arc::new(Gguf::open(path).unwrap());
@@ -2378,7 +2378,7 @@ mod tests {
     #[test]
     #[ignore = "requires explicit Vulkan shader execution environment"]
     fn software_vulkan_qwen_128k_context_short_prefix() {
-        assert_eq!(std::env::var("FORGE_VULKAN_TEST").as_deref(), Ok("1"));
+        assert_eq!(std::env::var("NEXTORA_VULKAN_TEST").as_deref(), Ok("1"));
         let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../tests/fixtures/tiny-qwen38.gguf");
         let mut bytes = std::fs::read(fixture).unwrap();

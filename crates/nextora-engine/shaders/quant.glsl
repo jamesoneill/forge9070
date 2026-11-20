@@ -1,8 +1,8 @@
 // Independent packed block decoding for the mixed GSQ-RCO checkpoint formats.
 // Byte layout reference: GGML ggml-common.h / ggml-quants.c. MIT codebook data
 // is attributed in ../GGML-NOTICE.md. No weight expansion or int64 requirement.
-#ifndef FORGE_QUANT_GLSL
-#define FORGE_QUANT_GLSL
+#ifndef NEXTORA_QUANT_GLSL
+#define NEXTORA_QUANT_GLSL
 #include "quant_tables.glsl"
 
 uint forge_word_at(uint offset) {

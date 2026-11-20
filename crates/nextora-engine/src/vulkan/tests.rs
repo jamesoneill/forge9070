@@ -123,15 +123,15 @@ fn packed_gpu_type_inventory_matches_public_types() {
     }
 }
 
-/// Run explicitly with FORGE_VULKAN_TEST=1 and a hardware or software ICD.
+/// Run explicitly with NEXTORA_VULKAN_TEST=1 and a hardware or software ICD.
 /// Software execution validates shader math/resources, never RX9070XT speed.
 #[test]
 #[ignore = "requires explicit Vulkan shader execution environment"]
 fn software_vulkan_full_validation() {
     assert_eq!(
-        std::env::var("FORGE_VULKAN_TEST").as_deref(),
+        std::env::var("NEXTORA_VULKAN_TEST").as_deref(),
         Ok("1"),
-        "explicit FORGE_VULKAN_TEST=1 is required"
+        "explicit NEXTORA_VULKAN_TEST=1 is required"
     );
     let report = discover().unwrap();
     if report["adapters"]
