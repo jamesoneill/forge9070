@@ -1,4 +1,4 @@
-# ForgeAI — native engine 0.2.1 (historical Forge9070 0.9.1)
+# Nextora — native engine 0.2.1 (historical Forge9070 0.9.1)
 
 The standalone `forge-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
@@ -6,12 +6,7 @@ Vulkan shaders without a RustingStrata execution dependency. It supports checked
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `forgeai`, `forge-engine` or `forge9070 engine` to select this implementation. Existing
-root `forge9070 serve`, `generate`, `chat`, `bench` and browser commands continue
-to use the attributed compatibility engine. They do not silently become the
-new implementation. `cargo build -p forge-engine` builds the independent binary
-without compiling the Strata runtime. Its GGML codebook data is MIT-attributed
-in `crates/forge-engine/GGML-NOTICE.md`; existing distribution licences remain.
+Use `nextora`, `forgeai`, `forge-engine`, or `forge9070` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
 ## Implemented scope
 
@@ -21,15 +16,19 @@ in `crates/forge-engine/GGML-NOTICE.md`; existing distribution licences remain.
 | Quantization | F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS |
 | Qwen3.8 | Hyper-connections, gated attention, DeltaNet recurrent state, QSA pooling/selection, lazy PLE histories, routed and shared experts |
 | CPU | Direct quantized rows, existing AVX2/FMA/F16C selection where implemented, reusable per-sequence working memory |
-| Vulkan | Packed weight kernels, device-owned model state, reusable command resources, independent sequences |
+| Vulkan | Capability-selected adapters, packed-weight kernels, device-owned model state, reusable command resources, independent sequences |
 | Native API | Chat Completions JSON/SSE, embedded model template, text/function-call histories, model catalogue and idle switching |
 | Configuration UI | Embedded browser panel, startup without a model, bounded folder scan, idle-only settings/load/unload and optional saved JSON profile |
 | Admission | One to four active requests, FIFO bounded wait queue, disconnect cancellation and deadlines |
 | Reuse | Exact executed-token prefix retains sequence state; unrelated histories reset state |
 | Numerical state | F32 KV and recurrent state; checkpoint quantization is retained |
 
-Every backend is explicit: `--backend cpu`, `--backend vulkan`, or
-`--backend hybrid`. `--cpu` is an alias for CPU. The hybrid backend is a
+Generation and benchmarking require an explicit policy: `--backend auto`,
+`--backend cpu`, `--backend vulkan`, or `--backend hybrid`. `--cpu` is an alias
+for CPU. `auto` selects eligible Vulkan hardware or CPU when discovery finds
+none. Explicit device, VRAM budget or software-Vulkan settings disable silent
+CPU fallback, and load/creation/shader errors remain errors. The status reports
+both the policy and the actual execution backend. See [hardware support](HARDWARE-SUPPORT.md). The hybrid backend is a
 diagnostic bridge with CPU state and cached GPU projections; its per-projection
 synchronization makes it unsuitable as the default performance route. The
 Vulkan Qwen3.8 path keeps state operations on the GPU and uses a bounded expert
@@ -46,8 +45,7 @@ shards and its tokenizer/template metadata.
 ## Configure the service in a browser
 
 The native server embeds its own HTML, CSS and JavaScript. It needs no frontend
-build, CDN or separate UI process. Both `forge-engine serve` and
-`forge9070 engine serve` expose it at `/`. A model is optional at startup, so
+build, CDN or separate UI process. All executable names enter one native service, exposed at `/`. A model is optional at startup, so
 you can find the files and configure the runtime before allocating GPU state.
 
 ### Windows
@@ -57,7 +55,7 @@ PowerShell in that project folder:
 
 ```powershell
 cargo build --release --locked -p forge-engine
-.\target\release\forge-engine.exe serve --open-ui --backend vulkan `
+.\target\release\forge-engine.exe serve --open-ui --backend auto `
   --models-dir 'F:\' --settings-file '.\forge-service.json'
 ```
 
@@ -94,7 +92,7 @@ If you used the earlier `forge9070 models pull` command without
 | Linux / native WSL | `$XDG_DATA_HOME/forge9070/models`, or `$HOME/.local/share/forge9070/models` when unset |
 | Explicit override | `FORGE9070_MODELS_DIR`, if that environment variable was set |
 
-These are defaults from the existing download command, not confirmation that
+These were defaults of the retired download command, not confirmation that
 a download exists on your computer. A different downloader can use another
 cache location. Scans skip symbolic links and report skipped paths; put a
 complete, regular-file GGUF set in a chosen model folder when necessary.
@@ -168,7 +166,7 @@ For the Windows GPU process from WSL:
 For native Linux execution in WSL:
 
 ```bash
-./target/release/forge-engine serve --open-ui --backend vulkan \
+./target/release/forge-engine serve --open-ui --backend auto \
   --models-dir /mnt/f --settings-file ./forge-service.json
 ```
 
@@ -273,6 +271,8 @@ This release has no continuous batching, async CPU/GPU expert overlap, MTP or
 quantized KV. GPU queues share the physical card. Four independent requests can
 be active, but they compete for compute, memory bandwidth and cache capacity.
 Software-Vulkan parity validates computation, not AMD hardware speed.
+
+Native WSL execution requires a compatible Linux Vulkan adapter. If only llvmpipe is available, `--backend auto` selects CPU; using the Windows executable may expose an actual Windows GPU instead. Physical performance remains unverified.
 
 ## Build on Windows and use from WSL
 

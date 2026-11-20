@@ -3,28 +3,19 @@ name = "forge9070"
 version = "0.9.1"
 edition = "2024"
 rust-version = "1.100"
-description = "ForgeAI legacy-compatible CLI: RX 9070 XT profile and diagnostics plus the native Forge engine"
-license-file = "LICENSE.md"
+description = "Nextora backwards-compatible command alias for the single native Rust engine"
+license = "MIT"
 publish = false
 
 [workspace]
-members = [".", "vendor/rusting-strata", "crates/forge-engine"]
-default-members = ["."]
+members = [".", "crates/forge-engine"]
+default-members = ["crates/forge-engine"]
 resolver = "3"
 
 [dependencies]
 anyhow = "1"
-ash = "0.38"
 clap = { version = "4", features = ["derive"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-http = "1"
-ureq = { version = "3", default-features = false, features = ["rustls"] }
-rusting_strata = { path = "vendor/rusting-strata" }
 forge-engine = { path = "crates/forge-engine" }
-
-[dev-dependencies]
-half = "2"
 
 [profile.release]
 opt-level = 3
@@ -33,4 +24,3 @@ lto = "thin"
 
 [profile.test]
 opt-level = 2
-

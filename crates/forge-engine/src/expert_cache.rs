@@ -6,7 +6,7 @@ use super::expert_io::{LoadedBytes, ReadMethod};
 use anyhow::Result;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}};
 
 #[derive(Debug)]
 pub(super) struct OwnedBytes(pub(super) Vec<u8>);
@@ -38,7 +38,7 @@ struct State {
 
 #[derive(Debug)]
 pub(super) struct ExpertCache {
-    capacity: usize,
+    capacity: AtomicUsize,
     state: Mutex<State>,
 }
 
@@ -67,9 +67,35 @@ pub struct ExpertCacheStats {
 impl ExpertCache {
     pub(super) fn new(capacity: usize) -> Self {
         Self {
-            capacity,
+            capacity: AtomicUsize::new(capacity),
             state: Mutex::new(State::default()),
         }
+    }
+
+    /// Change the owned-byte target while model computations hold immutable leases.
+    /// Entries still borrowed remain accounted for; a smaller target is enforced
+    /// on future cache admissions until the protected leases are released.
+    pub(super) fn resize(&self, target: usize) -> Result<()> {
+        let mut state = self.state.lock()
+            .map_err(|_| anyhow::anyhow!("expert cache lock poisoned"))?;
+        self.capacity.store(target, Ordering::Release);
+        if state.resident <= target {
+            return Ok(());
+        }
+        let victims: Vec<_> = state.recency.iter().map(|&(_, key)| key).collect();
+        for key in victims {
+            if state.resident <= target {
+                break;
+            }
+            if state.entries.get(&key).is_some_and(|entry| Arc::strong_count(&entry.bytes) == 1) {
+                let entry = state.entries.remove(&key)
+                    .expect("unleased victim belongs to locked cache");
+                state.recency.remove(&(entry.touched, key));
+                state.resident -= entry.bytes.0.len();
+                state.evictions = state.evictions.saturating_add(1);
+            }
+        }
+        Ok(())
     }
 
     #[cfg(test)]
@@ -105,11 +131,12 @@ impl ExpertCache {
             return Ok(Some(data));
         }
         state.misses = state.misses.saturating_add(1);
-        if length > self.capacity || self.capacity == 0 {
+        let capacity = self.capacity.load(Ordering::Acquire);
+        if length > capacity || capacity == 0 {
             state.mapped_bypasses = state.mapped_bypasses.saturating_add(1);
             return Ok(None);
         }
-        let needed = state.resident.saturating_sub(self.capacity - length);
+        let needed = state.resident.saturating_sub(capacity - length);
         if needed != 0 {
             // Inspect only as many oldest entries as needed; avoid scanning the
             // entire (potentially tens-of-thousands-of-experts) cache per miss.
@@ -211,7 +238,8 @@ impl ExpertCache {
                     .ok_or_else(|| anyhow::anyhow!("warmup payload overflow"))?;
             }
         }
-        if needed > self.capacity - state.resident {
+        let remaining = self.capacity.load(Ordering::Acquire).saturating_sub(state.resident);
+        if needed > remaining {
             return Ok(None);
         }
         let mut loaded = Vec::new();
@@ -272,7 +300,7 @@ impl ExpertCache {
             .lock()
             .map_err(|_| anyhow::anyhow!("expert cache lock poisoned"))?;
         Ok(ExpertCacheStats {
-            capacity_bytes: self.capacity,
+            capacity_bytes: self.capacity.load(Ordering::Acquire),
             resident_bytes: state.resident,
             pinned_bytes: state
                 .entries
@@ -308,6 +336,41 @@ mod tests {
             length,
             quantization: 0,
         }
+    }
+
+    #[test]
+    fn shrinking_under_active_lease_never_invalidates_expert_or_overallocates() {
+        let cache = ExpertCache::new(16);
+        let active = cache.lease(key(0, 8), &[1; 8]).unwrap().unwrap();
+        let cold = cache.lease(key(8, 8), &[2; 8]).unwrap().unwrap();
+        drop(cold);
+        cache.resize(0).unwrap();
+        let stats = cache.stats().unwrap();
+        assert_eq!(stats.capacity_bytes, 0);
+        assert_eq!(stats.resident_bytes, 8);
+        assert_eq!(stats.pinned_bytes, 8);
+        assert_eq!(active.0, [1; 8]);
+        assert!(cache.lease(key(16, 8), &[3; 8]).unwrap().is_none());
+        drop(active);
+        cache.resize(0).unwrap();
+        assert_eq!(cache.stats().unwrap().resident_bytes, 0);
+        cache.resize(8).unwrap();
+        let resumed = cache.lease(key(16, 8), &[3; 8]).unwrap().unwrap();
+        assert_eq!(resumed.0, [3; 8]);
+        assert_eq!(cache.stats().unwrap().resident_bytes, 8);
+    }
+
+    #[test]
+    fn shrinking_below_pinned_bytes_never_underflows_warmup_budget() {
+        let cache = ExpertCache::new(8);
+        let held = cache.lease(key(0, 8), &[1; 8]).unwrap().unwrap();
+        cache.resize(1).unwrap();
+        assert!(cache.warm_batch(&[(key(8, 4), 4)], |_, _|
+            panic!("warmup cannot fit below pinned bytes")).unwrap().is_none());
+        assert_eq!(cache.stats().unwrap().resident_bytes, 8);
+        drop(held);
+        cache.resize(1).unwrap();
+        assert_eq!(cache.stats().unwrap().resident_bytes, 0);
     }
 
     #[test]

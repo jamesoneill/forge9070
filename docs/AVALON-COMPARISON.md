@@ -1,3 +1,7 @@
+> **Historical comparison:** Strata references in this document describe
+> earlier releases. Current ForgeAI no longer links or vendors Strata;
+> the active native inference implementation is in `crates/forge-engine`.
+
 # Avalon comparison and optimisation scope
 
 ## Current implementation: Forge9070 0.9 independent Rust engine

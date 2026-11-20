@@ -10,7 +10,7 @@ mod hybrid;
 mod qwen38;
 mod resident;
 
-pub use context::{DeviceOptions, discover};
+pub use context::{DeviceOptions, discover, select_device};
 pub use facade::{GpuModel, GpuSequence};
 pub use hybrid::GpuMatvecExecutor;
 pub use qwen38::{QwenGpuModel, QwenGpuSequence};

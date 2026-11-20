@@ -1,6 +1,6 @@
-# ForgeAI documentation
+# Nextora documentation
 
-Start with the [ForgeAI launch page](../site/index.html), [rename/compatibility guide](RENAME.md), or [project overview](../README.md) or go straight to the
+Start with the [Nextora launch page](../site/index.html), [rename/compatibility guide](RENAME.md), or [project overview](../README.md). For setup, go straight to the
 [native engine guide](NATIVE-ENGINE.md).
 
 ## Run and configure
@@ -8,10 +8,11 @@ Start with the [ForgeAI launch page](../site/index.html), [rename/compatibility 
 | Guide | Use it for |
 | --- | --- |
 | [Native engine](NATIVE-ENGINE.md) | Independent Rust engine, configuration UI, model discovery, API, Windows and WSL |
+| [Hardware support](HARDWARE-SUPPORT.md) | Capability-based Vulkan selection, automatic CPU fallback and GPU-validation limitations |
 | [Model selection](QWEN3.8.md) | Exact Qwen3.8 GGUF revisions, shards, original and community variants |
 | [Architecture](ARCHITECTURE.md) | Request lifecycle, model storage and component boundaries |
-| [Compatibility application](COMPATIBILITY.md) | Earlier `forge9070 serve` and Strata commands, port 8080 |
-| [WSL details](WSL.md) | Environment diagnostics and compatibility-path launchers |
+| [Compatibility migration](COMPATIBILITY.md) | Retired Strata commands and the unified native service on port 9070 |
+| [WSL details](WSL.md) | Environment diagnostics and native Windows/WSL launchers |
 
 ## Performance and correctness
 
@@ -24,14 +25,11 @@ Start with the [ForgeAI launch page](../site/index.html), [rename/compatibility 
 | [Performance measurement](PERFORMANCE.md) | Compatibility-path tuning and reproducible measurements |
 | [Accuracy](ACCURACY.md) | Quantization, sampling and output-comparison limits |
 
-## Compatibility-path features
+## Historical compatibility material
 
-These guides describe the retained application. Consult the native guide for
-independent-engine API behavior; options are not interchangeable.
-
-- [Large code projects](LARGE-CODE-PROJECTS.md)
-- [Coding-client API](CLIENT-API.md)
-- [Request scheduling](REQUEST-SCHEDULING.md)
+Some older guides describe the retired Strata application. They are kept for
+migration reference only and do not establish live native CLI or API features.
+Use the [native guide](NATIVE-ENGINE.md) for current functionality.
 
 ## Develop and maintain
 

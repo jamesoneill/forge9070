@@ -12,8 +12,8 @@ committed Cargo lockfile, and official GitHub actions pinned to full commit SHAs
 
 | Job | What it checks |
 | --- | --- |
-| Source and shader checks | Python, JavaScript and shell syntax; UI helper and release-provenance/archive regressions; GLSL compilation and SPIR-V validation of both freshly compiled and committed shader bytecode |
-| Native engine checks: Linux | Native unit tests, CPU numerical parity, both release entry points, frontend dispatch, HTTP/SSE/admission, persisted configuration, desktop/mobile Chromium interactions, and software-Vulkan numerical and concurrency checks |
+| Source and shader checks | Python, JavaScript and shell syntax; release-provenance/archive regressions; GLSL compilation and SPIR-V validation of both freshly compiled and committed shader bytecode |
+| Native engine checks: Linux | Native unit tests and independent numerical references, both executable aliases, native dispatch, HTTP/SSE/admission, persisted configuration, desktop/mobile Chromium interactions, and software-Vulkan numerical and concurrency checks |
 | Native engine checks: Windows | Native unit tests, both release entry points, frontend dispatch, CPU CLI/API/configuration harnesses, and PowerShell launcher syntax |
 | `required` | Succeeds only when source checks and **both** operating-system jobs succeed; failure, cancellation and skipped dependencies do not pass |
 
@@ -49,7 +49,7 @@ From the repository root on Linux:
 ```bash
 export RUSTFLAGS='-C target-cpu=x86-64'
 cargo test --locked -p forge-engine --lib --bins
-cargo test --locked -p forge9070 --test new_engine_parity --test new_quant_parity --test new_qwen38_parity
+cargo test --locked -p forge9070 --bin forge9070
 cargo build --release --locked -p forge-engine -p forge9070
 python3 scripts/validate-forge-engine.py --binary target/release/forge-engine --frontend target/release/forge9070 --output artifacts/local-cli.json
 python3 scripts/validate-native-api.py --binary target/release/forge-engine --output artifacts/local-api.json

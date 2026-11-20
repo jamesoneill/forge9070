@@ -3,7 +3,8 @@
 
 This validates CLI selection, strict capability failures, actual generation,
 and benchmark accounting. It is not a GPU or pretrained-model quality test.
-Full numerical cross-implementation parity lives in tests/new_engine_parity.rs.
+Native numerical cases live in the engine's Rust tests; retained tiny model
+fixtures live under tests/fixtures.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=ROOT / "target/release/forge-engine")
-    parser.add_argument("--frontend", type=Path, help="Also validate forge9070 engine dispatch")
+    parser.add_argument("--frontend", type=Path, help="Also validate the forge9070 alias uses the same native engine")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     binary = args.binary.resolve()
@@ -35,13 +36,14 @@ def main() -> None:
     executions: list[dict] = []
 
     def run(arguments: list[str], *, success: bool = True, stdin: str | None = None,
-            executable: Path = binary, prefix: tuple[str, ...] = ()) -> subprocess.CompletedProcess:
+            executable: Path = binary, prefix: tuple[str, ...] = (),
+            environment: dict[str, str] | None = None) -> subprocess.CompletedProcess:
         command = [str(executable), *prefix, *arguments]
         started = time.monotonic()
         # Text-mode stdin translates LF to CRLF on Windows. Send exact UTF-8
         # bytes so token counts describe the requested prompt on every platform.
         result = subprocess.run(command, input=None if stdin is None else stdin.encode("utf-8"),
-                                capture_output=True, timeout=90)
+                                capture_output=True, timeout=90, env=environment)
         result.stdout = result.stdout.decode("utf-8")
         result.stderr = result.stderr.decode("utf-8")
         executions.append({"command": command, "exit_code": result.returncode,
@@ -58,8 +60,11 @@ def main() -> None:
     assert capabilities["engine"] == "forge-native"
     assert capabilities["independent_runtime"] is True
     assert capabilities["rusting_strata_dependency"] is False
-    assert capabilities["fallback"] == "no_implicit_backend_or_external_runtime_fallback"
+    assert capabilities["fallback"] == "auto_selection_only_no_runtime_or_external_fallback"
     assert capabilities["backends"] == ["cpu", "vulkan", "hybrid"]
+    assert capabilities["backend_policies"] == ["auto", "cpu", "vulkan", "hybrid"]
+    assert capabilities["gpu_vendor_policy"] == "capabilities_not_vendor_or_model"
+    assert capabilities["auto_backend"]["model_or_execution_errors_trigger_fallback"] is False
     assert capabilities["vulkan"] and capabilities["qwen3_8"] and capabilities["gguf_shards"]
     assert capabilities["http_server"] and capabilities["tool_calling_api"]
     assert not capabilities["gpu_performance_verified"]
@@ -79,6 +84,8 @@ def main() -> None:
     assert generated["text"] == "AAAA" and generated["token_ids"] == [65] * 4
     assert generated["runtime"]["execution"]["backend"] == "cpu"
     assert generated["runtime"]["execution"]["fallback"] == "none"
+    assert generated["runtime"]["backend_selection"]["requested"] == "cpu"
+    assert generated["runtime"]["backend_selection"]["selected"] == "cpu"
     assert generated["prompt_tokens"] == 5 and generated["generated_tokens"] == 4
     assert generated["decode_steps"] == 3 and generated["finish_reason"] == "length"
     assert generated["kv_precision"] == "F32" and generated["gpu_performance_verified"] is False
@@ -116,6 +123,38 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="forge-native-cli-") as directory:
         temporary = Path(directory)
+        # These loader overrides affect only child processes and deliberately
+        # expose no Vulkan ICD. Actual CPU inference must work on that host.
+        no_vulkan = dict(os.environ,
+                         VK_DRIVER_FILES=str(temporary / "missing-vulkan-driver.json"),
+                         VK_ICD_FILENAMES=str(temporary / "missing-vulkan-driver.json"))
+        auto_generation = ["generate", "--backend", "auto", *generation[2:]]
+        automatic = document(auto_generation, environment=no_vulkan)
+        selection = automatic["runtime"]["backend_selection"]
+        assert selection["requested"] == "auto" and selection["selected"] == "cpu"
+        assert selection["automatic"] is True and selection["reason"]
+        assert automatic["runtime"]["execution"]["backend"] == "cpu"
+        assert automatic["runtime"]["execution"]["fallback"] == "auto_selection_cpu"
+        assert automatic["text"] == generated["text"]
+        assert automatic["token_ids"] == generated["token_ids"]
+        # Automatic CPU selection must reserve the same host state as explicit CPU.
+        assert automatic["runtime"]["host_memory_plan"]["state_reserve_bytes"] == generated["runtime"]["host_memory_plan"]["state_reserve_bytes"]
+        checks.append("Auto without Vulkan executes CPU inference, reports its reason and uses the CPU host-state reservation")
+
+        hardware = document(["doctor"], environment=no_vulkan)
+        assert hardware["cpu_available"] is True
+        assert hardware["adapters"] == []
+        assert hardware["compute_submitted"] is False
+        checks.append("Hardware doctor remains readable on a host without a Vulkan driver")
+
+        explicit_gpu = auto_generation.copy()
+        explicit_gpu[explicit_gpu.index("--backend") + 1] = "vulkan"
+        failed_gpu = run(explicit_gpu, environment=no_vulkan, success=False)
+        assert "auto selected CPU" not in failed_gpu.stderr
+        for extra in (["--device", "999"], ["--vram-mib", "1"], ["--allow-software-vulkan"]):
+            run(auto_generation + extra, environment=no_vulkan, success=False)
+        checks.append("Explicit Vulkan and auto with explicit GPU settings fail instead of silently ignoring the requested configuration")
+
         source = fixture.read_bytes()
         architecture = b"qwen3moe"
         encoded = len(architecture).to_bytes(8, "little") + architecture
@@ -129,6 +168,9 @@ def main() -> None:
         truncated = temporary / "truncated.gguf"
         truncated.write_bytes(source[:-4])
         run(["inspect", "--model", str(truncated), "--ctx", "64"], success=False)
+        bad_auto = auto_generation.copy()
+        bad_auto[bad_auto.index("--model") + 1] = str(truncated)
+        run(bad_auto, environment=no_vulkan, success=False)
         checks.append("Truncated GGUF tensor payload is rejected by the independent loader")
 
         report = temporary / "benchmark.json"
@@ -200,11 +242,11 @@ def main() -> None:
     if args.frontend:
         frontend = args.frontend.resolve()
         assert frontend.is_file()
-        forwarded = document(["capabilities"], executable=frontend, prefix=("engine",))
+        forwarded = document(["capabilities"], executable=frontend)
         assert forwarded == capabilities
-        via_frontend = document(generation, executable=frontend, prefix=("engine",))
+        via_frontend = document(generation, executable=frontend)
         assert via_frontend["engine"] == "forge-native" and via_frontend["token_ids"] == [65] * 4
-        checks.append("Forge9070 engine subcommand selects the independent engine and executes generation")
+        checks.append("Historical forge9070 executable aliases the same native engine and executes generation")
 
     result = {"status": "passed", "checks_passed": len(checks), "checks": checks,
               "checks_skipped": len(skipped), "skipped": skipped,

@@ -20,8 +20,9 @@ body:
     attributes:
       label: Entry point
       options:
-        - forge-engine or forge9070 engine (native)
-        - forge9070 serve or other compatibility command
+        - nextora, forgeai or forge-engine (native)
+        - forge9070 (native alias)
+        - Migration from retired Strata commands or settings
         - Build or launcher
         - Unsure
     validations:

@@ -10,8 +10,8 @@ KEY="forge-native-api-validation-only"
 
 def module(name,path):
     spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);sys.modules[name]=m;spec.loader.exec_module(m);return m
-fixtures=module("native_fixture_helpers",ROOT/"tests/api-coding-client.py")
-scheduling=module("native_schedule_helpers",ROOT/"tests/scheduling_api.py")
+fixtures=module("native_fixture_helpers",ROOT/"scripts/native-fixtures.py")
+scheduling=fixtures
 checks=[]
 def check(condition,message):
     if not condition:raise AssertionError(message)

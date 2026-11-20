@@ -1,3 +1,9 @@
+> **Historical archive:** This document records modifications to the
+> former Strata-derived compatibility distribution. The separate runtime and
+> vendored source were removed from the current ForgeAI branch. See
+> [runtime consolidation](docs/RUNTIME-CONSOLIDATION.md) for active code and
+> [historical Strata licence](LICENSE-RUSTINGSTRATA-HISTORICAL.md).
+
 # Forge9070 changes and provenance
 
 Uses RustingStrata by Vasyl Trefilov.

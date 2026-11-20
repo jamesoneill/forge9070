@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/forgeai-logo.svg" alt="ForgeAI logo" width="96" height="96">
+  <img src="docs/assets/nextora-logo.svg" alt="Nextora logo" width="96" height="96">
 </p>
 
-<h1 align="center">ForgeAI</h1>
+<h1 align="center">Nextora</h1>
 
 <p align="center">
   <strong>Local models. Your hardware. A Rust engine you can inspect.</strong>
@@ -26,7 +26,8 @@
 
 ---
 
-**ForgeAI** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The legacy RX 9070 XT-specific profile remains for compatibility.
+**Nextora** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The old Strata runtime is retired; legacy executable names forward to the native engine.
+Its independent Rust engine selects eligible hardware Vulkan adapters by capabilities (not vendor or model name), and supports explicit automatic CPU fallback when no compatible adapter is available. See [hardware support](docs/HARDWARE-SUPPORT.md) for the validated scope.
 Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
 caches, a browser configuration panel and an OpenAI-compatible coding API.
 Windows and Linux launchers are included, with an explicit Windows-host route
@@ -38,11 +39,11 @@ for WSL users.
 > Windows GPU execution and RX 9070 XT throughput still require validation on
 > the target hardware. No token-rate claim is implied by a passing CI badge.
 
-## ForgeAI launch page
+## Nextora launch page
 
-The public-facing [ForgeAI landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
+The public-facing [Nextora landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
 
-**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`, with a new `forgeai` executable alias. Existing `forge9070` and `forge-engine` commands remain available. See [the rename guide](docs/RENAME.md).
+**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`; `nextora`, `forgeai`, and `forge-engine` are executable aliases. The historical `forge9070` executable now invokes that **same** native Rust engine. Legacy Strata commands and provider profiles require migration. See [the rename guide](docs/RENAME.md).
 
 ## Watch the architecture walkthrough
 
@@ -56,11 +57,12 @@ The episode covers the project as reviewed on **18 November 2026**. Read the
 alongside it: full pretrained-model quality and target RX 9070 XT performance
 remain to be measured. Passing CI does not establish those results.
 
-## What makes ForgeAI different
+## What makes Nextora different
 
 | Capability | What is implemented |
 | :--- | :--- |
 | **Independent Rust engine** | Model loading, sampling, CPU operations and native Vulkan shaders in `crates/forge-engine`; no Strata execution dependency for the standalone binary. |
+| **Capability-based hardware selection** | One Vulkan path for eligible devices, explicit CPU/Vulkan/hybrid choices and `--backend auto` with a reported selection reason. |
 | **Bounded MoE storage** | Owned expert RAM, a GPU expert cache, lazy PLE embedding rows and protected expert leases, informed by the Avalon source audit. |
 | **Every routed expert retained** | The native path computes every expert selected by the model. It does not omit expert tails for a speed headline. |
 | **A service you can configure** | Start without a model, scan complete GGUF shard sets, set context and memory limits, then save the configuration. |
@@ -83,7 +85,7 @@ features. Ordinary builds use the checked-in shader binaries.
 git clone https://github.com/jamesoneill/forge9070.git
 cd forge9070
 cargo build --release --locked -p forge-engine
-# produces forge-engine and forgeai entry points
+# produces nextora, forgeai and forge-engine executable entry points
 ```
 
 On Windows, clone onto a **local Windows drive**, for example
@@ -95,16 +97,18 @@ scripts from a WSL network share can be blocked by Application Control.
 **Windows PowerShell**
 
 ```powershell
-.\target\release\forge-engine.exe serve --open-ui --backend vulkan `
+.\target\release\forge-engine.exe serve --open-ui --backend auto `
   --models-dir 'F:\Models' --settings-file '.\forge-service.json'
 ```
 
 **Linux**
 
 ```sh
-./target/release/forge-engine serve --open-ui --backend vulkan \
+./target/release/forge-engine serve --open-ui --backend auto \
   --models-dir /path/to/models --settings-file ./forge-service.json
 ```
+
+The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `forge-engine doctor` reports eligibility, not validated throughput.
 
 Open **<http://127.0.0.1:9070/>**. Choose your actual model folder, select
 **Scan models**, choose the first shard of a complete supported model, and use
@@ -150,9 +154,9 @@ batching or a four-times speed guarantee. See the
 authentication, context limits and client behavior.
 
 > [!TIP]
-> **Use the correct command.** `forge-engine serve` and `forge9070 engine serve`
-> are the native service on port **9070**, with `--open-ui`.
-> `forge9070 serve` is the retained compatibility service on port **8080**.
+> **Use the native command.** `nextora serve`, `forgeai serve`,
+> `forge-engine serve` and `forge9070 serve` enter the same service on port
+> **9070**, with `--open-ui`. The former `forge9070 engine` prefix is retired.
 > With `cargo run`, put `--` before `serve`.
 
 ## Choose a model
@@ -170,7 +174,7 @@ weights.
 
 Keep **all shards of one checkpoint together** and select the `00001` file.
 Keep different variants in separate folders. These are publisher downloads,
-not models trained by ForgeAI. The GSQ-RCO layout has real-header inspection
+not models trained by Nextora. The GSQ-RCO layout has real-header inspection
 evidence; neither complete checkpoint has been accepted end to end on the
 target RX 9070 XT. The community modification has its own evaluation limits.
 
@@ -179,20 +183,23 @@ weights to move through host memory and GPU memory, while cold reads and large
 contexts can still make a configuration impractical. Start with the
 [model guide](docs/QWEN3.8.md) and the native memory controls.
 
-## Two clearly separated paths
+## One Rust application
 
-| | Native engine — primary path | Compatibility application |
-| :--- | :--- | :--- |
-| Package | `forge-engine` **0.2.1** | `forge9070` **0.9.1** |
-| Source | [`crates/forge-engine`](crates/forge-engine) | [`src`](src) and [`vendor/rusting-strata`](vendor/rusting-strata) |
-| Start | `forge-engine serve --open-ui` | `forge9070 serve` |
-| Default port | **9070** | **8080** |
-| License | MIT, with retained third-party notices | RustingStrata License 1.0 |
-| Guide | [Native guide](docs/NATIVE-ENGINE.md) | [Compatibility guide](docs/COMPATIBILITY.md) |
+All three documented executable names enter the **same native Rust inference
+service**, sharing a single GGUF loader, cache manager, scheduler and API.
+`forgeai` is the public-facing name, `forge-engine` is the native package's
+original executable, and `forge9070` is a thin historical command alias.
+There is no separate Strata serving backend or port 8080.
 
-The compatibility path retains the earlier Hugging Face browser/downloader,
-repository-context tooling and Strata features. Its architecture restrictions,
-API options and concurrency behavior differ from the independent engine.
+```sh
+cargo build --release --locked -p forge-engine -p forge9070
+./target/release/forgeai serve --open-ui --backend auto
+```
+
+The native `context` command preserves the local tracked-file source packer.
+See [migration](docs/COMPATIBILITY.md) for unsupported former Strata commands,
+and [native runtime](docs/NATIVE-ENGINE.md) for the supported API and model
+architectures. Only the native configurations are supported.
 
 ## Engineering principles
 
@@ -215,8 +222,8 @@ records the actual relationship to the reference project.
 | Path | Purpose |
 | :--- | :--- |
 | [`crates/forge-engine/`](crates/forge-engine) | Independent inference runtime, Vulkan kernels and embedded service UI |
-| [`src/`](src) | RX 9070 XT profile and retained compatibility commands |
-| [`vendor/`](vendor) | Pinned third-party source and attribution |
+| [`src/`](src) | Historical CLI alias and shared local repository context packer |
+| [`vendor/`](vendor) | Historical Avalon policy notice; Strata runtime source removed |
 | [`scripts/`](scripts) | Launchers, validators and release helpers |
 | [`tests/`](tests) | Original fixtures and repeatable regression checks |
 | [`docs/`](docs/README.md) | Architecture, platforms, model formats and operational guides |
@@ -234,8 +241,10 @@ aggregate check for branch protection. Tagged/manual release automation prepares
 does not establish GPU or large-checkpoint performance. See
 [the pipeline guide](docs/PIPELINES.md) for the exact gates and release process.
 
-**Authorised maintainers and the configured GitHub integration may merge pull requests into
-`main`.** Automatic merging is disabled by the repository setup. Ownership and
+**Merge policy requires owner review.** The live GitHub ruleset currently also
+permits an integration to bypass update restrictions through pull requests;
+that permission must be reviewed separately before claiming strict owner-only
+merges. Automatic merging is disabled. Ownership and
 required checks are configured separately; see
 [repository governance](docs/REPOSITORY-GOVERNANCE.md). CODEOWNERS routes review
 requests but is not, by itself, a merge-permission control.
@@ -244,21 +253,23 @@ requests but is not, by itself, a merge-permission control.
 
 ## Credits and licences
 
-The independent native engine is [MIT-licensed](crates/forge-engine/LICENSE-MIT).
-The root compatibility application and vendored engine retain
-[RustingStrata License 1.0](LICENSE.md), including its commercial-resale
-restriction. **The repository as a whole is not MIT-licensed.**
+The single native runtime and historical command alias are licensed under
+[MIT](LICENSE.md). Third-party components retain their own notices.
 
-**Uses RustingStrata by Vasyl Trefilov.**
+**Inspired by and credited to RustingStrata by Vasyl Trefilov.** The retired
+compatibility engine's original licence is preserved as
+[historical licence text](LICENSE-RUSTINGSTRATA-HISTORICAL.md) alongside
+[upstream provenance](UPSTREAM.json); **no RustingStrata inference runtime is
+included or linked**. The project does not claim authorship of RustingStrata.
 
-[Avalon](https://github.com/freriadoc/Avalon) informed the MoE storage work;
-[GGML / llama.cpp](https://github.com/ggml-org/llama.cpp) material retains its
-notices. Qwen and the model publishers own their respective model releases.
-See [third-party notices](THIRD_PARTY_NOTICES.md),
-[modification history](MODIFICATIONS.md), [sources](SOURCES.md) and
-[pinned upstream metadata](UPSTREAM.json).
+[Avalon](https://github.com/freriadoc/Avalon) informed the MoE storage
+architecture, and [GGML / llama.cpp](https://github.com/ggml-org/llama.cpp)
+informed GGUF and quantization support; retain their applicable notices.
+See [third-party notices](THIRD_PARTY_NOTICES.md) and
+[source references](SOURCES.md). Check every redistributable component's
+licence individually, especially after dependencies change.
 
-ForgeAI is an independent project. It is not endorsed by AMD, Qwen, Avalon or
-RustingStrata. The original ForgeAI artwork is documented in the
+Nextora is an independent project. It is not endorsed by AMD, Qwen, Avalon or
+RustingStrata. The original Nextora artwork is documented in the
 [brand guide](docs/BRAND.md).
 

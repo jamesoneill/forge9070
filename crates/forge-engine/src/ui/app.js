@@ -15,7 +15,7 @@
     ram_margin_mib: 'ram-margin-mib', expert_warmup: 'expert-warmup',
   };
   const defaults = {
-    backend: 'vulkan', device: null, ctx: 8192, max_tokens: 2048, parallel: 1,
+    backend: 'auto', device: null, ctx: 8192, max_tokens: 2048, parallel: 1,
     max_queued: 32, queue_timeout_secs: 120, vram_mib: 0,
     expert_ram_mib: null, ram_margin_mib: 4096, expert_warmup: true,
   };
@@ -115,11 +115,13 @@
 
   function backendHelp() {
     const backend = $('backend').value;
-    $('backend-help').textContent = backend === 'cpu'
-      ? 'Explicit CPU execution. GPU adapter and GPU allocation cap are unused.'
-      : backend === 'hybrid'
-        ? 'Diagnostic path: CPU state with GPU projections. Use Vulkan for the resident GPU graph.'
-        : 'Native GPU graph with bounded expert placement. Hardware support is checked when loading.';
+    $('backend-help').textContent = backend === 'auto'
+      ? 'Automatically select compatible GPU hardware, or CPU when none is available. Choosing an adapter or a nonzero GPU cap requires GPU execution; model-loading errors are reported.'
+      : backend === 'cpu'
+        ? 'Explicit CPU execution. GPU adapter and GPU allocation cap are unused.'
+        : backend === 'hybrid'
+          ? 'Diagnostic path: CPU state with GPU projections. Use Vulkan for the resident GPU graph.'
+          : 'Native GPU graph with bounded expert placement. Hardware support is checked when loading; this mode does not switch to CPU.';
     $('device').disabled = backend === 'cpu' || state.applying || !state.connected;
     $('vram-mib').disabled = backend === 'cpu' || state.applying || !state.connected;
   }
@@ -307,15 +309,28 @@
     renderSelection();
   }
 
+  function hardwareCompatible(adapter) {
+    return !adapter.software && adapter.compatible === true;
+  }
+
+  function hardwareRejection(adapter) {
+    const reasons = Array.isArray(adapter.rejection_reasons)
+      ? adapter.rejection_reasons.filter((reason) => typeof reason === 'string') : [];
+    if (reasons.length) return reasons.join('; ');
+    if (adapter.software) return 'Software adapter; GPU hardware is required';
+    if (adapter.compute_queue === null) return 'No compute queue';
+    return 'Required GPU capabilities are unavailable';
+  }
+
   function renderDeviceOptions() {
     const selected = state.pendingDevice;
     const automatic = node('option', '', 'Automatic hardware selection'); automatic.value = '';
     $('device').replaceChildren(automatic);
     for (const adapter of state.hardware) {
-      const software = !!adapter.software;
-      const unavailable = software || adapter.compute_queue === null;
-      const option = node('option', '', `${adapter.index}: ${adapter.name}${software ? ' · software, blocked' : adapter.compute_queue === null ? ' · no compute queue' : ''}`);
-      option.value = String(adapter.index); option.disabled = unavailable;
+      const unavailable = !hardwareCompatible(adapter);
+      const reason = unavailable ? hardwareRejection(adapter) : '';
+      const option = node('option', '', `${adapter.index}: ${adapter.name}${unavailable ? ' · unavailable' : ''}`);
+      option.value = String(adapter.index); option.disabled = unavailable; option.title = reason;
       $('device').append(option);
     }
     if (selected !== null && selected !== undefined && !state.hardware.some((adapter) => adapter.index === Number(selected))) {
@@ -336,12 +351,15 @@
       state.pendingDevice = $('device').value === '' ? null : Number($('device').value);
       state.hardware = Array.isArray(data.adapters) ? data.adapters : [];
       renderDeviceOptions();
-      const physical = state.hardware.filter((adapter) => !adapter.software && adapter.compute_queue !== null);
+      const physical = state.hardware.filter(hardwareCompatible);
+      const cpuHint = data.cpu_available ? 'Automatic mode can use CPU.' : 'CPU execution is unavailable on this platform.';
       $('hardware-status').textContent = physical.length
-        ? `${physical.length} hardware adapter${physical.length === 1 ? '' : 's'} with a compute queue detected.`
-        : state.config?.in_wsl
-          ? 'No hardware Vulkan adapter is exposed to this WSL process. Run the Windows native service to use the Windows GPU driver, or fix WSL GPU exposure.'
-          : 'No hardware Vulkan adapter with a compute queue was found. Check the GPU driver, or select explicit CPU execution.';
+        ? `${physical.length} hardware adapter${physical.length === 1 ? '' : 's'} meet${physical.length === 1 ? 's' : ''} the baseline Vulkan requirements.`
+        : data.vulkan_discovery_error
+          ? `Vulkan discovery is unavailable: ${data.vulkan_discovery_error}. ${cpuHint}`
+          : state.config?.in_wsl
+            ? `No compatible hardware Vulkan adapter is available to this WSL process. ${cpuHint} Run the Windows native service to use the Windows GPU driver, or fix WSL GPU exposure.`
+            : `No compatible hardware Vulkan adapter was found. ${cpuHint} Check the GPU driver and the requirements below for GPU execution.`;
       $('hardware-status').dataset.warning = String(!physical.length);
       $('hardware-list').replaceChildren();
       for (const adapter of state.hardware) {
@@ -349,10 +367,14 @@
         item.append(node('strong', '', `${adapter.index}: ${adapter.name}`));
         const heap = Math.max(0, ...(adapter.device_local_heaps_bytes || []));
         item.append(node('p', '', `Vulkan ${adapter.vulkan_version || '—'}${heap ? ` · ${bytes(heap)} largest device heap` : ''}`));
-        item.append(node('span', 'hardware-tag', adapter.software ? 'Software adapter · not a hardware GPU' : 'Discovered · compute not yet verified'));
+        const compatible = hardwareCompatible(adapter);
+        item.append(node('span', 'hardware-tag', compatible ? 'Capabilities compatible · compute not yet verified' : 'Unavailable for GPU execution'));
+        if (!compatible) item.append(node('p', '', hardwareRejection(adapter)));
         $('hardware-list').append(item);
       }
     } catch (error) {
+      state.hardware = [];
+      renderDeviceOptions();
       $('hardware-list').replaceChildren();
       $('hardware-status').textContent = error.message;
       $('hardware-status').dataset.warning = 'true';
@@ -375,8 +397,12 @@
     $('loaded-model-name').title = status.model || '';
     $('loaded-model-detail').textContent = status.model ? `${runtime?.config?.architecture || 'MoE checkpoint'} · ${bytes(runtime?.mapped_weight_bytes)} on disk` : 'Select a GGUF to get started';
     const execution = runtime?.execution || {};
+    const selection = runtime?.backend_selection;
     $('execution-name').textContent = execution.backend === 'cpu' ? 'CPU' : execution.backend === 'vulkan' ? 'Vulkan' : execution.backend ? 'Hybrid' : '—';
-    $('execution-detail').textContent = execution.adapter?.name || (execution.backend === 'cpu' ? 'Explicit CPU execution' : execution.backend ? 'CPU state + Vulkan projections' : 'Runtime starts when a model loads');
+    const adapterName = execution.adapter?.name || execution.statistics?.adapter?.name;
+    $('execution-detail').textContent = selection?.automatic
+      ? `Automatic selection${adapterName ? ` · ${adapterName}` : ''} · ${selection.reason}`
+      : adapterName || (execution.backend === 'cpu' ? 'Explicit CPU execution' : execution.backend ? 'CPU state + Vulkan projections' : 'Runtime starts when a model loads');
     $('execution-detail').title = $('execution-detail').textContent;
     $('active-count').textContent = String(admission.active ?? 0);
     $('active-capacity').textContent = String(admission.capacity ?? state.config?.settings?.parallel ?? 1);
@@ -389,6 +415,10 @@
     $('runtime-details').hidden = !runtime;
     $('runtime-stats').replaceChildren();
     if (runtime) {
+      if (selection) {
+        addRuntimeRow('Backend choice', selection.automatic ? 'Automatic' : 'Explicit');
+        addRuntimeRow('Selection reason', selection.reason);
+      }
       addRuntimeRow('Weight files', bytes(runtime.mapped_weight_bytes));
       addRuntimeRow('Shards', Array.isArray(runtime.shards) ? runtime.shards.length : runtime.shards);
       if (runtime.expert_cache?.resident_bytes !== undefined) addRuntimeRow('Expert RAM used', bytes(runtime.expert_cache.resident_bytes));

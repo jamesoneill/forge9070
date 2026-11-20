@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-19",
+  "base_commit": "08e3c1758496febc974068c25b304d0974a7d852",
+  "scope": "Native capability-based Vulkan selection and explicit auto policy; Linux development build with synthetic models",
+  "toolchain": "Rust 1.100.0",
+  "dependency_mode": "locked offline",
+  "local_results": {
+    "native_library_and_binaries": {"passed": 90, "failed": 0, "ignored": 4},
+    "selection_tests_included_in_native_total": {"passed": 15, "failed": 0},
+    "standalone_cli": {"passed": 18, "failed": 0},
+    "http_and_sse": {"passed": 28, "failed": 0},
+    "configuration_api": {"passed": 56, "failed": 0, "browser_group_skipped": 1},
+    "ui_helpers": {"passed": 13, "failed": 0},
+    "release_provenance_and_archive_tests": {"passed": 13, "failed": 0},
+    "source_checks": "Python and JavaScript syntax, native launcher Bash syntax and git diff whitespace passed"
+  },
+  "automatic_cpu_execution": {
+    "vulkan_driver_disabled_for_child_process": true,
+    "same_tokens_as_explicit_cpu": true,
+    "same_host_state_reservation_as_explicit_cpu": true,
+    "requested_and_selected_backend_reported": true,
+    "explicit_gpu_settings_remain_strict": true,
+    "invalid_models_remain_errors": true
+  },
+  "local_browser_attempt": {
+    "api_checks_before_launch": 47,
+    "pages_rendered": 0,
+    "screenshots_produced": 0,
+    "blocked_reason": "Environment denied Chromium process-singleton socket creation"
+  },
+  "not_verified_locally": [
+    "Windows execution",
+    "Vulkan shader execution; no Vulkan ICD exposed",
+    "Browser presentation and interaction",
+    "Physical AMD, NVIDIA or Intel GPU execution",
+    "GPU throughput or full pretrained-model quality"
+  ],
+  "ci": "Existing pull-request CI includes Windows/Linux, browser and software-Vulkan gates; consult the live run for the exact revision",
+  "hardware_performance_claim": "none"
+}

@@ -188,7 +188,12 @@ def main() -> None:
                 check('no-model-health-is-not-ready', request('/health')[0] == 503)
                 status, config = json_request('/api/config')
                 check('configuration-with-no-model-or-secret', status == 200 and config['model'] is None
-                      and config['settings']['backend'] == 'vulkan' and KEY not in json.dumps(config), config)
+                      and config['settings']['backend'] == 'auto' and KEY not in json.dumps(config), config)
+                status, hardware = json_request('/api/hardware')
+                check('hardware-report-remains-available-without-a-gpu', status == 200
+                      and isinstance(hardware.get('adapters'), list)
+                      and isinstance(hardware.get('vulkan_available'), bool)
+                      and hardware.get('cpu_available') is True, hardware)
                 check('foreign-host-rejected', request('/api/config', host='foreign.invalid')[0] in [400, 403])
                 check('foreign-origin-rejected', request('/api/config', origin_header='https://foreign.invalid')[0] in [400, 403])
                 check('matching-origin-accepted', request('/api/config', origin_header=origin)[0] == 200)
@@ -326,6 +331,19 @@ def main() -> None:
                           restored)
             finally:
                 moved_folder.rename(models)
+            auto_file = root / 'auto-profile.json'
+            auto_settings = dict(settings, backend='auto')
+            auto_payload = {'directory': str(models), 'model': None, 'settings': auto_settings}
+            with service(binary, auto_file) as (_, request, json_request):
+                status, configured = json_request('/api/config', auto_payload)
+                check('automatic-backend-persists-without-loading-model', status == 200
+                      and configured['settings'] == auto_settings and configured['model'] is None
+                      and json.loads(auto_file.read_bytes())['settings'] == auto_settings
+                      and json_request('/v1/status')[1]['runtime'] is None, configured)
+            with service(binary, auto_file) as (_, request, json_request):
+                status, restored = json_request('/api/config')
+                check('automatic-backend-restores-after-restart', status == 200
+                      and restored['settings'] == auto_settings and restored['model'] is None, restored)
             # An alternate loopback address exercises the same Host path as a
             # LAN client without requiring a particular network interface.
             with service(binary, root / 'wildcard-profile.json', bind_host='0.0.0.0',
@@ -376,6 +394,56 @@ def browser_checks(origin, request, json_request, models, suspicious_name, args,
             page.wait_for_function("() => document.querySelector('#ctx').value === '1024'")
             check('browser-inherits-effective-saved-settings', page.locator('#backend').input_value() == 'cpu'
                   and page.locator('#parallel').input_value() == '4')
+            page.locator('#backend').select_option('auto')
+            check('browser-exposes-automatic-backend-with-gpu-controls',
+                  'Automatically' in page.locator('#backend-help').inner_text()
+                  and page.locator('#device').is_enabled() and page.locator('#vram-mib').is_enabled())
+            # UI presentation checks use explicitly synthetic reports. They do
+            # not imply that these adapters or automatic GPU execution ran.
+            hardware = {'cpu_available': True, 'adapters': [
+                {'index': 0, 'name': 'Synthetic compatible GPU', 'software': False,
+                 'compatible': True, 'rejection_reasons': [], 'compute_queue': 0},
+                {'index': 1, 'name': 'Synthetic incompatible GPU', 'software': False,
+                 'compatible': False, 'rejection_reasons': ['Requires seven storage buffers'],
+                 'compute_queue': 0},
+                {'index': 2, 'name': 'Synthetic software adapter', 'software': True,
+                 'compatible': False, 'rejection_reasons': ['Software is disabled'], 'compute_queue': 0},
+            ]}
+            hardware_url = origin + '/api/hardware'
+            page.route(hardware_url, lambda route: route.fulfill(json=hardware))
+            try:
+                page.locator('#refresh-hardware').click()
+                page.wait_for_function("() => document.querySelector('#hardware-list').textContent.includes('Synthetic compatible GPU')")
+                check('browser-filters-synthetic-hardware-by-all-capabilities',
+                      not page.locator('#device option[value="0"]').is_disabled()
+                      and page.locator('#device option[value="1"]').is_disabled()
+                      and page.locator('#device option[value="2"]').is_disabled()
+                      and 'Requires seven storage buffers' in page.locator('#hardware-list').inner_text()
+                      and '1 hardware adapter meets' in page.locator('#hardware-status').inner_text())
+            finally:
+                page.unroute(hardware_url)
+            status_url = origin + '/v1/status'
+            selection_reason = 'No compatible hardware Vulkan adapter was found'
+            synthetic_status = dict(json_request('/v1/status')[1], model='synthetic-auto-cpu', runtime={
+                'config': {'architecture': 'qwen3moe'}, 'mapped_weight_bytes': 0,
+                'execution': {'backend': 'cpu'}, 'backend_selection': {
+                    'requested': 'auto', 'selected': 'cpu', 'automatic': True, 'reason': selection_reason,
+                },
+            })
+            page.route(status_url, lambda route: route.fulfill(json=synthetic_status))
+            try:
+                page.locator('#refresh-status').click()
+                page.wait_for_function("() => document.querySelector('#loaded-model-name').textContent === 'synthetic-auto-cpu'")
+                check('browser-explains-synthetic-automatic-cpu-selection',
+                      page.locator('#execution-name').inner_text() == 'CPU'
+                      and 'Automatic selection' in page.locator('#execution-detail').inner_text()
+                      and selection_reason in page.locator('#execution-detail').inner_text()
+                      and selection_reason in page.locator('#runtime-stats').inner_text())
+            finally:
+                page.unroute(status_url)
+            page.locator('#refresh-status').click()
+            page.wait_for_function("() => document.querySelector('#loaded-model-name').textContent === 'No model loaded'")
+            page.locator('#backend').select_option('cpu')
             page.locator('#model-directory').fill(str(models / 'missing download folder'))
             with page.expect_response(lambda response: urllib.parse.urlsplit(response.url).path == '/api/models/scan'
                                       and response.request.method == 'POST') as missing:

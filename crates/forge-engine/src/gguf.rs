@@ -279,6 +279,11 @@ impl Gguf {
         self.cache.stats()
     }
 
+    /// Retune expert RAM without replacing the model or invalidating active leases.
+    pub fn resize_expert_cache(&self, bytes: usize) -> Result<()> {
+        self.cache.resize(bytes)
+    }
+
     /// Configure after header/memory planning, before any expert cache use.
     pub fn set_expert_cache_capacity(&mut self, capacity_bytes: usize) -> Result<()> {
         ensure!(

@@ -31,9 +31,9 @@ or guaranteed response time is currently advertised.
 - The UI shell can be public while API routes enforce the configured key.
   Saved native profiles exclude the API key. Protect credentials passed through
   launch commands, process inspection, shell history and logs.
-- `HF_TOKEN` and `STRATA_API_KEY` belong to the compatibility path and have
-  different purposes. They are not interchangeable with the native engine's
-  `--api-key`. See the [README](README.md) and [native guide](docs/NATIVE-ENGINE.md).
+- The old `HF_TOKEN`/`STRATA_API_KEY` compatibility paths are retired. The
+  native service uses only its explicit `--api-key` for request authorization;
+  model loading does not need remote provider credentials.
 - Do not publish local profiles, model paths containing personal information,
   prompt histories or unredacted diagnostic bundles.
 

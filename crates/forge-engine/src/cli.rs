@@ -28,7 +28,7 @@ pub struct EngineArgs {
 pub enum EngineCommand {
     /// Serve the independent runtime through the OpenAI chat API and bounded FIFO queue.
     Serve(crate::server::ServeArgs),
-    /// Discover Vulkan adapters without accepting software as hardware.
+    /// Report CPU availability and eligible Vulkan adapters without claiming execution was verified.
     Doctor,
     /// Compare runtime-selected CPU dot kernels with their scalar numerical reference.
     KernelBench {
@@ -42,6 +42,39 @@ pub enum EngineCommand {
         reps: usize,
         #[arg(long)]
         json_out: Option<PathBuf>,
+    },
+    /// Build bounded, tracked repository excerpts without running code.
+    Context {
+        /// Git worktree or subdirectory to inspect.
+        #[arg(long)]
+        repo: PathBuf,
+        #[arg(long)]
+        query: String,
+        /// Optional local GGUF for exact tokenizer counts.
+        #[arg(long)]
+        model: Option<PathBuf>,
+        #[arg(long, default_value_t = 8192)]
+        ctx: usize,
+        #[arg(long, default_value_t = 2048)]
+        reserve_output: usize,
+        #[arg(long, default_value_t = 2048)]
+        reserve_other: usize,
+        #[arg(long)]
+        budget_tokens: Option<usize>,
+        #[arg(long, default_value_t = 131072)]
+        max_bytes: usize,
+        #[arg(long = "include")]
+        include_paths: Vec<PathBuf>,
+        #[arg(long)]
+        include_untracked: bool,
+        #[arg(long, default_value_t = 24)]
+        max_files: usize,
+        #[arg(long, default_value_t = 128)]
+        scan_mib: usize,
+        #[arg(long)]
+        output: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
     },
     /// Print the actual implementation and supported capabilities as JSON.
     Capabilities,
@@ -111,7 +144,7 @@ fn dispatch(command: EngineCommand) -> Result<()> {
         EngineCommand::Serve(_) => {
             unreachable!("serve dispatches with its own shared worker budget")
         }
-        EngineCommand::Doctor => print_json(&crate::vulkan::discover()?),
+        EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
         EngineCommand::KernelBench {
             width,
             rows,
@@ -124,6 +157,44 @@ fn dispatch(command: EngineCommand) -> Result<()> {
                 write_report(&path, &report, None)?;
             }
             print_json(&report)
+        }
+        EngineCommand::Context { repo, query, model, ctx, reserve_output, reserve_other,
+            budget_tokens, max_bytes, include_paths, include_untracked, max_files,
+            scan_mib, output, json } => {
+            ensure!((128..=131072).contains(&ctx), "ctx must be 128..=131072");
+            ensure!(reserve_output > 0 && reserve_other > 0, "reserves must be positive");
+            ensure!((1..=2048).contains(&scan_mib), "scan-mib must be 1..=2048");
+            let available = ctx.checked_sub(reserve_output)
+                .and_then(|n| n.checked_sub(reserve_other))
+                .filter(|n| *n > 0)
+                .context("context window cannot fit requested reserves")?;
+            ensure!(budget_tokens.is_none() || model.is_some(),
+                "--budget-tokens requires --model for exact tokenizer counts");
+            let budget = model.as_ref().map(|_| budget_tokens.unwrap_or(available));
+            ensure!(budget.is_none_or(|n| n > 0 && n <= available),
+                "context-pack token budget exceeds available context");
+            let tokenizer = if let Some(path) = &model {
+                let source = Gguf::open(path)?;
+                Some(crate::tokenizer::Tokenizer::from_gguf(&source)?)
+            } else { None };
+            let token_counter = |text: &str| -> Result<usize> {
+                Ok(tokenizer.as_ref().context("tokenizer not selected")?.encode(text)?.len())
+            };
+            let options = crate::context::Options {
+                root: repo, query, include_paths, include_untracked,
+                max_output_bytes: max_bytes, max_tokens: budget,
+                max_scan_bytes: (scan_mib as u64) << 20, max_files,
+                ..Default::default()
+            };
+            let result = crate::context::build(&options,
+                tokenizer.as_ref().map(|_| &token_counter as &dyn Fn(&str) -> Result<usize>))?;
+            if let Some(path) = &output {
+                std::fs::write(path, &result.context)?;
+            }
+            if json { print_json(&result) } else {
+                if output.is_none() { print!("{}", result.context); }
+                Ok(())
+            }
         }
         EngineCommand::Capabilities => print_json(&crate::capabilities()),
         EngineCommand::Inspect { model, ctx } => {

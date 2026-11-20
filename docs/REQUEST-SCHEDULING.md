@@ -1,3 +1,10 @@
+> **Historical compatibility guide:** The previous Strata-based application
+> and port 8080 have been retired from ForgeAI. The original documentation
+> below is retained solely as migration reference and may describe commands,
+> cache settings or API behaviour that the native Rust service does not offer.
+> For the active runtime, use [the native guide](NATIVE-ENGINE.md) and
+> [migration details](COMPATIBILITY.md).
+
 # Request capacity and queue behavior
 
 **Scope:** this guide documents the existing compatibility application. For the

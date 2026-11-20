@@ -1,3 +1,8 @@
+> **Current ForgeAI note:** Use `forgeai serve` on port 9070.
+> Historical references to Strata/8080 and the legacy download workflow below
+> do not describe the current native engine. Confirm each GGUF against
+> `forgeai capabilities` before loading.
+
 # Qwen3.8-Flash-Next: original and uncensored models
 
 Forge9070 can keep both versions in its model catalogue and switch between

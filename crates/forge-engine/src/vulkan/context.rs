@@ -21,7 +21,7 @@ pub struct DeviceOptions {
     /// Production discovery never accepts one by default.
     pub allow_software: bool,
     /// Maximum total live Vulkan allocation bytes owned by this engine. Zero
-    /// selects 70% of the largest device-local heap; this is not free VRAM.
+    /// selects 70% of the largest usable device-local heap; this is not free VRAM.
     pub memory_budget_bytes: usize,
 }
 impl Default for DeviceOptions {
@@ -85,20 +85,209 @@ fn open_instance() -> Result<(Entry, Instance)> {
     .context("create Vulkan instance")?;
     Ok((entry, instance))
 }
-fn describe(instance: &Instance, physical: vk::PhysicalDevice, index: usize) -> Value {
-    let p = unsafe { instance.get_physical_device_properties(physical) };
-    let memory = unsafe { instance.get_physical_device_memory_properties(physical) };
-    let queues = unsafe { instance.get_physical_device_queue_family_properties(physical) };
-    let compute = queues
+/// A discovery snapshot only: buffer memory-type compatibility and successful
+/// pipeline/model creation are checked later, when those resources exist.
+struct Adapter {
+    properties: vk::PhysicalDeviceProperties,
+    memory: vk::PhysicalDeviceMemoryProperties,
+    compute_queue: Option<u32>,
+}
+
+impl Adapter {
+    fn query(instance: &Instance, physical: vk::PhysicalDevice) -> Self {
+        let properties = unsafe { instance.get_physical_device_properties(physical) };
+        let memory = unsafe { instance.get_physical_device_memory_properties(physical) };
+        let queues = unsafe { instance.get_physical_device_queue_family_properties(physical) };
+        let compute_queue = queues
+            .iter()
+            .enumerate()
+            .filter(|(_, q)| q.queue_count > 0 && q.queue_flags.contains(vk::QueueFlags::COMPUTE))
+            .min_by_key(|(_, q)| q.queue_flags.contains(vk::QueueFlags::GRAPHICS))
+            .map(|(i, _)| i as u32);
+        Self {
+            properties,
+            memory,
+            compute_queue,
+        }
+    }
+
+    fn name(&self) -> String {
+        unsafe { CStr::from_ptr(self.properties.device_name.as_ptr()) }
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    fn largest_usable_heap(&self) -> u64 {
+        self.memory.memory_heaps[..self.memory.memory_heap_count as usize]
+            .iter()
+            .enumerate()
+            .filter(|(index, heap)| {
+                heap.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL)
+                    && self.memory.memory_types[..self.memory.memory_type_count as usize]
+                        .iter()
+                        .any(|ty| {
+                            ty.heap_index as usize == *index
+                                && ty
+                                    .property_flags
+                                    .contains(vk::MemoryPropertyFlags::DEVICE_LOCAL)
+                        })
+            })
+            .map(|(_, heap)| heap.size)
+            .max()
+            .unwrap_or(0)
+    }
+
+    fn has_staging_memory(&self) -> bool {
+        self.memory.memory_types[..self.memory.memory_type_count as usize]
+            .iter()
+            .any(|ty| {
+                ty.property_flags
+                    .contains(vk::MemoryPropertyFlags::HOST_VISIBLE)
+                    && ty.heap_index < self.memory.memory_heap_count
+                    && self.memory.memory_heaps[ty.heap_index as usize].size > 0
+            })
+    }
+
+    fn budget(&self, options: &DeviceOptions) -> u64 {
+        if options.memory_budget_bytes == 0 {
+            self.largest_usable_heap().saturating_mul(7) / 10
+        } else {
+            options.memory_budget_bytes as u64
+        }
+    }
+
+    fn rejection_reasons(&self, options: &DeviceOptions) -> Vec<String> {
+        let p = &self.properties;
+        let mut reasons = Vec::new();
+        if software(p) && !options.allow_software {
+            reasons.push(
+                "CPU/software Vulkan adapter requires the explicit test-only allow-software option"
+                    .into(),
+            );
+        }
+        if p.api_version < vk::API_VERSION_1_1 {
+            reasons.push("Vulkan 1.1 or later is required".into());
+        }
+        if self.compute_queue.is_none() {
+            reasons.push("adapter has no compute queue".into());
+        }
+        if p.limits.max_compute_work_group_invocations < WORKGROUP as u32
+            || p.limits.max_compute_work_group_size[0] < WORKGROUP as u32
+        {
+            reasons.push("adapter cannot execute 128-lane workgroups".into());
+        }
+        if p.limits.max_compute_shared_memory_size < (WORKGROUP * 4) as u32 {
+            reasons.push("adapter needs at least 512 bytes of compute shared memory".into());
+        }
+        if p.limits.max_per_stage_descriptor_storage_buffers < BINDINGS
+            || p.limits.max_descriptor_set_storage_buffers < BINDINGS
+        {
+            reasons.push("adapter needs at least seven compute storage-buffer bindings".into());
+        }
+        if p.limits.max_push_constants_size < 64 {
+            reasons.push("adapter needs at least 64 bytes of push constants".into());
+        }
+        let heap = self.largest_usable_heap();
+        if heap == 0 {
+            reasons.push("adapter has no usable device-local memory heap".into());
+        }
+        if !self.has_staging_memory() {
+            reasons.push("adapter has no host-visible memory for staging transfers".into());
+        }
+        let budget = self.budget(options);
+        if budget < 1024 * 1024 || budget > heap {
+            reasons.push(format!("Vulkan allocation budget must be between 1 MiB and the largest usable device-local heap ({heap} bytes); requested {budget} bytes"));
+        }
+        reasons
+    }
+
+    fn rank(&self, index: usize) -> (u8, std::cmp::Reverse<u64>, usize) {
+        let kind = if software(&self.properties) {
+            4
+        } else {
+            match self.properties.device_type {
+                vk::PhysicalDeviceType::DISCRETE_GPU => 0,
+                vk::PhysicalDeviceType::INTEGRATED_GPU => 1,
+                vk::PhysicalDeviceType::VIRTUAL_GPU => 2,
+                _ => 3,
+            }
+        };
+        // Heap capacity is a deterministic tie-break, not a free-memory or
+        // throughput measurement. Neither the vendor ID nor model name ranks a GPU.
+        (kind, std::cmp::Reverse(self.largest_usable_heap()), index)
+    }
+}
+
+fn choose_adapter(adapters: &[Adapter], options: &DeviceOptions) -> Result<Option<usize>> {
+    ensure!(
+        options.memory_budget_bytes == 0 || options.memory_budget_bytes >= 1024 * 1024,
+        "explicit Vulkan allocation budget must be at least 1 MiB"
+    );
+    if let Some(index) = options.device_index {
+        let adapter = adapters.get(index).with_context(|| {
+            format!(
+                "Vulkan adapter index {index} is outside {} adapters",
+                adapters.len()
+            )
+        })?;
+        let reasons = adapter.rejection_reasons(options);
+        ensure!(
+            reasons.is_empty(),
+            "selected Vulkan adapter {index} ({}) is incompatible: {}",
+            adapter.name(),
+            reasons.join("; ")
+        );
+        return Ok(Some(index));
+    }
+    let selected = adapters
         .iter()
-        .position(|q| q.queue_count > 0 && q.queue_flags.contains(vk::QueueFlags::COMPUTE));
+        .enumerate()
+        .filter(|(_, adapter)| adapter.rejection_reasons(options).is_empty())
+        .min_by_key(|(index, adapter)| adapter.rank(*index))
+        .map(|(index, _)| index);
+    ensure!(
+        selected.is_some() || options.memory_budget_bytes == 0,
+        "no compatible Vulkan adapter satisfies the explicit allocation budget of {} bytes",
+        options.memory_budget_bytes
+    );
+    Ok(selected)
+}
+
+/// Read-only device selection for the requested policy. This creates no logical
+/// device, shader, buffers or model. `None` means no permitted adapter satisfies
+/// discovery requirements; an explicit invalid device or allocation cap is an
+/// error. Loader/discovery errors are returned to the caller without fallback.
+pub fn select_device(options: &DeviceOptions) -> Result<Option<usize>> {
+    let (_entry, instance) = open_instance()?;
+    let result = (|| {
+        let devices = unsafe { instance.enumerate_physical_devices() }
+            .context("enumerate Vulkan adapters")?;
+        let adapters = devices
+            .into_iter()
+            .map(|p| Adapter::query(&instance, p))
+            .collect::<Vec<_>>();
+        choose_adapter(&adapters, options)
+    })();
+    unsafe { instance.destroy_instance(None) };
+    result
+}
+
+fn describe(adapter: &Adapter, index: usize, options: &DeviceOptions) -> Value {
+    let p = &adapter.properties;
+    let memory = &adapter.memory;
+    let reasons = adapter.rejection_reasons(options);
     json!({"index":index,"name":unsafe{CStr::from_ptr(p.device_name.as_ptr())}.to_string_lossy(),
         "vendor_id":p.vendor_id,"device_id":p.device_id,"type":format!("{:?}",p.device_type),
-        "vulkan_version":api(p.api_version),"software":software(&p),"compute_queue":compute,
+        "vulkan_version":api(p.api_version),"software":software(p),"compute_queue":adapter.compute_queue,
         "device_local_heaps_bytes":memory.memory_heaps[..memory.memory_heap_count as usize].iter()
             .filter(|h|h.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL)).map(|h|h.size).collect::<Vec<_>>(),
+        "largest_usable_device_local_heap_bytes":adapter.largest_usable_heap(),
+        "host_visible_staging_memory":adapter.has_staging_memory(),
+        "allocation_budget_bytes":adapter.budget(options),"allocation_budget_is_free_memory":false,
         "max_storage_buffer_bytes":p.limits.max_storage_buffer_range,
         "max_workgroup_invocations":p.limits.max_compute_work_group_invocations,
+        "compatible":reasons.is_empty(),"rejection_reasons":reasons,
+        "compatibility_scope":"discovery_requirements_only; model_allocation_and_compute_are_not_verified",
         "discovery_only":true,"compute_verified":false})
 }
 pub fn discover() -> Result<Value> {
@@ -107,7 +296,8 @@ pub fn discover() -> Result<Value> {
         let devices = unsafe { instance.enumerate_physical_devices() }
             .context("enumerate Vulkan adapters")?;
         Ok(
-            json!({"engine":"forge-native-vulkan","adapters":devices.into_iter().enumerate().map(|(i,p)|describe(&instance,p,i)).collect::<Vec<_>>(),
+            json!({"engine":"forge-native-vulkan","adapters":devices.into_iter().enumerate().map(|(i,p)|describe(&Adapter::query(&instance,p),i,&DeviceOptions::default())).collect::<Vec<_>>(),
+            "selection_policy":"capability_filtered_device_type_then_heap_capacity_then_index",
             "software_allowed_by_default":false,"compute_submitted":false,"hardware_performance_verified":false}),
         )
     })();
@@ -151,69 +341,20 @@ impl Device {
         let initialized = (|| -> Result<_> {
             let devices = unsafe { instance.enumerate_physical_devices() }
                 .context("enumerate Vulkan adapters")?;
-            let selected = if let Some(i) = options.device_index {
-                ensure!(
-                    i < devices.len(),
-                    "Vulkan adapter index {i} is outside {} adapters",
-                    devices.len()
-                );
-                i
-            } else {
-                devices.iter().enumerate().filter_map(|(i,&d)|{
-                    let p=unsafe{instance.get_physical_device_properties(d)};
-                    let queues=unsafe{instance.get_physical_device_queue_family_properties(d)};
-                    if (software(&p)&&!options.allow_software)||!queues.iter().any(|q|q.queue_count>0&&q.queue_flags.contains(vk::QueueFlags::COMPUTE)){return None;}
-                    let name=unsafe{CStr::from_ptr(p.device_name.as_ptr())}.to_string_lossy();
-                    let priority=if p.vendor_id==0x1002&&name.contains("9070 XT"){0}else if p.device_type==vk::PhysicalDeviceType::DISCRETE_GPU{1}else if !software(&p){2}else{3};
-                    Some((priority,i))
-                }).min().map(|x|x.1).context("no hardware Vulkan compute adapter; software adapters require the explicit test-only allow-software option")?
-            };
+            let adapters = devices
+                .iter()
+                .map(|&p| Adapter::query(&instance, p))
+                .collect::<Vec<_>>();
+            let selected = choose_adapter(&adapters, options)?
+                .context("no compatible Vulkan compute adapter; inspect engine doctor rejection_reasons; software adapters require the explicit test-only allow-software option")?;
             let physical = devices[selected];
-            let properties = unsafe { instance.get_physical_device_properties(physical) };
-            ensure!(
-                !software(&properties) || options.allow_software,
-                "selected Vulkan adapter is CPU/software; explicit test-only allow-software is required"
-            );
-            ensure!(
-                properties.api_version >= vk::API_VERSION_1_1,
-                "selected adapter requires Vulkan 1.1"
-            );
-            ensure!(
-                properties.limits.max_compute_work_group_invocations >= WORKGROUP as u32
-                    && properties.limits.max_compute_work_group_size[0] >= WORKGROUP as u32,
-                "adapter cannot execute 128-lane workgroups"
-            );
-            ensure!(
-                properties.limits.max_per_stage_descriptor_storage_buffers >= BINDINGS
-                    && properties.limits.max_descriptor_set_storage_buffers >= BINDINGS,
-                "adapter needs at least seven compute storage-buffer bindings"
-            );
-            let queues = unsafe { instance.get_physical_device_queue_family_properties(physical) };
-            let queue_family = queues
-                .iter()
-                .enumerate()
-                .filter(|(_, q)| {
-                    q.queue_count > 0 && q.queue_flags.contains(vk::QueueFlags::COMPUTE)
-                })
-                .min_by_key(|(_, q)| q.queue_flags.contains(vk::QueueFlags::GRAPHICS))
-                .map(|(i, _)| i as u32)
+            let adapter = &adapters[selected];
+            let properties = adapter.properties;
+            let queue_family = adapter
+                .compute_queue
                 .context("adapter has no compute queue")?;
-            let memory = unsafe { instance.get_physical_device_memory_properties(physical) };
-            let heap = memory.memory_heaps[..memory.memory_heap_count as usize]
-                .iter()
-                .filter(|h| h.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL))
-                .map(|h| h.size)
-                .max()
-                .context("adapter has no device-local heap")?;
-            let budget = if options.memory_budget_bytes == 0 {
-                heap.saturating_mul(7) / 10
-            } else {
-                options.memory_budget_bytes as u64
-            };
-            ensure!(
-                budget >= 1024 * 1024 && budget <= heap,
-                "Vulkan allocation budget must be between 1 MiB and the largest device-local heap ({heap} bytes)"
-            );
+            let memory = adapter.memory;
+            let budget = adapter.budget(options);
             let priority = [1.0];
             let queue_info = [vk::DeviceQueueCreateInfo::default()
                 .queue_family_index(queue_family)
@@ -325,7 +466,7 @@ impl Device {
                     set_layout,
                     pipeline_layout,
                     pipeline,
-                    describe(&instance, physical, selected),
+                    describe(adapter, selected, options),
                     budget,
                 )),
                 Err(e) => {
@@ -1063,4 +1204,283 @@ pub(crate) fn float_bytes(elements: usize) -> Result<usize> {
     elements
         .checked_mul(4)
         .context("GPU float buffer size overflow")
+}
+
+#[cfg(test)]
+mod selection_tests {
+    use super::*;
+
+    const MIB: u64 = 1024 * 1024;
+
+    fn adapter(vendor: u32, name: &str, kind: vk::PhysicalDeviceType, heap_mib: u64) -> Adapter {
+        let mut properties = vk::PhysicalDeviceProperties::default();
+        properties.vendor_id = vendor;
+        properties.device_type = kind;
+        properties.api_version = vk::API_VERSION_1_1;
+        for (target, source) in properties.device_name.iter_mut().zip(name.bytes()) {
+            *target = source as _;
+        }
+        properties.limits.max_compute_work_group_invocations = WORKGROUP as u32;
+        properties.limits.max_compute_work_group_size = [WORKGROUP as u32, 1, 1];
+        properties.limits.max_compute_shared_memory_size = (WORKGROUP * 4) as u32;
+        properties.limits.max_per_stage_descriptor_storage_buffers = BINDINGS;
+        properties.limits.max_descriptor_set_storage_buffers = BINDINGS;
+        properties.limits.max_push_constants_size = 64;
+        let mut memory = vk::PhysicalDeviceMemoryProperties::default();
+        memory.memory_heap_count = 1;
+        memory.memory_heaps[0] = vk::MemoryHeap {
+            size: heap_mib * MIB,
+            flags: vk::MemoryHeapFlags::DEVICE_LOCAL,
+        };
+        memory.memory_type_count = 1;
+        memory.memory_types[0] = vk::MemoryType {
+            property_flags: vk::MemoryPropertyFlags::DEVICE_LOCAL
+                | vk::MemoryPropertyFlags::HOST_VISIBLE,
+            heap_index: 0,
+        };
+        Adapter {
+            properties,
+            memory,
+            compute_queue: Some(0),
+        }
+    }
+
+    #[test]
+    fn incompatible_higher_ranked_adapter_is_skipped_before_selection() {
+        let mut discrete = adapter(
+            0x1002,
+            "AMD Radeon RX 9070 XT",
+            vk::PhysicalDeviceType::DISCRETE_GPU,
+            16_384,
+        );
+        discrete
+            .properties
+            .limits
+            .max_descriptor_set_storage_buffers = BINDINGS - 1;
+        let integrated = adapter(
+            0x8086,
+            "Intel integrated",
+            vk::PhysicalDeviceType::INTEGRATED_GPU,
+            8192,
+        );
+        let adapters = [discrete, integrated];
+        assert_eq!(
+            choose_adapter(&adapters, &DeviceOptions::default()).unwrap(),
+            Some(1)
+        );
+        let report = describe(&adapters[0], 0, &DeviceOptions::default());
+        assert_eq!(report["compatible"], false);
+        assert!(
+            report["rejection_reasons"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|reason| reason.as_str().unwrap().contains("seven"))
+        );
+    }
+
+    #[test]
+    fn vendor_and_model_name_do_not_affect_hardware_rank() {
+        for (vendor, name) in [
+            (0x10de, "NVIDIA GPU"),
+            (0x8086, "Intel Arc"),
+            (0x1234, "Future hardware"),
+        ] {
+            let other = adapter(vendor, name, vk::PhysicalDeviceType::DISCRETE_GPU, 16_384);
+            let radeon = adapter(
+                0x1002,
+                "AMD Radeon RX 9070 XT",
+                vk::PhysicalDeviceType::DISCRETE_GPU,
+                16_384,
+            );
+            assert_eq!(
+                choose_adapter(&[other, radeon], &DeviceOptions::default()).unwrap(),
+                Some(0)
+            );
+        }
+    }
+
+    #[test]
+    fn device_class_then_heap_capacity_then_index_break_ties() {
+        let adapters = [
+            adapter(
+                0x8086,
+                "Integrated GPU",
+                vk::PhysicalDeviceType::INTEGRATED_GPU,
+                32_768,
+            ),
+            adapter(
+                0x1002,
+                "Discrete A",
+                vk::PhysicalDeviceType::DISCRETE_GPU,
+                8192,
+            ),
+            adapter(
+                0x10de,
+                "Discrete B",
+                vk::PhysicalDeviceType::DISCRETE_GPU,
+                16_384,
+            ),
+            adapter(
+                0x8086,
+                "Discrete C",
+                vk::PhysicalDeviceType::DISCRETE_GPU,
+                16_384,
+            ),
+        ];
+        assert_eq!(
+            choose_adapter(&adapters, &DeviceOptions::default()).unwrap(),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn software_is_an_explicit_opt_in_and_ranks_after_hardware() {
+        let software = adapter(0, "llvmpipe", vk::PhysicalDeviceType::CPU, 16_384);
+        let options = DeviceOptions::default();
+        assert_eq!(
+            choose_adapter(std::slice::from_ref(&software), &options).unwrap(),
+            None
+        );
+        let allowed = DeviceOptions {
+            allow_software: true,
+            ..options
+        };
+        assert_eq!(
+            choose_adapter(std::slice::from_ref(&software), &allowed).unwrap(),
+            Some(0)
+        );
+        let hardware = adapter(0x1234, "Hardware", vk::PhysicalDeviceType::OTHER, 256);
+        assert_eq!(
+            choose_adapter(&[software, hardware], &allowed).unwrap(),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn explicit_device_selection_is_strict() {
+        let mut bad = adapter(
+            0x1002,
+            "Unsupported",
+            vk::PhysicalDeviceType::DISCRETE_GPU,
+            8192,
+        );
+        bad.compute_queue = None;
+        let good = adapter(
+            0x10de,
+            "Supported",
+            vk::PhysicalDeviceType::DISCRETE_GPU,
+            8192,
+        );
+        let adapters = [bad, good];
+        let mut options = DeviceOptions {
+            device_index: Some(0),
+            ..Default::default()
+        };
+        assert!(
+            choose_adapter(&adapters, &options)
+                .unwrap_err()
+                .to_string()
+                .contains("no compute queue")
+        );
+        options.device_index = Some(2);
+        assert!(
+            choose_adapter(&adapters, &options)
+                .unwrap_err()
+                .to_string()
+                .contains("outside 2 adapters")
+        );
+        options.device_index = Some(1);
+        assert_eq!(choose_adapter(&adapters, &options).unwrap(), Some(1));
+    }
+
+    #[test]
+    fn explicit_budget_is_validated_before_ranking_and_never_silently_dropped() {
+        let adapters = [
+            adapter(
+                0x1002,
+                "Small discrete",
+                vk::PhysicalDeviceType::DISCRETE_GPU,
+                256,
+            ),
+            adapter(
+                0x8086,
+                "Larger integrated",
+                vk::PhysicalDeviceType::INTEGRATED_GPU,
+                1024,
+            ),
+        ];
+        let mut options = DeviceOptions {
+            memory_budget_bytes: 512 * MIB as usize,
+            ..Default::default()
+        };
+        assert_eq!(choose_adapter(&adapters, &options).unwrap(), Some(1));
+        options.device_index = Some(0);
+        assert!(
+            choose_adapter(&adapters, &options)
+                .unwrap_err()
+                .to_string()
+                .contains("allocation budget")
+        );
+        options.device_index = None;
+        options.memory_budget_bytes = 2048 * MIB as usize;
+        assert!(choose_adapter(&adapters, &options).is_err());
+        options.memory_budget_bytes = 1;
+        assert!(
+            choose_adapter(&adapters, &options)
+                .unwrap_err()
+                .to_string()
+                .contains("at least 1 MiB")
+        );
+    }
+
+    #[test]
+    fn discovery_and_selection_share_all_baseline_requirements() {
+        let mut bad = adapter(
+            0x1234,
+            "Unsupported capabilities",
+            vk::PhysicalDeviceType::DISCRETE_GPU,
+            256,
+        );
+        bad.properties.api_version = vk::API_VERSION_1_0;
+        bad.properties.limits.max_compute_work_group_invocations = 64;
+        bad.properties.limits.max_compute_shared_memory_size = 256;
+        bad.properties.limits.max_push_constants_size = 32;
+        bad.memory.memory_types[0].property_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
+        let options = DeviceOptions::default();
+        let reasons = bad.rejection_reasons(&options);
+        assert_eq!(reasons.len(), 5);
+        let report = describe(&bad, 0, &options);
+        assert_eq!(report["rejection_reasons"], json!(reasons));
+        assert_eq!(report["compatible"], false);
+        assert_eq!(report["host_visible_staging_memory"], false);
+        assert_eq!(report["compute_verified"], false);
+        assert_eq!(choose_adapter(&[bad], &options).unwrap(), None);
+    }
+
+    #[test]
+    fn device_local_heap_needs_an_usable_memory_type_and_is_not_free_memory() {
+        let mut device = adapter(
+            0x1234,
+            "Missing local memory",
+            vk::PhysicalDeviceType::DISCRETE_GPU,
+            256,
+        );
+        device.memory.memory_types[0].property_flags = vk::MemoryPropertyFlags::HOST_VISIBLE;
+        let options = DeviceOptions::default();
+        assert_eq!(device.largest_usable_heap(), 0);
+        assert_eq!(
+            choose_adapter(std::slice::from_ref(&device), &options).unwrap(),
+            None
+        );
+        device.memory.memory_types[0].property_flags |= vk::MemoryPropertyFlags::DEVICE_LOCAL;
+        let report = describe(&device, 0, &options);
+        assert_eq!(report["compatible"], true);
+        assert_eq!(
+            report["allocation_budget_bytes"],
+            json!((256 * MIB) * 7 / 10)
+        );
+        assert_eq!(report["allocation_budget_is_free_memory"], false);
+        assert_eq!(report["compute_verified"], false);
+    }
 }

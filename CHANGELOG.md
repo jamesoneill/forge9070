@@ -1,6 +1,6 @@
-# ForgeAI change log
+# Nextora change log
 
-ForgeAI is the current project brand; Forge9070 is its historical name and retained compatibility identifier. Project and native engine versions are independent. The initial public source
+Nextora is the current public project brand. ForgeAI and Forge9070 are its historical names; their established executable, package and URL identifiers are retained for compatibility. Project and native engine versions are independent. The initial public source
 snapshot was Forge9070 **0.9.1**, including `forge-engine` **0.2.1**.
 
 ## 0.9.1 — configuration and public-source preparation

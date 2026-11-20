@@ -9,9 +9,9 @@ and [validation record](VALIDATION.md) before changing execution behavior.
 
 | Area | Location | Entry point |
 |---|---|---|
-| Independent native engine and configuration UI | `crates/forge-engine/` | `forge-engine` or `forge9070 engine` |
-| Compatibility frontend | `src/` | Other `forge9070` commands |
-| Attributed compatibility runtime | `vendor/rusting-strata/` | Used by the compatibility frontend |
+| Native engine, scheduler, UI and runtime cache | `crates/forge-engine/` | `forgeai`, `forge-engine` or `forge9070` |
+| Historical command alias | `src/main.rs` | Forwards to the same native Rust engine |
+| Bounded repository context packer | `src/code_context.rs` | Compiled into the native crate; `forgeai context` |
 
 The workspace pins Rust in `rust-toolchain.toml`. Install Rust with rustup and
 the platform's C/C++ build tools. On Windows, build in a local Windows folder;
@@ -41,8 +41,7 @@ python3 scripts/validate-native-ui.py \
   --binary target/release/forge-engine --output artifacts/native-ui-local.json
 ```
 
-On Windows use `python` and append `.exe` to binary paths. For browser, GPU and
-compatibility checks, follow [VALIDATION.md](VALIDATION.md) and
+On Windows use `python` and append `.exe` to binary paths. For browser and GPU checks, follow [VALIDATION.md](VALIDATION.md) and
 [tests/README.md](tests/README.md). Report skipped or unavailable checks explicitly;
 a synthetic or software-Vulkan pass does not establish physical GPU performance.
 
@@ -62,15 +61,14 @@ service profiles or build outputs. Redact diagnostics before sharing them.
 ## Review, ownership and licenses
 
 **Only @jamesoneill may merge pull requests into `main`.** Contributors submit
-pull requests; maintainers do not enable automatic merging. The repository's
-branch rules must enforce this policy: `CODEOWNERS` requests review but does
+pull requests; maintainers do not enable automatic merging. The intended branch rules must enforce this policy, but the currently installed
+GitHub integration bypass requires separate ruleset review: `CODEOWNERS` requests review but does
 not itself restrict merges or grant permissions.
 
-Contributions retain the license of the component they modify. The native
-crate is MIT-licensed; the compatibility distribution has different terms.
-Read [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), preserve notices, and
-describe significant changes to vendored code. Public source availability does
-not make the whole repository MIT-licensed.
+Native project code is MIT-licensed. Preserve every applicable dependency and
+reference notice in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The historical RustingStrata licence text is retained for provenance, but the
+old inference runtime is no longer included.
 
 Follow the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
 the [security policy](SECURITY.md), not a public bug report.

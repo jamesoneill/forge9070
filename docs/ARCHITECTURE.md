@@ -1,9 +1,25 @@
 # Native engine architecture
 
-ForgeAI contains an independent native engine and a retained compatibility
-application. This page describes `forge-engine` 0.2.1. The native service is
-also reachable through `forge9070 engine` (legacy CLI); ordinary `forge9070 serve` selects
-the compatibility service.
+Nextora contains **one native Rust inference runtime**. The `nextora`,
+`forgeai`, `forge-engine`, and historical `forge9070` executable names all enter
+the same implementation.
+The Strata compatibility service and port 8080 have been retired.
+
+## Execution policy and hardware
+
+The native runtime keeps CPU, resident Vulkan and diagnostic hybrid execution
+behind one model interface. Vulkan adapter eligibility comes from API version,
+compute queues, kernel limits and memory capabilities, not a vendor ID or model
+name. The same native kernels target eligible AMD, NVIDIA and Intel hardware.
+
+`--backend auto` resolves to Vulkan when eligible hardware exists, otherwise
+CPU. The resolution precedes host-memory planning, and reports the requested
+policy, chosen backend and reason. Explicit device, VRAM budget or software
+Vulkan test settings forbid silent fallback. Failures in model loading, shader
+compilation and device allocation remain errors.
+
+This is capability selection, not a CUDA, HIP or Metal implementation or
+physical GPU performance proof. See [hardware support](HARDWARE-SUPPORT.md).
 
 ## Model storage and expert execution
 
@@ -34,7 +50,7 @@ as required. See [the native guide](NATIVE-ENGINE.md) and
 
 ## Service lifecycle
 
-1. The service can start without a model, exposing its configuration panel.
+1. The service can start without a model, exposing its configuration panel; fresh settings use the `auto` backend policy.
 2. The catalog scans a bounded folder tree and validates complete model sets.
 3. Configuration changes require an idle service. Loading applies the model
    and runtime settings; a failure attempts restoration of the previous state.
@@ -55,16 +71,18 @@ the inference service does not execute arbitrary client tools.
 | --- | --- |
 | One loaded checkpoint | A model ID in a chat request does not download or silently switch models. |
 | One to four active slots | Independent sequence capacity, subject to state and device budgets; not continuous batching. |
-| Vulkan adapter | GPU capability discovery is distinct from actual kernel execution. |
+| Vulkan adapter | Capability-based discovery is distinct from successful kernel execution and model fit. |
+| Automatic policy | Resolves before model loading and never masks model, shader or execution failures. |
 | WSL process type | A Linux process uses Linux paths and drivers; a Windows executable launched from WSL remains a Windows process. |
-| CPU/software Vulkan tests | Useful numerical and service checks, not RX 9070 XT performance evidence. |
+| CPU/software Vulkan tests | Useful numerical and service checks, not real hardware performance evidence. |
 | Model file size | Disk footprint; not the same quantity as owned cache size or peak memory use. |
 
 ## Source map
 
 The native crate is [`crates/forge-engine`](../crates/forge-engine).
 Server control and UI code are under its `src/server` and `src/ui` directories.
-The root [`src`](../src) holds the compatibility frontend and hardware profile;
-[`vendor/rusting-strata`](../vendor/rusting-strata) retains the pinned upstream
-engine and its original terms. [Third-party notices](../THIRD_PARTY_NOTICES.md)
-explain those licensing boundaries.
+The historical command alias lives at [`src/main.rs`](../src/main.rs),
+while the bounded local context packer remains at
+[`src/code_context.rs`](../src/code_context.rs) and compiles into the native
+crate. The old Strata runtime has been deleted. Historical attribution and
+licence text are retained in [third-party notices](../THIRD_PARTY_NOTICES.md).
