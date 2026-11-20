@@ -188,6 +188,7 @@ pub struct RuntimeModel {
     selection: BackendSelection,
     host_plan: crate::memory::HostMemoryPlan,
     warmup: serde_json::Value,
+    load_timings_ms: serde_json::Value,
 }
 
 pub enum RuntimeSequence {
@@ -218,15 +219,22 @@ impl RuntimeModel {
         // Reject invalid GGUF and unsupported tokenizer metadata before probing
         // drivers or allocating any Vulkan resources. This also prevents an
         // unnecessary hardware probe on CPU-only hosts with an invalid model.
+        let load_start = std::time::Instant::now();
         let mut g = Gguf::open(path)?;
+        let mapping_ms = load_start.elapsed().as_secs_f64() * 1000.0;
+        let tokenizer_start = std::time::Instant::now();
         let tokenizer = Tokenizer::from_gguf(&g)?;
+        let tokenizer_ms = tokenizer_start.elapsed().as_secs_f64() * 1000.0;
+        let backend_start = std::time::Instant::now();
         let resolved = options.resolve()?;
+        let backend_selection_ms = backend_start.elapsed().as_secs_f64() * 1000.0;
         let backend = resolved.selection.selected;
         if resolved.selection.automatic {
             eprintln!("Nextora backend: {backend:?}. {}", resolved.selection.reason);
         }
         let routed_device_cache = backend != Backend::Vulkan
             || g.meta.get("general.architecture").and_then(|v| v.as_str()) == Some("qwen4exp");
+        let memory_plan_start = std::time::Instant::now();
         let host_plan = crate::memory::plan(
             &g,
             context,
@@ -244,7 +252,9 @@ impl RuntimeModel {
         } else {
             0
         })?;
+        let memory_plan_ms = memory_plan_start.elapsed().as_secs_f64() * 1000.0;
         let source = Arc::new(g);
+        let runtime_start = std::time::Instant::now();
         let execution = match backend {
             Backend::Cpu => Execution::Cpu(Model::load(source.clone(), context)?),
             Backend::Vulkan => {
@@ -268,13 +278,26 @@ impl RuntimeModel {
             tokenizer.vocab_size() == config_vocab_size,
             "tokenizer vocabulary and model disagree"
         );
+        let runtime_init_ms = runtime_start.elapsed().as_secs_f64() * 1000.0;
         // Warmup is potentially expensive: only perform it for an accepted
         // tokenizer/model pair. Expert warmup never changes model precision.
+        let warmup_start = std::time::Instant::now();
         let warmup = if options.expert_warmup && routed_device_cache {
             serde_json::to_value(source.warm_expert_cache()?)?
         } else {
             serde_json::json!({"enabled":false})
         };
+        let warmup_ms = warmup_start.elapsed().as_secs_f64() * 1000.0;
+        let load_timings_ms = serde_json::json!({
+            "gguf_mapping": mapping_ms,
+            "tokenizer_construction": tokenizer_ms,
+            "backend_selection": backend_selection_ms,
+            "memory_planning": memory_plan_ms,
+            "runtime_initialization": runtime_init_ms,
+            "expert_warmup": warmup_ms,
+            "total": load_start.elapsed().as_secs_f64() * 1000.0,
+            "unit": "milliseconds",
+        });
         Ok(Self {
             execution,
             source,
@@ -283,6 +306,7 @@ impl RuntimeModel {
             selection: resolved.selection,
             host_plan,
             warmup,
+            load_timings_ms,
         })
     }
     pub fn config(&self) -> &Config {
@@ -346,6 +370,7 @@ impl RuntimeModel {
         serde_json::json!({"engine":crate::ENGINE_ID,"version":crate::ENGINE_VERSION,"config":self.config(),
             "backend_selection":self.selection,
             "host_memory_plan":self.host_plan,"expert_warmup":self.warmup,
+            "model_load_timings_ms":self.load_timings_ms,
             "execution":execution,"mapped_weight_bytes":self.source.mapped_bytes(),"shards":self.source.shard_paths(),
             "expert_cache":self.source.expert_cache_stats().map(|s|serde_json::to_value(s).unwrap_or_default()).unwrap_or_else(|e|serde_json::json!({"error":e.to_string()})),"kv_precision":"F32"})
     }
