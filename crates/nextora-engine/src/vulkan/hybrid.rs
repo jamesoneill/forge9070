@@ -667,6 +667,6 @@ impl MatvecExecutor for GpuMatvecExecutor {
         self.run(tensor, input, output, false)
     }
     fn name(&self) -> &'static str {
-        "forge-native-hybrid-vulkan"
+        "nextora-native-hybrid-vulkan"
     }
 }

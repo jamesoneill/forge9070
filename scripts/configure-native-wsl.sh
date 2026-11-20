@@ -6,22 +6,22 @@ usage() {
     cat <<'EOF'
 Usage: bash scripts/configure-native-wsl.sh [options]
 
-  --bin PATH           Native Linux forge-engine (default: target/release/forge-engine)
-  --windows-exe PATH   Windows forge-engine.exe, given as a WSL path (/mnt/c/...)
+  --bin PATH           Native Linux nextora-engine (default: target/release/nextora-engine)
+  --windows-exe PATH   Windows nextora-engine.exe, given as a WSL path (/mnt/c/...)
   --models-dir PATH    Optional model folder; defaults to /mnt/f when mounted
   --settings-file PATH Persistent JSON profile, given as a Linux/WSL path
   --port NUMBER        Loopback port (default: 9070)
   --no-browser         Print the address without opening a browser
 
-Native Linux stores settings in $XDG_CONFIG_HOME/forge9070/native-service.json
-(or $HOME/.config/forge9070/native-service.json). A Windows executable launched
+Native Linux stores settings in $XDG_CONFIG_HOME/nextora-cli/native-service.json
+(or $HOME/.config/nextora-cli/native-service.json). A Windows executable launched
 from WSL uses native-service.json beside the executable unless --settings-file
 is supplied. Windows mode converts the model/profile paths with wslpath.
 
 Examples:
   bash scripts/configure-native-wsl.sh --models-dir /mnt/f/Models
   bash scripts/configure-native-wsl.sh \
-    --windows-exe /mnt/c/code/forge9070/target/release/forge-engine.exe \
+    --windows-exe /mnt/c/code/nextora-cli/target/release/nextora-engine.exe \
     --models-dir /mnt/f/Models
 
 New profiles use auto: a compatible hardware Vulkan adapter, otherwise CPU
@@ -32,7 +32,7 @@ EOF
 }
 
 project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-binary="$project_root/target/release/forge-engine"
+binary="$project_root/target/release/nextora-engine"
 windows_mode=false
 models_dir=''
 settings_file=''
@@ -60,7 +60,7 @@ fi
     printf '%s\n' '--port must be between 1 and 65535.' >&2; exit 2;
 }
 [[ -f "$binary" && -x "$binary" ]] || {
-    printf 'Executable not found: %s\nBuild the independent engine with: cargo build --release --locked -p forge-engine\n' "$binary" >&2
+    printf 'Executable not found: %s\nBuild the independent engine with: cargo build --release --locked -p nextora-engine\n' "$binary" >&2
     exit 1
 }
 binary=$(realpath -- "$binary")
@@ -75,19 +75,19 @@ if $windows_mode; then
     command -v wslpath >/dev/null 2>&1 || { printf '%s\n' 'Run Windows mode in WSL with Windows interoperability enabled.' >&2; exit 1; }
     windows_binary=$(wslpath -w "$binary")
     [[ "$windows_binary" != \\\\* ]] || {
-        printf '%s\n' 'Use an executable built in a Windows-local folder, for example /mnt/c/code/forge9070, rather than the WSL UNC share.' >&2
+        printf '%s\n' 'Use an executable built in a Windows-local folder, for example /mnt/c/code/nextora-cli, rather than the WSL UNC share.' >&2
         exit 1
     }
     if [[ -z "$settings_file" ]]; then settings_file="$(dirname -- "$binary")/native-service.json"; fi
 else
     [[ "$binary" != *.exe ]] || { printf '%s\n' 'Use --windows-exe for a Windows executable.' >&2; exit 2; }
     if [[ -z "$settings_file" ]]; then
-        settings_file="${XDG_CONFIG_HOME:-${HOME}/.config}/forge9070/native-service.json"
+        settings_file="${XDG_CONFIG_HOME:-${HOME}/.config}/nextora-cli/native-service.json"
     fi
 fi
 settings_file=$(realpath -m -- "$settings_file")
 mkdir -p -- "$(dirname -- "$settings_file")"
-printf 'Forge9070 configuration: http://127.0.0.1:%s/\nSettings: %s\n' "$port" "$settings_file"
+printf 'Nextora configuration: http://127.0.0.1:%s/\nSettings: %s\n' "$port" "$settings_file"
 if $windows_mode; then
     settings_file=$(wslpath -w "$settings_file")
     if [[ -n "$models_dir" ]]; then models_dir=$(wslpath -w "$models_dir"); fi

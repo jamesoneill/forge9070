@@ -296,7 +296,7 @@ pub fn discover() -> Result<Value> {
         let devices = unsafe { instance.enumerate_physical_devices() }
             .context("enumerate Vulkan adapters")?;
         Ok(
-            json!({"engine":"forge-native-vulkan","adapters":devices.into_iter().enumerate().map(|(i,p)|describe(&Adapter::query(&instance,p),i,&DeviceOptions::default())).collect::<Vec<_>>(),
+            json!({"engine":"nextora-native-vulkan","adapters":devices.into_iter().enumerate().map(|(i,p)|describe(&Adapter::query(&instance,p),i,&DeviceOptions::default())).collect::<Vec<_>>(),
             "selection_policy":"capability_filtered_device_type_then_heap_capacity_then_index",
             "software_allowed_by_default":false,"compute_submitted":false,"hardware_performance_verified":false}),
         )

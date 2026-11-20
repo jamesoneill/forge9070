@@ -1,13 +1,13 @@
 > **Historical comparison:** Strata references in this document describe
-> earlier releases. Current ForgeAI no longer links or vendors Strata;
-> the active native inference implementation is in `crates/forge-engine`.
+> earlier releases. Current Nextora no longer links or vendors Strata;
+> the active native inference implementation is in `crates/nextora-engine`.
 
 # Avalon comparison and optimisation scope
 
-## Current implementation: Forge9070 0.9 independent Rust engine
+## Current implementation: Nextora 0.9 independent Rust engine
 
 Updated 17 November 2026. The independent execution path lives in
-[`crates/forge-engine`](../crates/forge-engine): it owns GGUF loading,
+[`crates/nextora-engine`](../crates/nextora-engine): it owns GGUF loading,
 quantization, model execution, expert storage, and Vulkan work. The older
 RustingStrata comparison is preserved under **Compatibility-engine history**
 below. Its MTP, KV-precision and concurrency descriptions belong to that older
@@ -22,7 +22,7 @@ and protect decode residents from prompt traffic. These are independently
 implemented Rust mechanisms. They do not copy Avalon's complete allocator,
 dispatcher, custom quantizations or published performance results. Separately
 licensed GGML codebook data is identified in
-[`GGML-NOTICE.md`](../crates/forge-engine/GGML-NOTICE.md).
+[`GGML-NOTICE.md`](../crates/nextora-engine/GGML-NOTICE.md).
 
 ### Actual selected checkpoint, rather than its filename alone
 
@@ -52,8 +52,8 @@ and GPU capacity remain separate limits.
 
 The checkpoint actually contains 13 formats: BF16, F16, F32, IQ2_S, IQ3_S,
 IQ3_XXS, IQ4_NL, IQ4_XS, Q2_0, Q4_K, Q5_K, Q6_K and Q8_0. Native
-[`quant.rs`](../crates/forge-engine/src/quant.rs) and the packed
-[`quant.glsl`](../crates/forge-engine/shaders/quant.glsl) path cover these;
+[`quant.rs`](../crates/nextora-engine/src/quant.rs) and the packed
+[`quant.glsl`](../crates/nextora-engine/shaders/quant.glsl) path cover these;
 Q4_0 is also supported. The IQ3_S filename does not mean every tensor uses
 IQ3_S. Header acceptance and format support do not by themselves establish
 trained-model quality or target-card throughput.
@@ -62,15 +62,15 @@ trained-model quality or target-card throughput.
 
 | Mechanism | Native 0.9 implementation and actual policy |
 | --- | --- |
-| Complete sharded model lookup | [`Gguf::open`](../crates/forge-engine/src/gguf.rs) maps each shard and exposes one tensor namespace without copying the whole weight set. It accepts a metadata-only first shard and selection of any part, and validates split counts, ordinals, shared metadata, tensor identities and byte ranges. |
-| Owned, bounded host expert cache | [`ExpertCache::lease_with`](../crates/forge-engine/src/expert_cache.rs) owns encoded expert bytes under a hard payload ceiling. Decode hits update LRU recency. Eviction considers only unleased entries. If an expert cannot fit, the caller receives its mapped view instead of an overflow allocation. |
-| Available-RAM accounting | [`memory::plan`](../crates/forge-engine/src/memory.rs) uses Linux/WSL MemAvailable with cgroup-v2 headroom, or Windows GlobalMemoryStatusEx, then allows for dense pages, configured sequence slots and an OS margin. Automatic capacity is capped by actual expert payload. An explicit ceiling is clamped to that payload and checked against the same headroom. Zero disables the owned cache. This plan is an estimate, not an OS reservation. |
-| Immutable active leases and stable identity | [`ExpertLease` and `TensorKey`](../crates/forge-engine/src/gguf.rs) preserve the model/shard/byte-range identity when weights move into owned RAM. An active Arc lease prevents its cache entry from being evicted. The reported `pinned_bytes` means retained by readers; it does not mean OS-locked or GPU-registered memory. |
-| Offset/direct reads with observable fallback | [`expert_io::Source`](../crates/forge-engine/src/expert_io.rs) attempts Linux O_DIRECT or Windows FILE_FLAG_NO_BUFFERING with a bounded 64-KiB aligned scratch buffer. Unsupported or failed direct reads use buffered positional reads. Owned fills do not copy from the mmap. Successful direct I/O avoids populating mapping pages; buffered reads and mapped bypasses can still populate OS cache. |
-| Bounded startup warmup | [`Gguf::warm_expert_cache`](../crates/forge-engine/src/gguf.rs) visits expert IDs in ascending order, round-robin across layers. It admits complete gate/up/down triplets only when the remaining budget fits them, never evicts existing entries, and never warms the whole PLE table. This is unranked warmup, not a prediction of the hottest experts. A failed triplet read publishes none of that triplet. |
-| Prefill protection for decode residents | [`expert_cached_for_prefill`](../crates/forge-engine/src/gguf.rs) and [`prefill_lease`](../crates/forge-engine/src/expert_cache.rs) reuse existing host entries without admitting misses or refreshing decode recency. Native [`model.rs`](../crates/forge-engine/src/model.rs) and [`qwen38.rs`](../crates/forge-engine/src/qwen38.rs) use this policy for prompt tokens. The Qwen3.8 Vulkan [`prepare_batch`](../crates/forge-engine/src/vulkan/hybrid.rs) policy also keeps prefill misses transient and prevents them from evicting cached decode weights. |
-| Retention of every selected expert | Native CPU/hybrid [`qwen38.rs`](../crates/forge-engine/src/qwen38.rs) executes the router's selected experts. The resident Vulkan [`QwenGpuModel`](../crates/forge-engine/src/vulkan/qwen38.rs) keeps selected device buffers alive through submission and its fence; an expert whose packed triplet cannot fit the device budget is computed on the CPU and merged with its routing weight. CPU expert executions are counted. There is no expert-tail omission. |
-| Visible cache pressure and I/O behavior | [`ExpertCacheStats`](../crates/forge-engine/src/expert_cache.rs) reports resident/pinned bytes, hits, misses, evictions, mapped bypasses, prefill hits/misses, direct and buffered loads, fallback counts, payload bytes read and read errors. [`runtime.rs`](../crates/forge-engine/src/runtime.rs) exposes the memory plan, cache statistics and warmup report. |
+| Complete sharded model lookup | [`Gguf::open`](../crates/nextora-engine/src/gguf.rs) maps each shard and exposes one tensor namespace without copying the whole weight set. It accepts a metadata-only first shard and selection of any part, and validates split counts, ordinals, shared metadata, tensor identities and byte ranges. |
+| Owned, bounded host expert cache | [`ExpertCache::lease_with`](../crates/nextora-engine/src/expert_cache.rs) owns encoded expert bytes under a hard payload ceiling. Decode hits update LRU recency. Eviction considers only unleased entries. If an expert cannot fit, the caller receives its mapped view instead of an overflow allocation. |
+| Available-RAM accounting | [`memory::plan`](../crates/nextora-engine/src/memory.rs) uses Linux/WSL MemAvailable with cgroup-v2 headroom, or Windows GlobalMemoryStatusEx, then allows for dense pages, configured sequence slots and an OS margin. Automatic capacity is capped by actual expert payload. An explicit ceiling is clamped to that payload and checked against the same headroom. Zero disables the owned cache. This plan is an estimate, not an OS reservation. |
+| Immutable active leases and stable identity | [`ExpertLease` and `TensorKey`](../crates/nextora-engine/src/gguf.rs) preserve the model/shard/byte-range identity when weights move into owned RAM. An active Arc lease prevents its cache entry from being evicted. The reported `pinned_bytes` means retained by readers; it does not mean OS-locked or GPU-registered memory. |
+| Offset/direct reads with observable fallback | [`expert_io::Source`](../crates/nextora-engine/src/expert_io.rs) attempts Linux O_DIRECT or Windows FILE_FLAG_NO_BUFFERING with a bounded 64-KiB aligned scratch buffer. Unsupported or failed direct reads use buffered positional reads. Owned fills do not copy from the mmap. Successful direct I/O avoids populating mapping pages; buffered reads and mapped bypasses can still populate OS cache. |
+| Bounded startup warmup | [`Gguf::warm_expert_cache`](../crates/nextora-engine/src/gguf.rs) visits expert IDs in ascending order, round-robin across layers. It admits complete gate/up/down triplets only when the remaining budget fits them, never evicts existing entries, and never warms the whole PLE table. This is unranked warmup, not a prediction of the hottest experts. A failed triplet read publishes none of that triplet. |
+| Prefill protection for decode residents | [`expert_cached_for_prefill`](../crates/nextora-engine/src/gguf.rs) and [`prefill_lease`](../crates/nextora-engine/src/expert_cache.rs) reuse existing host entries without admitting misses or refreshing decode recency. Native [`model.rs`](../crates/nextora-engine/src/model.rs) and [`qwen38.rs`](../crates/nextora-engine/src/qwen38.rs) use this policy for prompt tokens. The Qwen3.8 Vulkan [`prepare_batch`](../crates/nextora-engine/src/vulkan/hybrid.rs) policy also keeps prefill misses transient and prevents them from evicting cached decode weights. |
+| Retention of every selected expert | Native CPU/hybrid [`qwen38.rs`](../crates/nextora-engine/src/qwen38.rs) executes the router's selected experts. The resident Vulkan [`QwenGpuModel`](../crates/nextora-engine/src/vulkan/qwen38.rs) keeps selected device buffers alive through submission and its fence; an expert whose packed triplet cannot fit the device budget is computed on the CPU and merged with its routing weight. CPU expert executions are counted. There is no expert-tail omission. |
+| Visible cache pressure and I/O behavior | [`ExpertCacheStats`](../crates/nextora-engine/src/expert_cache.rs) reports resident/pinned bytes, hits, misses, evictions, mapped bypasses, prefill hits/misses, direct and buffered loads, fallback counts, payload bytes read and read errors. [`runtime.rs`](../crates/nextora-engine/src/runtime.rs) exposes the memory plan, cache statistics and warmup report. |
 
 Avalon's corresponding design evidence remains the pinned
 [RAM arena](https://github.com/freriadoc/Avalon/blob/762a3dae8d78ff18acb38e351dfa940328485fd8/ggml/src/ggml-cuda/moe-arena.h),
@@ -115,7 +115,7 @@ published token rates depend on its hardware, custom checkpoint and additional
 techniques. Native rates require measurement with the actual checkpoint,
 context, cache warmth, slot count and backend recorded.
 
-## Compatibility-engine history: Forge9070 0.3–0.5
+## Compatibility-engine history: Nextora 0.3–0.5
 
 **Everything below this heading describes the earlier RustingStrata-backed
 compatibility engine and its historical release policies.** It is retained for
@@ -125,12 +125,12 @@ above.
 Reviewed 16 November 2026. Avalon source was inspected at commit
 [`762a3dae8d78ff18acb38e351dfa940328485fd8`](https://github.com/freriadoc/Avalon/tree/762a3dae8d78ff18acb38e351dfa940328485fd8).
 The source includes the techniques below; this is more than a comparison of
-project names or README headlines. Forge9070 embeds RustingStrata 1.2.4 at
+project names or README headlines. Nextora embeds RustingStrata 1.2.4 at
 [`f821c4435ea553eb8a49f542313da52caab75b90`](https://github.com/RustingStudio/RustingStrata/tree/f821c4435ea553eb8a49f542313da52caab75b90).
 Neither source inspection nor a passing CPU test measures performance on
 the target RX 9070 XT.
 
-**Historical 0.5 profile: Forge9070 0.5 retains all selected experts, starts with one
+**Historical 0.5 profile: Nextora 0.5 retains all selected experts, starts with one
 GPU request slot and F16 KV, and rejects expert-tail omission.** The v0.3 tail
 policy below is retained as implementation/provenance history, not a supported
 speed recommendation for the current fidelity-focused workflow. Q8 KV and
@@ -138,7 +138,7 @@ checkpoint quantization remain explicit precision/memory tradeoffs.
 
 ### What the existing engine already does
 
-| Technique | Avalon implementation | Forge9070 / RustingStrata implementation |
+| Technique | Avalon implementation | Nextora / RustingStrata implementation |
 | --- | --- | --- |
 | Keep useful experts on the GPU | Per-expert pools, admission and replacement in `ggml/src/ggml-cuda/moe-cache.cu` | `src/expert_cache.rs`: `ExpertCache::new`, `record`, `adapt`; routing frequencies place hot experts and replace cold residents |
 | Compute CPU misses alongside GPU hits | Hosted MoE mailbox and GPU merge inside the graph | `src/cpu_worker.rs` and `src/gpu_model.rs`: CPU worker receives routed misses while cached experts execute on the GPU |
@@ -162,7 +162,7 @@ The corresponding RustingStrata sources are the pinned
 [prefill](https://github.com/RustingStudio/RustingStrata/blob/f821c4435ea553eb8a49f542313da52caab75b90/src/gpu_model/prefill.rs)
 and [Vulkan graph implementation](https://github.com/RustingStudio/RustingStrata/blob/f821c4435ea553eb8a49f542313da52caab75b90/src/vulkan/mod.rs).
 
-### Owned expert RAM implemented in Forge9070 0.5
+### Owned expert RAM implemented in Nextora 0.5
 
 The earlier releases used mmap and filesystem cache for host experts. Version
 0.5 adds a native Rust owned expert tier, available-memory budgeting and
@@ -183,7 +183,7 @@ registration limits, pinned/imported host buffers, Avalon's prefill slot loans
 or its Windows-disabled GPU wait dispatcher. No new approximate arithmetic,
 tail skipping or custom quantization kernels are enabled.
 
-### Changes in Forge9070 0.3
+### Changes in Nextora 0.3
 
 The model workflow now checks actual GGUF metadata, routed-expert geometry and
 tensor types. The speed-focused catalogue admits sparse MoE models only.
@@ -208,7 +208,7 @@ constraints.
 
 Version 0.3 exposed `--expert-tail-min-rank R` for a new Rust implementation of
 Avalon's `moe_hosted_tail_skip`, off by default (`R = 0`). Version 0.4 rejects
-nonzero values through the Forge9070 profile; the helper and attribution remain
+nonzero values through the Nextora profile; the helper and attribution remain
 in the source. The following describes the historical algorithm.
 Ranks are one-based: `R = 8` corresponds to Avalon's zero-based threshold 7.
 The source policy is `moe_hosted_tail_skip` in the pinned
@@ -292,7 +292,7 @@ and [sampling implementation](https://github.com/RustingStudio/RustingStrata/blo
 | Custom IQ3_K / IQ3_KS | Avalon uses custom GGUF type IDs 43 and 44 and matching CPU/HIP kernels. Those types remain unsupported here. They are not interchangeable with Q3_K or IQ3_S. |
 | Q4 value cache | Avalon's headline configuration uses Q8 keys and Q4 values. This engine provides Q8/F16 KV modes. |
 | Flagship-model MTP | RustingStrata disables MTP for hyper-connection models, including the qwen4exp path used by Avalon's flagship. Exposing an MTP option does not remove this limitation. |
-| Backend-specific tuning | Avalon's published AMD path is HIP/ROCm. Forge9070's RX 9070 XT path is Vulkan. A Rust wrapper does not translate HIP kernels or add ROCm support. |
+| Backend-specific tuning | Avalon's published AMD path is HIP/ROCm. Nextora's RX 9070 XT path is Vulkan. A Rust wrapper does not translate HIP kernels or add ROCm support. |
 
 See Avalon's pinned [RAM arena](https://github.com/freriadoc/Avalon/blob/762a3dae8d78ff18acb38e351dfa940328485fd8/ggml/src/ggml-cuda/moe-arena.h),
 [RAM budgeting](https://github.com/freriadoc/Avalon/blob/762a3dae8d78ff18acb38e351dfa940328485fd8/ggml/src/ggml-cuda/moe-ram-budget.h),
@@ -331,7 +331,7 @@ RX 9070 XT. The "Strata v0.2.9" comparison in Avalon's README refers to
 RustingStudio/RustingStrata.
 
 Record the actual model/revision, quantization, context/prompt lengths, slot
-count, draft setting, disabled expert omission in Forge9070 0.4, cache warmness, CPU/RAM and GPU backend
+count, draft setting, disabled expert omission in Nextora 0.4, cache warmness, CPU/RAM and GPU backend
 when comparing results. Measure time to first token, per-request decode speed
 and aggregate throughput separately. `VALIDATION.md` states which checks were
 performed in this package; it does not claim target-hardware throughput.

@@ -1,5 +1,5 @@
 > **Historical compatibility guide:** The previous Strata-based application
-> and port 8080 have been retired from ForgeAI. The original documentation
+> and port 8080 have been retired from Nextora. The original documentation
 > below is retained solely as migration reference and may describe commands,
 > cache settings or API behaviour that the native Rust service does not offer.
 > For the active runtime, use [the native guide](NATIVE-ENGINE.md) and
@@ -27,7 +27,7 @@ executable. Enter the actual path to the first GGUF shard when prompted. Set
 the same API key in your client; replace the example key before use.
 
 ```powershell
-$Forge = (Resolve-Path '.\target\release\forge9070.exe').Path
+$Forge = (Resolve-Path '.\target\release\nextora-cli.exe').Path
 $Model = (Resolve-Path -LiteralPath (Read-Host 'Full path to the first model GGUF shard')).Path
 $env:STRATA_API_KEY = 'replace-with-your-own-local-api-key'
 
@@ -120,7 +120,7 @@ distinction between admitted, reserved, queued and generating requests.
 This example discovers the exact loaded model ID and makes one JSON Chat
 Completions request using the Python standard library. Set `STRATA_API_KEY`
 in the client's environment when authentication is enabled. Set
-`FORGE_BASE_URL` if the server is not on the same localhost address.
+`NEXTORA_BASE_URL` if the server is not on the same localhost address.
 
 ```python
 import json
@@ -128,7 +128,7 @@ import os
 import urllib.error
 import urllib.request
 
-base = os.environ.get("FORGE_BASE_URL", "http://127.0.0.1:8080/v1").rstrip("/")
+base = os.environ.get("NEXTORA_BASE_URL", "http://127.0.0.1:8080/v1").rstrip("/")
 key = os.environ.get("STRATA_API_KEY", "")
 
 def request(route, payload=None, timeout=900):

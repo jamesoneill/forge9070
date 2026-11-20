@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/jamesoneill/forge9070/actions/workflows/ci.yml"><img src="https://github.com/jamesoneill/forge9070/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and test status"></a>
-  <a href="crates/forge-engine/LICENSE-MIT"><img src="https://img.shields.io/badge/native_engine-MIT-23967f?style=flat-square" alt="Native engine licence: MIT"></a>
+  <a href="crates/nextora-engine/LICENSE-MIT"><img src="https://img.shields.io/badge/native_engine-MIT-23967f?style=flat-square" alt="Native engine licence: MIT"></a>
   <a href="VALIDATION.md"><img src="https://img.shields.io/badge/status-experimental-f46a3c?style=flat-square" alt="Experimental; read validation status"></a>
   <a href="docs/NATIVE-ENGINE.md"><img src="https://img.shields.io/badge/backend-Vulkan-59677b?style=flat-square" alt="Vulkan backend"></a>
 </p>
@@ -43,11 +43,11 @@ for WSL users.
 
 The public-facing [Nextora landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
 
-**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`; `nextora`, `forgeai`, and `forge-engine` are executable aliases. The historical `forge9070` executable now invokes that **same** native Rust engine. Legacy Strata commands and provider profiles require migration. See [the rename guide](docs/RENAME.md).
+**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The public executable is `nextora` and its Rust package is `nextora-engine`. The auxiliary `nextora-cli` command forwards to the same native runtime. Legacy Strata commands and provider profiles require migration. See [the rename guide](docs/RENAME.md).
 
 ## Watch the architecture walkthrough
 
-[**Forge9070 Explained: Inside a Rust & Vulkan Local AI Engine for AMD** (archived video title)](https://www.youtube.com/watch?v=NLr7lbs6Iwg)
+[**Early architecture walkthrough** (archived, recorded before the rebrand)](https://www.youtube.com/watch?v=NLr7lbs6Iwg)
 is a 14:25 technical walkthrough from [**the1darkj Tech Briefing**](https://www.youtube.com/@the1darkj).
 It explains expert caching across disk, RAM and VRAM, memory budgets, the native
 coding API and Windows/WSL launch paths, with upstream credits and source references.
@@ -61,7 +61,7 @@ remain to be measured. Passing CI does not establish those results.
 
 | Capability | What is implemented |
 | :--- | :--- |
-| **Independent Rust engine** | Model loading, sampling, CPU operations and native Vulkan shaders in `crates/forge-engine`; no Strata execution dependency for the standalone binary. |
+| **Independent Rust engine** | Model loading, sampling, CPU operations and native Vulkan shaders in `crates/nextora-engine`; no Strata execution dependency for the standalone binary. |
 | **Capability-based hardware selection** | One Vulkan path for eligible devices, explicit CPU/Vulkan/hybrid choices and `--backend auto` with a reported selection reason. |
 | **Bounded MoE storage** | Owned expert RAM, a GPU expert cache, lazy PLE embedding rows and protected expert leases, informed by the Avalon source audit. |
 | **Every routed expert retained** | The native path computes every expert selected by the model. It does not omit expert tails for a speed headline. |
@@ -82,14 +82,14 @@ GPU execution also needs a working Vulkan driver exposing the required device
 features. Ordinary builds use the checked-in shader binaries.
 
 ```sh
-git clone https://github.com/jamesoneill/forge9070.git
-cd forge9070
-cargo build --release --locked -p forge-engine
-# produces nextora, forgeai and forge-engine executable entry points
+git clone https://github.com/jamesoneill/forge9070.git nextora
+cd nextora
+cargo build --release --locked -p nextora-engine
+# produces the nextora executable
 ```
 
 On Windows, clone onto a **local Windows drive**, for example
-`C:\code\forge9070`, and build in Windows PowerShell. Executing Windows build
+`C:\code\nextora`, and build in Windows PowerShell. Executing Windows build
 scripts from a WSL network share can be blocked by Application Control.
 
 ### 2. Open the configuration panel
@@ -97,18 +97,18 @@ scripts from a WSL network share can be blocked by Application Control.
 **Windows PowerShell**
 
 ```powershell
-.\target\release\forge-engine.exe serve --open-ui --backend auto `
-  --models-dir 'F:\Models' --settings-file '.\forge-service.json'
+.\target\release\nextora.exe serve --open-ui --backend auto `
+  --models-dir 'F:\Models' --settings-file '.\nextora-service.json'
 ```
 
 **Linux**
 
 ```sh
-./target/release/forge-engine serve --open-ui --backend auto \
-  --models-dir /path/to/models --settings-file ./forge-service.json
+./target/release/nextora serve --open-ui --backend auto \
+  --models-dir /path/to/models --settings-file ./nextora-service.json
 ```
 
-The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `forge-engine doctor` reports eligibility, not validated throughput.
+The native `--backend auto` policy selects an eligible Vulkan adapter or CPU if discovery cannot supply one. An explicit device, nonzero VRAM cap, or software-Vulkan permission prevents silent CPU fallback. Model, shader, device creation and allocation failures still propagate. `nextora doctor` reports eligibility, not validated throughput.
 
 Open **<http://127.0.0.1:9070/>**. Choose your actual model folder, select
 **Scan models**, choose the first shard of a complete supported model, and use
@@ -124,7 +124,7 @@ the Windows binary first, then run:
 
 ```sh
 bash scripts/configure-native-wsl.sh \
-  --windows-exe /mnt/c/code/forge9070/target/release/forge-engine.exe \
+  --windows-exe /mnt/c/code/nextora/target/release/nextora.exe \
   --models-dir /mnt/f/Models
 ```
 
@@ -154,9 +154,9 @@ batching or a four-times speed guarantee. See the
 authentication, context limits and client behavior.
 
 > [!TIP]
-> **Use the native command.** `nextora serve`, `forgeai serve`,
-> `forge-engine serve` and `forge9070 serve` enter the same service on port
-> **9070**, with `--open-ui`. The former `forge9070 engine` prefix is retired.
+> **Use the native command.** `nextora serve` or
+> `nextora-cli serve` enter the same service on port
+> **9070**, with `--open-ui`. The old nested `engine` prefix is no longer supported.
 > With `cargo run`, put `--` before `serve`.
 
 ## Choose a model
@@ -187,19 +187,26 @@ contexts can still make a configuration impractical. Start with the
 
 All three documented executable names enter the **same native Rust inference
 service**, sharing a single GGUF loader, cache manager, scheduler and API.
-`forgeai` is the public-facing name, `forge-engine` is the native package's
-original executable, and `forge9070` is a thin historical command alias.
+`nextora` is the public-facing name, `nextora-engine` is the native Rust package, and `nextora-cli` is a thin auxiliary command.
 There is no separate Strata serving backend or port 8080.
 
 ```sh
-cargo build --release --locked -p forge-engine -p forge9070
-./target/release/forgeai serve --open-ui --backend auto
+cargo build --release --locked -p nextora-engine -p nextora-cli
+./target/release/nextora serve --open-ui --backend auto
 ```
 
 The native `context` command preserves the local tracked-file source packer.
 See [migration](docs/COMPATIBILITY.md) for unsupported former Strata commands,
 and [native runtime](docs/NATIVE-ENGINE.md) for the supported API and model
 architectures. Only the native configurations are supported.
+
+## Loading quality and performance
+
+Nextora checks GGUF and tokenizer metadata before probing or allocating Vulkan resources,
+and verifies vocabulary agreement before warming expert caches. Load reports expose
+per-stage timing so cold-start mapping, tokenizer work and optional warmup can
+be measured separately. See the [model-loading and quality guide](docs/MODEL-LOADING.md)
+for reproducible CPU/Vulkan comparisons, baseline acceptance and tuning trade-offs.
 
 ## Engineering principles
 
@@ -221,7 +228,7 @@ records the actual relationship to the reference project.
 
 | Path | Purpose |
 | :--- | :--- |
-| [`crates/forge-engine/`](crates/forge-engine) | Independent inference runtime, Vulkan kernels and embedded service UI |
+| [`crates/nextora-engine/`](crates/nextora-engine) | Independent inference runtime, Vulkan kernels and embedded service UI |
 | [`src/`](src) | Historical CLI alias and shared local repository context packer |
 | [`vendor/`](vendor) | Historical Avalon policy notice; Strata runtime source removed |
 | [`scripts/`](scripts) | Launchers, validators and release helpers |
@@ -270,6 +277,6 @@ See [third-party notices](THIRD_PARTY_NOTICES.md) and
 licence individually, especially after dependencies change.
 
 Nextora is an independent project. It is not endorsed by AMD, Qwen, Avalon or
-RustingStrata. The original Nextora artwork is documented in the
+RustingStrata. The Nextora artwork is documented in the
 [brand guide](docs/BRAND.md).
 

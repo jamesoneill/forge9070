@@ -12,7 +12,7 @@ body:
     attributes:
       label: Version or commit
       description: Include the executable name and its --version output, or the source commit.
-      placeholder: forge-engine 0.2.1 / Forge9070 0.9.1
+      placeholder: nextora-engine 0.2.1 / Nextora 0.9.1
     validations:
       required: true
   - type: dropdown
@@ -20,8 +20,8 @@ body:
     attributes:
       label: Entry point
       options:
-        - nextora, forgeai or forge-engine (native)
-        - forge9070 (native alias)
+        - nextora, nextora or nextora-engine (native)
+        - nextora-cli (native alias)
         - Migration from retired Strata commands or settings
         - Build or launcher
         - Unsure

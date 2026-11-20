@@ -1,6 +1,6 @@
 # Generation speed with output fidelity
 
-Forge9070 0.4 prioritizes the rate of one generated response while retaining
+Nextora 0.4 prioritizes the rate of one generated response while retaining
 the selected model's expert computation. It does not promise a particular
 tokens/second figure or guarantee that a model's answers are correct. The
 hardware, model, quantization and workload must be measured together.
@@ -21,7 +21,7 @@ quality on a particular task. These questions are deliberately kept separate.
 
 - **One active request.** Extra slots remain available for aggregate throughput,
   but allocate additional context state and can reduce expert-cache residency.
-- **All selected experts retained.** The Forge9070 workflow rejects nonzero
+- **All selected experts retained.** The Nextora workflow rejects nonzero
   expert-tail omission. The model still uses its normal trained top-k routing;
   this does not mean evaluating every expert in the model.
 - **f16 KV cache.** Attention state uses floating-point storage. Explicit

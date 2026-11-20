@@ -1,6 +1,6 @@
 # Code of conduct
 
-Forge9070 welcomes useful technical contributions, questions and reproducible
+Nextora welcomes useful technical contributions, questions and reproducible
 reports. Treat participants with respect, including when disagreeing about
 implementation choices, model behavior or project priorities.
 

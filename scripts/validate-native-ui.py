@@ -3,7 +3,7 @@
 
 The optional Chromium checks use isolated browser storage and loopback-only
 networking. No model download, Windows execution or GPU performance is inferred.
-Requires a built forge-engine; --browser additionally requires Python Playwright.
+Requires a built nextora-engine; --browser additionally requires Python Playwright.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ import time
 import urllib.parse
 
 ROOT = Path(__file__).resolve().parents[1]
-KEY = 'forge-native-ui-local-validation-only'
+KEY = 'nextora-native-ui-local-validation-only'
 
 
 def import_module(name: str, path: Path):
@@ -139,7 +139,7 @@ def main() -> None:
         version = subprocess.run([str(binary), '--version'], capture_output=True, text=True,
                                  timeout=20, check=True).stdout.strip()
         check('built-executable', True, {'version': version, 'sha256': hashlib.sha256(binary.read_bytes()).hexdigest()})
-        with tempfile.TemporaryDirectory(prefix='forge-native-ui-') as temporary:
+        with tempfile.TemporaryDirectory(prefix='nextora-native-ui-') as temporary:
             root = Path(temporary)
             models = root / 'Models with spaces'
             models.mkdir()
@@ -172,7 +172,7 @@ def main() -> None:
 
             with service(binary, config_file) as (origin, request, json_request):
                 status, headers, page = request('/', auth=False)
-                check('unloaded-public-ui-without-gpu-initialization', status == 200 and 'Forge9070' in page
+                check('unloaded-public-ui-without-gpu-initialization', status == 200 and 'Nextora' in page
                       and KEY not in page and not config_file.exists(), {'status': status})
                 csp = headers.get('content-security-policy', '')
                 check('ui-security-headers', headers.get('x-content-type-options') == 'nosniff'
@@ -484,7 +484,7 @@ def browser_checks(origin, request, json_request, models, suspicious_name, args,
                 page.locator('#export-settings').click()
             exported_profile = Path(exported.value.path()).read_text()
             profile = json.loads(exported_profile)
-            check('browser-exports-usable-profile-without-api-key', exported.value.suggested_filename == 'forge-service.json'
+            check('browser-exports-usable-profile-without-api-key', exported.value.suggested_filename == 'nextora-service.json'
                   and set(profile) == {'directory', 'model', 'settings'}
                   and profile['model'] == 'fixture.gguf' and profile['settings']['ctx'] == 2048
                   and profile['settings']['parallel'] == 2 and KEY not in exported_profile, profile)

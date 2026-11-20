@@ -1,13 +1,13 @@
-//! Historical forge9070 command name forwards to the SAME independent Rust runtime.
+//! Historical nextora-cli command name forwards to the SAME independent Rust runtime.
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(version, about = "Nextora native Rust inference (legacy forge9070 command alias)")]
+#[command(version, about = "Nextora native Rust inference (legacy nextora-cli command alias)")]
 struct Cli {
     #[command(flatten)]
-    engine: forge_engine::cli::EngineArgs,
+    engine: nextora_engine::cli::EngineArgs,
 }
 
 fn main() -> anyhow::Result<()> {
-    forge_engine::cli::run(Cli::parse().engine)
+    nextora_engine::cli::run(Cli::parse().engine)
 }

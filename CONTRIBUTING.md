@@ -1,6 +1,6 @@
-# Contributing to Forge9070
+# Contributing to Nextora
 
-Forge9070 is an experimental Rust inference project. Contributions should improve
+Nextora is an experimental Rust inference project. Contributions should improve
 measured behavior while preserving model validation, bounded memory use and
 explicit backend selection. Read the [native engine guide](docs/NATIVE-ENGINE.md)
 and [validation record](VALIDATION.md) before changing execution behavior.
@@ -9,9 +9,9 @@ and [validation record](VALIDATION.md) before changing execution behavior.
 
 | Area | Location | Entry point |
 |---|---|---|
-| Native engine, scheduler, UI and runtime cache | `crates/forge-engine/` | `forgeai`, `forge-engine` or `forge9070` |
+| Native engine, scheduler, UI and runtime cache | `crates/nextora-engine/` | `nextora`, `nextora-engine` or `nextora-cli` |
 | Historical command alias | `src/main.rs` | Forwards to the same native Rust engine |
-| Bounded repository context packer | `src/code_context.rs` | Compiled into the native crate; `forgeai context` |
+| Bounded repository context packer | `src/code_context.rs` | Compiled into the native crate; `nextora context` |
 
 The workspace pins Rust in `rust-toolchain.toml`. Install Rust with rustup and
 the platform's C/C++ build tools. On Windows, build in a local Windows folder;
@@ -30,15 +30,15 @@ for the synthetic CPU checks below.
 From the repository root, the native baseline is:
 
 ```bash
-cargo build --release --locked -p forge-engine -p forge9070
-cargo test --locked -p forge-engine --lib --bins
-python3 scripts/validate-forge-engine.py \
-  --binary target/release/forge-engine --frontend target/release/forge9070 \
-  --output artifacts/forge-engine-cli-local.json
+cargo build --release --locked -p nextora-engine -p nextora-cli
+cargo test --locked -p nextora-engine --lib --bins
+python3 scripts/validate-nextora-engine.py \
+  --binary target/release/nextora-engine --frontend target/release/nextora-cli \
+  --output artifacts/nextora-engine-cli-local.json
 python3 scripts/validate-native-api.py \
-  --binary target/release/forge-engine --output artifacts/native-api-local.json
+  --binary target/release/nextora-engine --output artifacts/native-api-local.json
 python3 scripts/validate-native-ui.py \
-  --binary target/release/forge-engine --output artifacts/native-ui-local.json
+  --binary target/release/nextora-engine --output artifacts/native-ui-local.json
 ```
 
 On Windows use `python` and append `.exe` to binary paths. For browser and GPU checks, follow [VALIDATION.md](VALIDATION.md) and

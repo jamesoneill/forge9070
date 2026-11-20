@@ -48,12 +48,12 @@ From the repository root on Linux:
 
 ```bash
 export RUSTFLAGS='-C target-cpu=x86-64'
-cargo test --locked -p forge-engine --lib --bins
-cargo test --locked -p forge9070 --bin forge9070
-cargo build --release --locked -p forge-engine -p forge9070
-python3 scripts/validate-forge-engine.py --binary target/release/forge-engine --frontend target/release/forge9070 --output artifacts/local-cli.json
-python3 scripts/validate-native-api.py --binary target/release/forge-engine --output artifacts/local-api.json
-python3 scripts/validate-native-ui.py --binary target/release/forge-engine --output artifacts/local-ui.json
+cargo test --locked -p nextora-engine --lib --bins
+cargo test --locked -p nextora-cli --bin nextora-cli
+cargo build --release --locked -p nextora-engine -p nextora-cli
+python3 scripts/validate-nextora-engine.py --binary target/release/nextora-engine --frontend target/release/nextora-cli --output artifacts/local-cli.json
+python3 scripts/validate-native-api.py --binary target/release/nextora-engine --output artifacts/local-api.json
+python3 scripts/validate-native-ui.py --binary target/release/nextora-engine --output artifacts/local-ui.json
 ```
 
 In Windows PowerShell:
@@ -61,11 +61,11 @@ In Windows PowerShell:
 ```powershell
 $env:RUSTFLAGS = '-C target-cpu=x86-64'
 $env:PYTHONUTF8 = '1'
-cargo test --locked -p forge-engine --lib --bins
-cargo build --release --locked -p forge-engine -p forge9070
-python scripts/validate-forge-engine.py --binary target/release/forge-engine.exe --frontend target/release/forge9070.exe --output artifacts/local-cli.json
-python scripts/validate-native-api.py --binary target/release/forge-engine.exe --output artifacts/local-api.json
-python scripts/validate-native-ui.py --binary target/release/forge-engine.exe --output artifacts/local-ui.json
+cargo test --locked -p nextora-engine --lib --bins
+cargo build --release --locked -p nextora-engine -p nextora-cli
+python scripts/validate-nextora-engine.py --binary target/release/nextora-engine.exe --frontend target/release/nextora-cli.exe --output artifacts/local-cli.json
+python scripts/validate-native-api.py --binary target/release/nextora-engine.exe --output artifacts/local-api.json
+python scripts/validate-native-ui.py --binary target/release/nextora-engine.exe --output artifacts/local-ui.json
 ```
 
 Use Python 3.12 or later for these pipeline helpers. Rust and a working native
@@ -95,8 +95,8 @@ succeed before the draft-release job runs.
 
 | Asset | Build target and scope |
 | --- | --- |
-| `forge9070-vVERSION-x86_64-pc-windows-msvc.zip` | Windows x64; x86-64 CPU baseline and static C runtime |
-| `forge9070-vVERSION-x86_64-unknown-linux-gnu.tar.gz` | Linux x64; x86-64 CPU baseline, built on Ubuntu 24.04 for glibc systems |
+| `nextora-cli-vVERSION-x86_64-pc-windows-msvc.zip` | Windows x64; x86-64 CPU baseline and static C runtime |
+| `nextora-cli-vVERSION-x86_64-unknown-linux-gnu.tar.gz` | Linux x64; x86-64 CPU baseline, built on Ubuntu 24.04 for glibc systems |
 
 Archives include the standalone engine, embedded UI/shaders, a usage guide,
 engine MIT license, GGML attribution, transitive dependency license texts,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify, or explicitly apply, Forge9070's owner-only GitHub governance.
+"""Verify, or explicitly apply, Nextora's owner-only GitHub governance.
 
 Requires Python 3.10+ and an authenticated GitHub CLI. No third-party modules.
 The default mode is read-only. This script never pushes code or merges a PR.
@@ -21,7 +21,7 @@ from urllib.parse import urlencode
 
 OWNER = "jamesoneill"
 OWNER_ID = 3801829
-REPOSITORY = f"{OWNER}/forge9070"
+REPOSITORY = f"{OWNER}/nextora-cli"
 API_BASE = f"repos/{REPOSITORY}"
 CHECK_NAME = "required"
 ROOT = Path(__file__).resolve().parents[1]

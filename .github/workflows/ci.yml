@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           python -m compileall -q .github/scripts scripts tests
-          node --check crates/forge-engine/src/ui/app.js
+          node --check crates/nextora-engine/src/ui/app.js
           for script in scripts/*.sh; do bash -n "$script"; done
       - name: Check native validation scripts can load their helpers
         shell: bash
@@ -58,10 +58,10 @@ jobs:
         run: |
           mkdir -p artifacts
           glslangValidator -V --target-env vulkan1.1 \
-            -Icrates/forge-engine/shaders crates/forge-engine/shaders/ops.comp \
-            -o artifacts/forge-ops.spv
-          spirv-val --target-env vulkan1.1 artifacts/forge-ops.spv
-          spirv-val --target-env vulkan1.1 crates/forge-engine/src/vulkan/ops.spv
+            -Icrates/nextora-engine/shaders crates/nextora-engine/shaders/ops.comp \
+            -o artifacts/nextora-ops.spv
+          spirv-val --target-env vulkan1.1 artifacts/nextora-ops.spv
+          spirv-val --target-env vulkan1.1 crates/nextora-engine/src/vulkan/ops.spv
           # Compiler versions can produce different valid bytecode. This checks
           # both representations; it makes no GPU execution/performance claim.
 
@@ -74,11 +74,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            executable: forge-engine
-            frontend: forge9070
+            executable: nextora
+            frontend: nextora-cli
           - os: windows-2025
-            executable: forge-engine.exe
-            frontend: forge9070.exe
+            executable: nextora.exe
+            frontend: nextora-cli.exe
     defaults:
       run:
         shell: bash
@@ -93,17 +93,17 @@ jobs:
           python-version: '3.12'
       - name: Install the pinned Rust toolchain
         run: |
-          FORGE_TOOLCHAIN="$(python -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')"
-          rustup toolchain install "$FORGE_TOOLCHAIN" --profile minimal
+          NEXTORA_TOOLCHAIN="$(python -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')"
+          rustup toolchain install "$NEXTORA_TOOLCHAIN" --profile minimal
           rustc --version --verbose
       - name: Test the independent engine
-        run: cargo test --locked -p forge-engine --lib --bins
+        run: cargo test --locked -p nextora-engine --lib --bins
       - name: Test the legacy command alias forwards to the same native engine
-        run: cargo test --locked -p forge9070 --bin forge9070
+        run: cargo test --locked -p nextora-cli --bin nextora-cli
       - name: Build native engine and legacy command alias
-        run: cargo build --release --locked -p forge-engine -p forge9070
+        run: cargo build --release --locked -p nextora-engine -p nextora-cli
       - name: Check CLI execution with synthetic models
-        run: python scripts/validate-forge-engine.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
+        run: python scripts/validate-nextora.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
       - name: Check HTTP, streaming, queues and cancellation
         run: python scripts/validate-native-api.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-api.json
       - name: Check configuration UI API and persisted settings
@@ -117,9 +117,9 @@ jobs:
       - name: Exercise the served UI in desktop and mobile Chromium
         if: runner.os == 'Linux'
         run: |
-          FORGE_CHROMIUM="$(python -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          NEXTORA_CHROMIUM="$(python -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
           python scripts/validate-native-ui.py --binary target/release/${{ matrix.executable }} \
-            --browser --chromium "$FORGE_CHROMIUM" --screenshots artifacts/ui \
+            --browser --chromium "$NEXTORA_CHROMIUM" --screenshots artifacts/ui \
             --output artifacts/ci-ui.json
       - name: Install the software Vulkan correctness runtime
         if: runner.os == 'Linux'
@@ -130,15 +130,15 @@ jobs:
       - name: Check Vulkan kernels and all-expert retention
         if: runner.os == 'Linux'
         env:
-          FORGE_VULKAN_TEST: '1'
-        run: cargo test --locked -p forge-engine --lib software_vulkan -- --ignored --test-threads=1
+          NEXTORA_VULKAN_TEST: '1'
+        run: cargo test --locked -p nextora-engine --lib software_vulkan -- --ignored --test-threads=1
       - name: Check Vulkan HTTP concurrency correctness
         if: runner.os == 'Linux'
         env:
-          FORGE_VULKAN_TEST: '1'
+          NEXTORA_VULKAN_TEST: '1'
         # Hosted software Vulkan checks correctness; allow its four simultaneous
         # requests to finish without treating this as a hardware speed target.
-        run: python scripts/validate-native-gpu-api.py --binary target/release/forge-engine --request-timeout 600 --output artifacts/ci-vulkan-api.json
+        run: python scripts/validate-native-gpu-api.py --binary target/release/nextora --request-timeout 600 --output artifacts/ci-vulkan-api.json
       - name: Parse Windows launch scripts
         if: runner.os == 'Windows'
         shell: pwsh

@@ -1,12 +1,12 @@
 # Native hardware support
 
-The native `forge-engine` uses CPU execution and a shared Vulkan implementation.
+The native `nextora-engine` uses CPU execution and a shared Vulkan implementation.
 GPU selection checks capabilities rather than a vendor or card-model name. This
 lets eligible AMD, NVIDIA and Intel devices use the same execution path while
 retaining explicit backend and adapter overrides.
 
-This guide applies to `forge-engine` and `forge9070`. The retained
-`forge9070 serve` and `forge9070 doctor` commands use the RX 9070 XT compatibility
+This guide applies to `nextora-engine` and `nextora-cli`. The retained
+`nextora-cli serve` and `nextora-cli doctor` commands use the RX 9070 XT compatibility
 profile; their options and device indices are not interchangeable with native
 commands.
 
@@ -31,12 +31,12 @@ See the [validation record](../VALIDATION.md) for completed checks.
 ## Select an execution policy
 
 ```sh
-forge-engine doctor
-forge-engine serve --open-ui --backend auto --models-dir /path/to/models
+nextora-engine doctor
+nextora-engine serve --open-ui --backend auto --models-dir /path/to/models
 ```
 
-On Windows use `forge-engine.exe` and Windows model paths. The equivalent
-frontend command is `forge9070 doctor` or `forge9070 serve ...`.
+On Windows use `nextora-engine.exe` and Windows model paths. The equivalent
+frontend command is `nextora-cli doctor` or `nextora-cli serve ...`.
 
 | Policy | Behaviour |
 | --- | --- |

@@ -1,14 +1,14 @@
 # Native inference tests and fixtures
 
-ForgeAI has one Rust inference runtime. Run its core tests and numerical
+Nextora has one Rust inference runtime. Run its core tests and numerical
 regressions with:
 
 ```bash
-cargo test --locked -p forge-engine --lib --bins
-cargo test --locked -p forge9070 --bin forge9070
-cargo build --release --locked -p forge-engine -p forge9070
-python scripts/validate-forge-engine.py --binary target/release/forge-engine --frontend target/release/forge9070
-python scripts/validate-native-api.py --binary target/release/forge-engine
+cargo test --locked -p nextora-engine --lib --bins
+cargo test --locked -p nextora-cli --bin nextora-cli
+cargo build --release --locked -p nextora-engine -p nextora-cli
+python scripts/validate-nextora-engine.py --binary target/release/nextora-engine --frontend target/release/nextora-cli
+python scripts/validate-native-api.py --binary target/release/nextora-engine
 ```
 
 The native library has tiny, original test models and reference outputs.

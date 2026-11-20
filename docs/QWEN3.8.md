@@ -1,11 +1,11 @@
-> **Current ForgeAI note:** Use `forgeai serve` on port 9070.
+> **Current Nextora note:** Use `nextora serve` on port 9070.
 > Historical references to Strata/8080 and the legacy download workflow below
 > do not describe the current native engine. Confirm each GGUF against
-> `forgeai capabilities` before loading.
+> `nextora capabilities` before loading.
 
 # Qwen3.8-Flash-Next: original and uncensored models
 
-Forge9070 can keep both versions in its model catalogue and switch between
+Nextora can keep both versions in its model catalogue and switch between
 them. There is one active model at a time. A model's original, uncensored or
 abliterated label does not change the technical compatibility policy.
 
@@ -116,7 +116,7 @@ The path below follows the separate Windows build directory used in the
 troubleshooting instructions; change it if your executable is elsewhere.
 
 ```powershell
-$Forge = 'C:\code\forge9070-windows\target-windows-msvc\x86_64-pc-windows-msvc\release\forge9070.exe'
+$Forge = 'C:\code\nextora-cli-windows\target-windows-msvc\x86_64-pc-windows-msvc\release\nextora-cli.exe'
 & $Forge --version
 
 $NormalRepo = 'ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF'

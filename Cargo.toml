@@ -1,5 +1,5 @@
 [package]
-name = "forge9070"
+name = "nextora-cli"
 version = "0.9.1"
 edition = "2024"
 rust-version = "1.100"
@@ -8,14 +8,14 @@ license = "MIT"
 publish = false
 
 [workspace]
-members = [".", "crates/forge-engine"]
-default-members = ["crates/forge-engine"]
+members = [".", "crates/nextora-engine"]
+default-members = ["crates/nextora-engine"]
 resolver = "3"
 
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-forge-engine = { path = "crates/forge-engine" }
+nextora-engine = { path = "crates/nextora-engine" }
 
 [profile.release]
 opt-level = 3

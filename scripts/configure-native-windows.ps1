@@ -10,20 +10,20 @@ $ErrorActionPreference = 'Stop'
 # Native Forge only. This launcher neither builds the program nor downloads weights.
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $Executable) {
-    $Executable = Join-Path $ProjectRoot 'target\release\forge-engine.exe'
+    $Executable = Join-Path $ProjectRoot 'target\release\nextora-engine.exe'
 }
 if (-not (Test-Path -LiteralPath $Executable -PathType Leaf)) {
-    throw 'Build the independent engine in a Windows-local project folder first: cargo build --release --locked -p forge-engine'
+    throw 'Build the independent engine in a Windows-local project folder first: cargo build --release --locked -p nextora-engine'
 }
 $Executable = (Resolve-Path -LiteralPath $Executable).Path
 if ($Executable.StartsWith('\\')) {
-    throw 'Copy the project to a Windows-local folder such as C:\code\forge9070 and build there. Running generated executables from a WSL UNC path can be blocked by Windows Application Control.'
+    throw 'Copy the project to a Windows-local folder such as C:\code\nextora-cli and build there. Running generated executables from a WSL UNC path can be blocked by Windows Application Control.'
 }
 
 if (-not $SettingsFile) {
     $ConfigBase = $env:LOCALAPPDATA
     if (-not $ConfigBase) { throw 'LOCALAPPDATA is unavailable. Supply -SettingsFile with an explicit local JSON path.' }
-    $SettingsFile = Join-Path $ConfigBase 'Forge9070\native-service.json'
+    $SettingsFile = Join-Path $ConfigBase 'Nextora\native-service.json'
 }
 $SettingsFile = [System.IO.Path]::GetFullPath($SettingsFile)
 $ConfigDirectory = Split-Path -Parent $SettingsFile
@@ -43,7 +43,7 @@ if ($ModelsDir) {
 }
 if (-not $NoBrowser) { $EngineArguments += '--open-ui' }
 
-Write-Host "Forge9070 configuration: http://127.0.0.1:$Port/"
+Write-Host "Nextora configuration: http://127.0.0.1:$Port/"
 Write-Host "Settings: $SettingsFile"
 Write-Host 'Choose a model folder in the UI and scan for compatible GGUF files. Existing saved settings are restored.'
 & $Executable @EngineArguments

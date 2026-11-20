@@ -35,7 +35,7 @@ COMMIT = "a" * 40
 
 class GitProvenance(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="forge-release-git-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="nextora-release-git-")
         self.root = Path(self.temporary.name)
         self.patches = [mock.patch.object(package, "ROOT", self.root), mock.patch.object(gate, "ROOT", self.root)]
         for patch in self.patches:
@@ -147,18 +147,18 @@ class GitHubProvenance(unittest.TestCase):
 
 class ArchiveIntegrity(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="forge-release-archive-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="nextora-release-archive-")
         self.root = Path(self.temporary.name)
         self.dist = self.root / "dist"
         self.dist.mkdir()
-        self.engine_version = package.version(package.ROOT / "crates/forge-engine/Cargo.toml")
+        self.engine_version = package.version(package.ROOT / "crates/nextora-engine/Cargo.toml")
         self.stages = {}
         for target in sorted(package.TARGETS):
             windows = target.endswith("windows-msvc")
-            stem = f"forge9070-v0.9.1-{target}"
+            stem = f"nextora-v0.9.1-{target}"
             stage = self.root / stem
             stage.mkdir()
-            binary = stage / ("forge-engine.exe" if windows else "forge-engine")
+            binary = stage / ("nextora.exe" if windows else "nextora")
             binary.write_bytes(b"Synthetic archive integrity fixture; not an executable.")
             manifest = {"project_version": "0.9.1", "engine_version": self.engine_version,
                         "tag": "v0.9.1", "commit": COMMIT, "target": target,
@@ -194,7 +194,7 @@ class ArchiveIntegrity(unittest.TestCase):
 
     def test_tampered_executable_is_rejected_even_with_fresh_archive_checksum(self):
         target = "x86_64-unknown-linux-gnu"
-        (self.stages[target] / "forge-engine").write_bytes(b"modified executable")
+        (self.stages[target] / "nextora").write_bytes(b"modified executable")
         self.write_archive(target)
         with self.assertRaisesRegex(ValueError, "Executable checksum mismatch"):
             self.verify()
@@ -228,7 +228,7 @@ class ArchiveIntegrity(unittest.TestCase):
                     self.assertTrue(all("\\" not in name for name in data.namelist()))
             else:
                 with tarfile.open(archive) as data:
-                    binary = data.getmember(self.stages[target].name + "/forge-engine")
+                    binary = data.getmember(self.stages[target].name + "/nextora")
                     self.assertEqual(binary.mode, 0o755)
                     self.assertEqual((binary.uid, binary.gid), (0, 0))
 

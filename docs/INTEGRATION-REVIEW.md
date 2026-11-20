@@ -1,7 +1,7 @@
-# ForgeAI integration review
+# Nextora integration review
 
 The single-runtime refactor is on draft PR #9. It includes the GPU portability
-logic from PR #7, the ForgeAI branding already merged through PR #8,
+logic from PR #7, the Nextora branding already merged through PR #8,
 automatic Rust host-cache resizing, and migration of the old root command
 alias and context packer onto the independent native engine.
 

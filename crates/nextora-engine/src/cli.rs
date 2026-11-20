@@ -460,7 +460,7 @@ fn write_report(path: &Path, report: &serde_json::Value, model: Option<&Path>) -
     for _ in 0..64 {
         let number = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let temp = parent.join(format!(
-            ".forge-engine-report-{}-{number}.tmp",
+            ".nextora-engine-report-{}-{number}.tmp",
             std::process::id()
         ));
         match std::fs::OpenOptions::new()

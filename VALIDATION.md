@@ -1,7 +1,7 @@
-> **Migration note (20 November 2026):** The previous native/Strata parity reports in this file describe the earlier two-runtime repository. The current PR #9 removes the Strata runtime and relies on independent native numerical tests. New merged-branch CI is required before treating the consolidation as validated.\n\n# Forge9070 0.9.1 validation record
+> **Migration note (20 November 2026):** The previous native/Strata parity reports in this file describe the earlier two-runtime repository. The current PR #9 removes the Strata runtime and relies on independent native numerical tests. New merged-branch CI is required before treating the consolidation as validated.\n\n# Nextora 0.9.1 validation record
 
-Validated 17 November 2026. The independent package is `forge-engine` 0.2.1;
-the encompassing project is Forge9070 0.9.1.
+Validated 17 November 2026. The independent package is `nextora-engine` 0.2.1;
+the encompassing project is Nextora 0.9.1.
 
 **The optimized Linux build, native unit tests, coding API regression checks
 and new configuration API checks passed. Browser rendering and interaction
@@ -99,7 +99,7 @@ acceptance still need the checks described at the end of this file.
 |---|---|---|
 | Optimized standalone and frontend build on Linux x86_64 | Passed, 62.60 seconds | [build-release-0.9.1.json](docs/validation/build-release-0.9.1.json) |
 | Native Rust library and binary unit tests | 75 passed, 0 failed; 4 separately gated tests ignored | [native-core-tests-0.9.1.json](docs/validation/native-core-tests-0.9.1.json) |
-| Native CLI and `forge9070 engine` dispatch | 16 checks passed, none skipped | [forge-engine-cli-0.9.1.json](docs/validation/forge-engine-cli-0.9.1.json) |
+| Native CLI and `nextora-cli engine` dispatch | 16 checks passed, none skipped | [nextora-engine-cli-0.9.1.json](docs/validation/nextora-engine-cli-0.9.1.json) |
 | Existing native HTTP/SSE/model switching/admission | 28 checks passed | [native-api-0.9.1.json](docs/validation/native-api-0.9.1.json) |
 | New configuration and model discovery API | 50 checks passed; one browser group skipped | [native-ui-0.9.1.json](docs/validation/native-ui-0.9.1.json) |
 | Launcher arguments and Python/Bash syntax | 6 checks passed; Windows conversion used a stub | [native-ui-launchers-0.9.1.json](docs/validation/native-ui-launchers-0.9.1.json) |
@@ -201,15 +201,15 @@ measurement.
 From the project root:
 
 ```bash
-cargo build --release --locked -p forge-engine -p forge9070
-cargo test --locked -p forge-engine --lib --bins
-python3 scripts/validate-forge-engine.py \
-  --binary target/release/forge-engine --frontend target/release/forge9070 \
-  --output artifacts/forge-engine-cli-local.json
+cargo build --release --locked -p nextora-engine -p nextora-cli
+cargo test --locked -p nextora-engine --lib --bins
+python3 scripts/validate-nextora-engine.py \
+  --binary target/release/nextora-engine --frontend target/release/nextora-cli \
+  --output artifacts/nextora-engine-cli-local.json
 python3 scripts/validate-native-api.py \
-  --binary target/release/forge-engine --output artifacts/native-api-local.json
+  --binary target/release/nextora-engine --output artifacts/native-api-local.json
 python3 scripts/validate-native-ui.py \
-  --binary target/release/forge-engine --output artifacts/native-ui-local.json
+  --binary target/release/nextora-engine --output artifacts/native-ui-local.json
 ```
 
 For browser testing, install/use the test environment's Python Playwright and

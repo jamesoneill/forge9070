@@ -10,7 +10,7 @@ from pathlib import Path
 import tarfile
 import zipfile
 
-spec = importlib.util.spec_from_file_location("forge_package_release", Path(__file__).with_name("package-release.py"))
+spec = importlib.util.spec_from_file_location("nextora_package_release", Path(__file__).with_name("package-release.py"))
 package = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(package)
 
@@ -32,10 +32,10 @@ def main() -> None:
     parser.add_argument("--directory", required=True, type=Path)
     args = parser.parse_args()
     project_version, commit = package.validate_tag(args.tag)
-    engine_version = package.version(package.ROOT / "crates/forge-engine/Cargo.toml")
+    engine_version = package.version(package.ROOT / "crates/nextora-engine/Cargo.toml")
     expected_files, checksums, rows = set(), [], []
     for target in sorted(package.TARGETS):
-        stem = f"forge9070-{args.tag}-{target}"
+        stem = f"nextora-{args.tag}-{target}"
         extension = ".zip" if target.endswith("windows-msvc") else ".tar.gz"
         archive = args.directory / (stem + extension)
         manifest_file = args.directory / (stem + ".build.json")
@@ -51,7 +51,7 @@ def main() -> None:
                               "target_gpu_verified": False}.items():
             if external.get(key) != expected:
                 raise ValueError(f"Unexpected {key} in {target} manifest")
-        executable = "forge-engine.exe" if target.endswith("windows-msvc") else "forge-engine"
+        executable = "nextora.exe" if target.endswith("windows-msvc") else "nextora"
         if external.get("binary") != executable:
             raise ValueError(f"Unexpected executable name: {target}")
         package.validate_rustflags(external.get("rustflags", ""), target)
@@ -74,7 +74,7 @@ def main() -> None:
     if unexpected:
         raise ValueError(f"Unexpected files in release artifact set: {sorted(unexpected)}")
     (args.directory / "SHA256SUMS").write_text("\n".join(checksums) + "\n", encoding="ascii")
-    notes = [f"# Forge9070 {args.tag}", "", f"Native engine **{engine_version}** · source commit `{commit}`", "",
+    notes = [f"# Nextora {args.tag}", "", f"Native engine **{engine_version}** · source commit `{commit}`", "",
              "## Downloads", "", "| Platform | Archive | Size |", "| --- | --- | --- |", *rows, "",
              "Extract the archive and follow its README to start the embedded configuration UI.",
              "The archives contain the independent native engine, licenses and attribution,",
