@@ -1,35 +1,35 @@
-# ForgeAI naming and compatibility
+# Nextora — naming and migration
 
-ForgeAI is the public project name. **Forge9070** is the original project name and a retained compatibility identifier.
+**Nextora** is the public product name. **ForgeAI** and **Forge9070** are historical identities. The rename changes presentation and introduces a command alias without silently breaking shipped interfaces.
 
-## Stable interfaces
-
-| Existing interface | Policy |
+| Interface | Migration policy |
 | --- | --- |
-| `https://github.com/jamesoneill/forge9070` | Remains the canonical repository address until an intentional GitHub repository rename with redirects is separately verified. Existing clone URLs keep working. |
-| Cargo package `forge9070` | Retained to avoid breaking Cargo.lock, package selectors and dependent scripts. This is the legacy CLI and hardware profile. |
-| Cargo package `forge-engine` | Retained as the independent native engine library and executable. |
-| New executable `forgeai` | Alias for the same `crates/forge-engine/src/main.rs` entry point. |
-| `forge9070 engine ...`, `forge9070 serve` | Retained; latter is the older compatibility service. |
-| API base URL and ports | Unchanged. Native service remains on port 9070. |
-| Files, model directories and settings | Do not rename automatically; existing paths/configuration continue to work. |
-| Existing logo at `docs/assets/forge9070-logo.svg` | Retained for historic links; `forgeai-logo.svg` is the new public asset. |
+| GitHub `jamesoneill/forge9070` | Kept until an administrator explicitly renames the repository and validates automatic redirects; all current links remain valid |
+| Cargo package `forge-engine` | Preserved; new public executable `nextora` is built from the same Rust entry point |
+| Existing binaries `forgeai`, `forge-engine` | Preserved |
+| Root Cargo package / binary `forge9070` | Preserved as legacy profile/compatibility entry point |
+| `forge9070 engine` | Preserved as the native engine bridge |
+| API paths, default ports, settings files | Unchanged; native service port remains 9070 |
+| `docs/assets/forgeai-logo.svg`, `forge9070-logo.svg` | Preserved; new public art is `nextora-logo.svg` |
+| Historical validation reports, prior release names, upstream credits | Never rewritten retroactively |
 
-This rebrand makes **no new hardware-support claims**. Native Vulkan requires a capable adapter and suitable driver. Some paths and documentation still describe RX 9070 XT validation because that is their historical context.
-
-## Build and run
+## Build
 
 ```sh
 git clone https://github.com/jamesoneill/forge9070.git
 cd forge9070
 cargo build --release --locked -p forge-engine
-./target/release/forgeai serve --help
+./target/release/nextora serve --help
 ```
 
-The `forge-engine` binary remains valid. To build only the new alias: `cargo build --release --locked -p forge-engine --bin forgeai`.
+Windows: `.\target\release\nextora.exe serve --help`.
 
-**Migration guidance:** Existing scripts should keep running. New scripts may use `forgeai` for the native runtime. Do not rename the root Cargo package or release artefacts until downstream build scripts and CI/release contracts are deliberately migrated and tested.
+Existing callers can continue to invoke `forgeai` or `forge-engine`. The root `forge9070 serve` command is the older compatibility path, not the same backend.
 
-## Launch page
+**Do not rename `forge-engine` as a Cargo package until downstream dependency and release tooling is migrated and independently verified.** Branding the runtime as Nextora does not itself add support for all GPUs, models, or execution paths.
 
-The static [ForgeAI launch page](../site/index.html) links to source, docs, releases, and the status evidence. It is designed to work as an ordinary static file and can be deployed with GitHub Pages after the site's deployment workflow is reviewed.
+## Launch site
+
+The static [Nextora site](../site/index.html) points to current documentation, source, releases and validation evidence. Before GitHub Pages deploys it, this remains a versioned page in source control rather than a claimed live production deployment.
+
+**Name clearance:** Other businesses use "Nextora"; check relevant trademarks, project-name availability, and domains before formal commercial branding or acquiring a domain.
