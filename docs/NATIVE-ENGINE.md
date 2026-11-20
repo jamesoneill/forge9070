@@ -1,12 +1,12 @@
-# Nextora — native engine 0.2.1 (historical Forge9070 0.9.1)
+# Nextora — native engine 0.2.1 (historical Nextora 0.9.1)
 
-The standalone `forge-engine` package runs our Rust model implementation and
+The standalone `nextora-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
 `qwen3`, `qwen3moe` and Qwen3.8 `qwen4exp` text paths. The native HTTP catalogue
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `nextora`, `forgeai`, `forge-engine`, or `forge9070` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
+Use `nextora`, `nextora`, `nextora-engine`, or `nextora-cli` to access the **same** native inference engine. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
 ## Implemented scope
 
@@ -50,12 +50,12 @@ you can find the files and configure the runtime before allocating GPU state.
 
 ### Windows
 
-Build on a local Windows volume, for example `C:\code\forge9070`. From
+Build on a local Windows volume, for example `C:\code\nextora-cli`. From
 PowerShell in that project folder:
 
 ```powershell
-cargo build --release --locked -p forge-engine
-.\target\release\forge-engine.exe serve --open-ui --backend auto `
+cargo build --release --locked -p nextora-engine
+.\target\release\nextora-engine.exe serve --open-ui --backend auto `
   --models-dir 'F:\' --settings-file '.\forge-service.json'
 ```
 
@@ -83,14 +83,14 @@ does not load the original Transformers weights directly. Download all GGUF
 shards into the same folder and select the first shard. Original and
 abliterated/uncensored models pass the same architecture and format checks.
 
-If you used the earlier `forge9070 models pull` command without
+If you used the earlier `nextora-cli models pull` command without
 `--models-dir`, check its default download folder as well:
 
 | Downloader process | Default model folder |
 |---|---|
-| Windows | `%LOCALAPPDATA%\forge9070\models` |
-| Linux / native WSL | `$XDG_DATA_HOME/forge9070/models`, or `$HOME/.local/share/forge9070/models` when unset |
-| Explicit override | `FORGE9070_MODELS_DIR`, if that environment variable was set |
+| Windows | `%LOCALAPPDATA%\nextora-cli\models` |
+| Linux / native WSL | `$XDG_DATA_HOME/nextora-cli/models`, or `$HOME/.local/share/nextora-cli/models` when unset |
+| Explicit override | `NEXTORA_MODELS_DIR`, if that environment variable was set |
 
 These were defaults of the retired download command, not confirmation that
 a download exists on your computer. A different downloader can use another
@@ -158,15 +158,15 @@ inside WSL** uses the mounted path, normally `/mnt/f/Models`.
 For the Windows GPU process from WSL:
 
 ```bash
-/mnt/c/code/forge9070/target/release/forge-engine.exe serve \
+/mnt/c/code/nextora-cli/target/release/nextora-engine.exe serve \
   --open-ui --backend vulkan --models-dir 'F:\' \
-  --settings-file 'C:\code\forge9070\forge-service.json'
+  --settings-file 'C:\code\nextora-cli\forge-service.json'
 ```
 
 For native Linux execution in WSL:
 
 ```bash
-./target/release/forge-engine serve --open-ui --backend auto \
+./target/release/nextora-engine serve --open-ui --backend auto \
   --models-dir /mnt/f --settings-file ./forge-service.json
 ```
 
@@ -186,7 +186,7 @@ bash scripts/configure-native-wsl.sh --models-dir /mnt/f/Models
 
 # Windows process, with path conversion performed by wslpath.
 bash scripts/configure-native-wsl.sh \
-  --windows-exe /mnt/c/code/forge9070/target/release/forge-engine.exe \
+  --windows-exe /mnt/c/code/nextora-cli/target/release/nextora-engine.exe \
   --models-dir /mnt/f/Models
 ```
 
@@ -276,13 +276,13 @@ Native WSL execution requires a compatible Linux Vulkan adapter. If only llvmpip
 
 ## Build on Windows and use from WSL
 
-On Windows use a normal local Windows checkout such as `C:\code\forge9070`
+On Windows use a normal local Windows checkout such as `C:\code\nextora-cli`
 and Developer PowerShell with the MSVC/C++ toolchain installed:
 
 ```powershell
-Set-Location C:\code\forge9070
-cargo build --release --locked -p forge-engine
-$Forge = (Resolve-Path .\target\release\forge-engine.exe).Path
+Set-Location C:\code\nextora-cli
+cargo build --release --locked -p nextora-engine
+$Forge = (Resolve-Path .\target\release\nextora-engine.exe).Path
 & $Forge doctor
 & $Forge capabilities
 ```
@@ -298,7 +298,7 @@ For a Windows GPU server launched from WSL, use the actual Windows executable
 and Windows model paths:
 
 ```bash
-/mnt/c/code/forge9070/target/release/forge-engine.exe serve \
+/mnt/c/code/nextora-cli/target/release/nextora-engine.exe serve \
   --backend vulkan --model 'C:\Models\your-model-00001-of-00002.gguf' \
   --models-dir 'C:\Models' --ctx 16384 --max-tokens 4096 \
   --parallel 1 --max-queued 32 --port 9070
@@ -307,9 +307,9 @@ and Windows model paths:
 Inference in this route runs on Windows. For a native WSL build:
 
 ```bash
-cargo build --release --locked -p forge-engine
-./target/release/forge-engine doctor
-./target/release/forge-engine serve --backend vulkan \
+cargo build --release --locked -p nextora-engine
+./target/release/nextora-engine doctor
+./target/release/nextora-engine serve --backend vulkan \
   --model "$HOME/models/your-model-00001-of-00002.gguf" \
   --models-dir "$HOME/models" --ctx 16384 --max-tokens 4096 \
   --parallel 1 --max-queued 32 --port 9070
@@ -330,7 +330,7 @@ output inside the context: a 16,384-token window with 4,096 output tokens leaves
 `/api/context` endpoint counts the actual rendered template and tokenizer.
 Oversized requests fail before admission; there is no silent history truncation.
 
-The existing `forge9070 context` repository excerpt tool can still prepare
+The existing `nextora-cli context` repository excerpt tool can still prepare
 bounded query-focused source excerpts. It does not run repository code or make
 the native server understand an entire repository automatically. Send relevant
 files and preserve conversation prefixes to benefit from exact state reuse.

@@ -1,6 +1,6 @@
 # Nextora — visual identity
 
-**Nextora** is the current public brand for the Rust-based local inference engine. ForgeAI and Forge9070 are historical names retained for compatibility.
+**Nextora** is the current public brand for the Rust-based local inference engine. Nextora and Nextora are historical names retained for compatibility.
 
 ## Identity
 
@@ -9,8 +9,8 @@ The Nextora mark is a six-sided orbit enclosing a connected **N** monogram. It r
 | Asset | Use |
 | --- | --- |
 | [Nextora vector logo](assets/nextora-logo.svg) | Current product mark for documentation and launch page |
-| [ForgeAI logo](assets/forgeai-logo.svg) | Retained for historical references |
-| [Forge9070 logo](assets/forge9070-logo.svg) | Retained for existing URLs and documentation |
+| [Nextora logo](assets/nextora-logo.svg) | Retained for historical references |
+| [Nextora logo](assets/nextora-cli-logo.svg) | Retained for existing URLs and documentation |
 
 ## Palette
 

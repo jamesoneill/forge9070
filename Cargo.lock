@@ -331,7 +331,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
-name = "forge-engine"
+name = "nextora-engine"
 version = "0.2.1"
 dependencies = [
  "anyhow",
@@ -350,12 +350,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "forge9070"
+name = "nextora-cli"
 version = "0.9.1"
 dependencies = [
  "anyhow",
  "clap",
- "forge-engine",
+ "nextora-engine",
 ]
 
 [[package]]

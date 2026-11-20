@@ -1,7 +1,7 @@
 # Native engine architecture
 
 Nextora contains **one native Rust inference runtime**. The `nextora`,
-`forgeai`, `forge-engine`, and historical `forge9070` executable names all enter
+`nextora`, `nextora-engine`, and historical `nextora-cli` executable names all enter
 the same implementation.
 The Strata compatibility service and port 8080 have been retired.
 
@@ -79,7 +79,7 @@ the inference service does not execute arbitrary client tools.
 
 ## Source map
 
-The native crate is [`crates/forge-engine`](../crates/forge-engine).
+The native crate is [`crates/nextora-engine`](../crates/nextora-engine).
 Server control and UI code are under its `src/server` and `src/ui` directories.
 The historical command alias lives at [`src/main.rs`](../src/main.rs),
 while the bounded local context packer remains at
