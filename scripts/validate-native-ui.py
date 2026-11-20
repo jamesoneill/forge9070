@@ -26,7 +26,7 @@ import time
 import urllib.parse
 
 ROOT = Path(__file__).resolve().parents[1]
-KEY = 'forge-native-ui-local-validation-only'
+KEY = 'nextora-native-ui-local-validation-only'
 
 
 def import_module(name: str, path: Path):
@@ -139,7 +139,7 @@ def main() -> None:
         version = subprocess.run([str(binary), '--version'], capture_output=True, text=True,
                                  timeout=20, check=True).stdout.strip()
         check('built-executable', True, {'version': version, 'sha256': hashlib.sha256(binary.read_bytes()).hexdigest()})
-        with tempfile.TemporaryDirectory(prefix='forge-native-ui-') as temporary:
+        with tempfile.TemporaryDirectory(prefix='nextora-native-ui-') as temporary:
             root = Path(temporary)
             models = root / 'Models with spaces'
             models.mkdir()
@@ -484,7 +484,7 @@ def browser_checks(origin, request, json_request, models, suspicious_name, args,
                 page.locator('#export-settings').click()
             exported_profile = Path(exported.value.path()).read_text()
             profile = json.loads(exported_profile)
-            check('browser-exports-usable-profile-without-api-key', exported.value.suggested_filename == 'forge-service.json'
+            check('browser-exports-usable-profile-without-api-key', exported.value.suggested_filename == 'nextora-service.json'
                   and set(profile) == {'directory', 'model', 'settings'}
                   and profile['model'] == 'fixture.gguf' and profile['settings']['ctx'] == 2048
                   and profile['settings']['parallel'] == 2 and KEY not in exported_profile, profile)

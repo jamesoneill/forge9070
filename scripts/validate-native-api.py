@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Exercise the independent Forge API with real synthetic-model execution.
+"""Exercise the independent Nextora API with real synthetic-model execution.
 
 No external client, pretrained quality or hardware performance is inferred.
 """
 import argparse,contextlib,hashlib,http.client,importlib.util,json,os,socket,struct,subprocess,sys,tempfile,threading,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-KEY="forge-native-api-validation-only"
+KEY="nextora-native-api-validation-only"
 
 def module(name,path):
     spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);sys.modules[name]=m;spec.loader.exec_module(m);return m
@@ -110,7 +110,7 @@ class Job:
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--binary',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
     binary=args.binary.resolve();start=time.monotonic()
-    with tempfile.TemporaryDirectory(prefix='forge-native-api-') as td:
+    with tempfile.TemporaryDirectory(prefix='nextora-native-api-') as td:
         directory=Path(td);plain=directory/'plain.gguf';tool=directory/'tools.gguf';literal=directory/'literal.gguf'
         source=ROOT/'tests/fixtures/tiny-qwen3moe.gguf'
         fixtures.fixture_copy(source,plain,False);fixtures.fixture_copy(source,tool,True)

@@ -10,7 +10,7 @@ from pathlib import Path
 import tarfile
 import zipfile
 
-spec = importlib.util.spec_from_file_location("forge_package_release", Path(__file__).with_name("package-release.py"))
+spec = importlib.util.spec_from_file_location("nextora_package_release", Path(__file__).with_name("package-release.py"))
 package = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(package)
 
@@ -35,7 +35,7 @@ def main() -> None:
     engine_version = package.version(package.ROOT / "crates/nextora-engine/Cargo.toml")
     expected_files, checksums, rows = set(), [], []
     for target in sorted(package.TARGETS):
-        stem = f"nextora-cli-{args.tag}-{target}"
+        stem = f"nextora-{args.tag}-{target}"
         extension = ".zip" if target.endswith("windows-msvc") else ".tar.gz"
         archive = args.directory / (stem + extension)
         manifest_file = args.directory / (stem + ".build.json")
@@ -51,7 +51,7 @@ def main() -> None:
                               "target_gpu_verified": False}.items():
             if external.get(key) != expected:
                 raise ValueError(f"Unexpected {key} in {target} manifest")
-        executable = "nextora-engine.exe" if target.endswith("windows-msvc") else "nextora-engine"
+        executable = "nextora.exe" if target.endswith("windows-msvc") else "nextora"
         if external.get("binary") != executable:
             raise ValueError(f"Unexpected executable name: {target}")
         package.validate_rustflags(external.get("rustflags", ""), target)

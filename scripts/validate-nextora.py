@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the independent Forge executable with untrained CPU fixtures.
+"""Exercise the independent Nextora executable with untrained CPU fixtures.
 
 This validates CLI selection, strict capability failures, actual generation,
 and benchmark accounting. It is not a GPU or pretrained-model quality test.
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/nextora-engine")
+    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/nextora")
     parser.add_argument("--frontend", type=Path, help="Also validate the nextora-cli alias uses the same native engine")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -57,7 +57,7 @@ def main() -> None:
         return json.loads(run(arguments, **kwargs).stdout)
 
     capabilities = document(["capabilities"])
-    assert capabilities["engine"] == "forge-native"
+    assert capabilities["engine"] == "nextora-native"
     assert capabilities["independent_runtime"] is True
     assert capabilities["rusting_strata_dependency"] is False
     assert capabilities["fallback"] == "auto_selection_only_no_runtime_or_external_fallback"
@@ -121,7 +121,7 @@ def main() -> None:
     assert "positive" in run(zero, success=False).stderr.lower()
     checks.append("Empty prompts and zero output reservations are rejected")
 
-    with tempfile.TemporaryDirectory(prefix="forge-native-cli-") as directory:
+    with tempfile.TemporaryDirectory(prefix="nextora-native-cli-") as directory:
         temporary = Path(directory)
         # These loader overrides affect only child processes and deliberately
         # expose no Vulkan ICD. Actual CPU inference must work on that host.
@@ -245,7 +245,7 @@ def main() -> None:
         forwarded = document(["capabilities"], executable=frontend)
         assert forwarded == capabilities
         via_frontend = document(generation, executable=frontend)
-        assert via_frontend["engine"] == "forge-native" and via_frontend["token_ids"] == [65] * 4
+        assert via_frontend["engine"] == "nextora-native" and via_frontend["token_ids"] == [65] * 4
         checks.append("Historical nextora-cli executable aliases the same native engine and executes generation")
 
     result = {"status": "passed", "checks_passed": len(checks), "checks": checks,

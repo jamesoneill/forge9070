@@ -79,7 +79,7 @@ def dependency_notices(destination: Path, target: str) -> int:
     lines = ["# Third-party notices", "",
              "The independent native binary includes third-party components under their own licenses.",
              "This inventory conservatively includes resolved build-time dependencies as well.",
-             "Full upstream notices are under `licenses/`; the Forge MIT license and GGML notice",
+             "Full upstream notices are under `licenses/`; the Nextora MIT license and GGML notice",
              "are provided separately. No RustingStrata runtime is included in this archive.", "",
              "| Package | Version | Declared license | Notices |",
              "| --- | --- | --- | --- |"]
@@ -123,11 +123,11 @@ def dependency_notices(destination: Path, target: str) -> int:
 
 def usage(tag: str, engine_version: str, target: str) -> str:
     windows = target.endswith("windows-msvc")
-    command = (".\\nextora-engine.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
-               "--settings-file '.\\forge-service.json'" if windows else
+    command = (".\\nextora.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
+               "--settings-file '.\\nextora-service.json'" if windows else
                "./nextora serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
-               "--settings-file ./forge-service.json")
-    doctor = ".\\nextora-engine.exe doctor" if windows else "./nextora doctor"
+               "--settings-file ./nextora-service.json")
+    doctor = ".\\nextora.exe doctor" if windows else "./nextora doctor"
     return f"""# Nextora {tag} — independent native engine
 
 Engine version: **{engine_version}**. Target: **{target}**.

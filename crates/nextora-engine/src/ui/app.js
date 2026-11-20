@@ -541,10 +541,10 @@
       const profile = draftProfile();
       const blob = new Blob([JSON.stringify(profile, null, 2) + '\n'], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const link = node('a'); link.href = url; link.download = 'forge-service.json';
+      const link = node('a'); link.href = url; link.download = 'nextora-service.json';
       document.body.append(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      notice('Settings exported as forge-service.json. This exports the current form; it does not load or change the running model.');
+      notice('Settings exported as nextora-service.json. This exports the current form; it does not load or change the running model.');
     } catch (error) { showError(error); }
   }
 
