@@ -9,12 +9,12 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 }
 Push-Location $ProjectRoot
 try {
-    $BuildArgs = @('build', '--locked', '-p', 'forge-engine', '-p', 'forge9070')
+    $BuildArgs = @('build', '--locked', '-p', 'nextora-engine', '-p', 'nextora-cli')
     if (-not $DebugBuild) { $BuildArgs += '--release' }
     & cargo @BuildArgs
     if ($LASTEXITCODE -ne 0) { throw 'Cargo build failed. Confirm the Visual Studio C++ Build Tools and Windows SDK are installed.' }
     $Profile = if ($DebugBuild) { 'debug' } else { 'release' }
-    $Executable = Join-Path $ProjectRoot "target\$Profile\forgeai.exe"
+    $Executable = Join-Path $ProjectRoot "target\$Profile\nextora.exe"
     & $Executable doctor
     if ($LASTEXITCODE -ne 0) { throw 'The hardware diagnostic command failed.' }
     Write-Host "Built $Executable"

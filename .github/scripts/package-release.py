@@ -68,7 +68,7 @@ def dependency_notices(destination: Path, target: str) -> int:
                               "--filter-platform", target))
     packages = {p["id"]: p for p in metadata["packages"]}
     nodes = {n["id"]: n for n in metadata["resolve"]["nodes"]}
-    engine = next(p["id"] for p in packages.values() if p["name"] == "forge-engine")
+    engine = next(p["id"] for p in packages.values() if p["name"] == "nextora-engine")
     pending, selected = [engine], set()
     while pending:
         package_id = pending.pop()
@@ -123,12 +123,12 @@ def dependency_notices(destination: Path, target: str) -> int:
 
 def usage(tag: str, engine_version: str, target: str) -> str:
     windows = target.endswith("windows-msvc")
-    command = (".\\forge-engine.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
+    command = (".\\nextora-engine.exe serve --open-ui --backend auto --models-dir 'F:\\Models' "
                "--settings-file '.\\forge-service.json'" if windows else
-               "./forge-engine serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
+               "./nextora-engine serve --open-ui --backend auto --models-dir \"$HOME/Models\" "
                "--settings-file ./forge-service.json")
-    doctor = ".\\forge-engine.exe doctor" if windows else "./forge-engine doctor"
-    return f"""# Forge9070 {tag} — independent native engine
+    doctor = ".\\nextora-engine.exe doctor" if windows else "./nextora-engine doctor"
+    return f"""# Nextora {tag} — independent native engine
 
 Engine version: **{engine_version}**. Target: **{target}**.
 
@@ -173,7 +173,7 @@ or hardware token rates. See the source repository's validation documentation.
 
 ## Contents and attribution
 
-This archive contains `forge-engine`, its embedded configuration UI and shaders,
+This archive contains `nextora-engine`, its embedded configuration UI and shaders,
 the engine MIT license, GGML attribution, resolved dependency notices, and a
 build manifest. It does not contain model weights, the compatibility frontend,
 or the RustingStrata runtime. The complete source repository has separate
@@ -209,7 +209,7 @@ def archive(source: Path, output: Path, windows: bool, *, epoch: int) -> Path:
                     info.uid = info.gid = 0
                     info.uname = info.gname = ""
                     info.mtime = epoch
-                    info.mode = 0o755 if item.is_dir() or item.name == "forge-engine" else 0o644
+                    info.mode = 0o755 if item.is_dir() or item.name == "nextora-engine" else 0o644
                     if item.is_file():
                         with item.open("rb") as data:
                             handle.addfile(info, data)
@@ -226,10 +226,10 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     project_version, commit = validate_tag(args.tag)
-    engine_version = version(ROOT / "crates/forge-engine/Cargo.toml")
+    engine_version = version(ROOT / "crates/nextora-engine/Cargo.toml")
     binary = args.binary.resolve(strict=True)
     actual_version = run(str(binary), "--version")
-    if actual_version != f"forge-engine {engine_version}":
+    if actual_version != f"nextora-engine {engine_version}":
         raise ValueError(f"Unexpected executable version: {actual_version!r}")
     rustflags = os.environ.get("RUSTFLAGS", "")
     if os.environ.get("CARGO_ENCODED_RUSTFLAGS"):
@@ -237,15 +237,15 @@ def main() -> None:
     validate_rustflags(rustflags, args.target)
     windows = args.target.endswith("windows-msvc")
     epoch = int(run("git", "show", "-s", "--format=%ct", commit))
-    stem = f"forge9070-{args.tag}-{args.target}"
-    with tempfile.TemporaryDirectory(prefix="forge-release-") as temporary:
+    stem = f"nextora-cli-{args.tag}-{args.target}"
+    with tempfile.TemporaryDirectory(prefix="nextora-release-") as temporary:
         stage = Path(temporary) / stem
         stage.mkdir()
-        executable = stage / ("forge-engine.exe" if windows else "forge-engine")
+        executable = stage / ("nextora-engine.exe" if windows else "nextora-engine")
         shutil.copy2(binary, executable)
         executable.chmod(0o755)
-        shutil.copyfile(ROOT / "crates/forge-engine/LICENSE-MIT", stage / "LICENSE-MIT")
-        shutil.copyfile(ROOT / "crates/forge-engine/GGML-NOTICE.md", stage / "GGML-NOTICE.md")
+        shutil.copyfile(ROOT / "crates/nextora-engine/LICENSE-MIT", stage / "LICENSE-MIT")
+        shutil.copyfile(ROOT / "crates/nextora-engine/GGML-NOTICE.md", stage / "GGML-NOTICE.md")
         count = dependency_notices(stage, args.target)
         (stage / "README.md").write_text(usage(args.tag, engine_version, args.target), encoding="utf-8")
         manifest = {"project_version": project_version, "engine_version": engine_version,
