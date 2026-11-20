@@ -1,4 +1,4 @@
-# ForgeAI — native engine 0.2.1 (historical Forge9070 0.9.1)
+# Nextora — native engine 0.2.1 (historical Forge9070 0.9.1)
 
 The standalone `forge-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
@@ -6,7 +6,7 @@ Vulkan shaders without a RustingStrata execution dependency. It supports checked
 admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
 available to the CLI and numerical tests.
 
-Use `forgeai`, `forge-engine` or `forge9070 engine` to select this implementation. Existing
+Use `nextora`, `forgeai`, `forge-engine` or `forge9070 engine` to select this implementation. Existing
 root `forge9070 serve`, `generate`, `chat`, `bench` and browser commands continue
 to use the attributed compatibility engine. They do not silently become the
 new implementation. `cargo build -p forge-engine` builds the independent binary
