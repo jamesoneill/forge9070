@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/forgeai-logo.svg" alt="ForgeAI logo" width="96" height="96">
+  <img src="docs/assets/nextora-logo.svg" alt="Nextora logo" width="96" height="96">
 </p>
 
-<h1 align="center">ForgeAI</h1>
+<h1 align="center">Nextora</h1>
 
 <p align="center">
   <strong>Local models. Your hardware. A Rust engine you can inspect.</strong>
@@ -26,7 +26,7 @@
 
 ---
 
-**ForgeAI** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The legacy RX 9070 XT-specific profile remains for compatibility.
+**Nextora** is a local-first inference project built in Rust. Its independent Vulkan engine targets compatible GPU devices and includes a CPU execution path. The legacy RX 9070 XT-specific profile remains for compatibility.
 Its independent Rust engine combines Vulkan compute, bounded mixture-of-experts
 caches, a browser configuration panel and an OpenAI-compatible coding API.
 Windows and Linux launchers are included, with an explicit Windows-host route
@@ -38,11 +38,11 @@ for WSL users.
 > Windows GPU execution and RX 9070 XT throughput still require validation on
 > the target hardware. No token-rate claim is implied by a passing CI badge.
 
-## ForgeAI launch page
+## Nextora launch page
 
-The public-facing [ForgeAI landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
+The public-facing [Nextora landing page](site/index.html) links to the repository, documentation, releases and validation status. Until GitHub Pages is deployed, the page can be opened locally.
 
-**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate remains `forge-engine`, with a new `forgeai` executable alias. Existing `forge9070` and `forge-engine` commands remain available. See [the rename guide](docs/RENAME.md).
+**Compatibility:** The repository remains at `jamesoneill/forge9070` so existing clone links continue working. The native crate stays `forge-engine`, while the executable aliases `nextora`, `forgeai` and `forge-engine` are supported. Existing `forge9070` and `forge-engine` commands remain available. See [the rename guide](docs/RENAME.md).
 
 ## Watch the architecture walkthrough
 
@@ -56,7 +56,7 @@ The episode covers the project as reviewed on **18 November 2026**. Read the
 alongside it: full pretrained-model quality and target RX 9070 XT performance
 remain to be measured. Passing CI does not establish those results.
 
-## What makes ForgeAI different
+## What makes Nextora different
 
 | Capability | What is implemented |
 | :--- | :--- |
@@ -83,7 +83,7 @@ features. Ordinary builds use the checked-in shader binaries.
 git clone https://github.com/jamesoneill/forge9070.git
 cd forge9070
 cargo build --release --locked -p forge-engine
-# produces forge-engine and forgeai entry points
+# produces nextora, forgeai and forge-engine executable entry points
 ```
 
 On Windows, clone onto a **local Windows drive**, for example
@@ -170,7 +170,7 @@ weights.
 
 Keep **all shards of one checkpoint together** and select the `00001` file.
 Keep different variants in separate folders. These are publisher downloads,
-not models trained by ForgeAI. The GSQ-RCO layout has real-header inspection
+not models trained by Nextora. The GSQ-RCO layout has real-header inspection
 evidence; neither complete checkpoint has been accepted end to end on the
 target RX 9070 XT. The community modification has its own evaluation limits.
 
@@ -258,7 +258,7 @@ See [third-party notices](THIRD_PARTY_NOTICES.md),
 [modification history](MODIFICATIONS.md), [sources](SOURCES.md) and
 [pinned upstream metadata](UPSTREAM.json).
 
-ForgeAI is an independent project. It is not endorsed by AMD, Qwen, Avalon or
-RustingStrata. The original ForgeAI artwork is documented in the
+Nextora is an independent project. It is not endorsed by AMD, Qwen, Avalon or
+RustingStrata. The original Nextora artwork is documented in the
 [brand guide](docs/BRAND.md).
 
