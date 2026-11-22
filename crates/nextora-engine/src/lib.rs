@@ -10,6 +10,7 @@ pub mod cli;
 #[path = "../../../src/code_context.rs"]
 pub mod context;
 pub mod gguf;
+pub mod insight;
 pub mod math;
 pub mod memory;
 pub mod model;
