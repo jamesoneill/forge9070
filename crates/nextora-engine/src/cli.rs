@@ -39,6 +39,15 @@ pub enum EngineCommand {
         #[arg(long)]
         json_out: Option<PathBuf>,
     },
+    /// Compare two accepted native benchmark reports without claiming controlled hardware gains.
+    InsightCompare {
+        #[arg(long)]
+        baseline: PathBuf,
+        #[arg(long)]
+        candidate: PathBuf,
+        #[arg(long)]
+        json_out: Option<PathBuf>,
+    },
     /// Compare runtime-selected CPU dot kernels with their scalar numerical reference.
     KernelBench {
         #[arg(long, default_value_t = 2048)]
@@ -169,6 +178,19 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             }
             print_json(&report)
         },
+        EngineCommand::InsightCompare { baseline, candidate, json_out } => {
+            if let Some(destination) = json_out.as_deref() {
+                check_report_destination(&baseline, destination)?;
+                check_report_destination(&candidate, destination)?;
+            }
+            let a = crate::insight::read_benchmark(&baseline)?;
+            let b = crate::insight::read_benchmark(&candidate)?;
+            let report = crate::insight::compare_benchmarks(&a, &b)?;
+            if let Some(destination) = json_out {
+                write_report(&destination, &report, None)?;
+            }
+            print_json(&report)
+        }
         EngineCommand::KernelBench {
             width,
             rows,
