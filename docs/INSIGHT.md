@@ -70,3 +70,30 @@ All upgrade suggestions remain **conditional**. Neither host RAM availability no
 **Project principle:** Optimise first. Recommend upgrades second. Spend money last.
 
 See [model loading and quality](MODEL-LOADING.md), [hardware support](HARDWARE-SUPPORT.md), [validation evidence](../VALIDATION.md) and [roadmap](ROADMAP.md).
+
+## Live performance dashboard (new)
+
+Start the single native service with `nextora serve --open-ui --backend auto`. The existing browser console at `http://127.0.0.1:9070/` includes a **Nextora Insight** section and obtains its readings from authenticated `GET /api/insight/live`. Its read-only panel shows:
+
+- Recent completed request prefill and output throughput, with per-request bars and success/failure counts. Generation timing includes sampler and streaming overhead, not just GPU kernel execution.
+- Currently available RAM and Nextora-owned GPU allocations; neither is installed RAM nor total/free device VRAM.
+- Current queue depth, active request slots, expert-cache footprint and CPU expert-fallback observations (when supported by the loaded runtime).
+- Free-first recommendations for additional measurement and conditional hardware-capacity suggestions.
+
+The service keeps at most 64 completed request samples in memory, resetting on restart. Its inference route records incomplete requests separately and does not use them to claim throughput. UI data never contains prompts, generated text, checkpoint paths or personal identifiers. The GET endpoint uses the service's existing Host, Origin and Bearer-token authentication checks; do not expose a service without an adequate API key.
+
+**Interpretation:** aggregate rates across recent completed requests are *not* a GPU utilisation percentage; trends need a representative workload. The endpoint samples current state, and does not yet capture thermal throttling, system paging, disk stalls or external GPU allocations.
+
+## Exploratory comparisons
+
+Use two completed native benchmark reports:
+
+```sh
+./target/release/nextora insight-compare --baseline baseline.json --candidate candidate.json --json-out comparison.json
+```
+
+Insight rejects differences in recorded request count, prompt-token count, decode-step count, mapped model bytes or execution backend. It displays the observed throughput ratios but labels the outcome **exploratory, not controlled**, because the existing reports lack full checkpoint checksums, input-token digests, driver identity and hardware metadata. Two models with identical file size can produce completely different results. A ratio must **not** be presented as an upgrade speedup or a quality guarantee.
+
+## Future hardware upgrade simulator
+
+A purchase calculator requires verified measurements from both candidate and current hardware, applicable compatibility checks, actual component pricing, power/cooling constraints, and common workload/model fingerprints. No live hardware prices or hypothetical performance predictions are implemented in this release. The upgrade recommendation remains **insufficient evidence for purchase** until those data exist.
