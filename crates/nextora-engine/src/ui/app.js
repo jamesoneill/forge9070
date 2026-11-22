@@ -6,7 +6,7 @@
     config: null, status: null, scan: null, selection: null,
     apiKey: '', connected: false, dirty: false,
     scanning: false, applying: false, refreshing: false, hardwareLoading: false,
-    polling: false, lastError: '', hardware: [], pendingDevice: null,
+    polling: false, insightLoading: false, lastError: '', hardware: [], pendingDevice: null,
   };
   const fields = {
     backend: 'backend', device: 'device', ctx: 'ctx', max_tokens: 'max-tokens',
@@ -387,6 +387,66 @@
     row.append(node('dt', '', label), node('dd', '', value)); $('runtime-stats').append(row);
   }
 
+
+  function insightRate(value) {
+    return Number.isFinite(Number(value)) && Number(value) >= 0
+      ? Number(value).toFixed(1) + ' tok/s' : 'No samples';
+  }
+  function renderInsight(result) {
+    const m = result.measurements || {};
+    const host = result.host || {};
+    const memory = result.memory || {};
+    const samples = Array.isArray(m.recent_samples) ? m.recent_samples : [];
+    $('insight-generation').textContent = insightRate(m.recent_aggregate_generation_tokens_per_second);
+    $('insight-prefill').textContent = insightRate(m.recent_aggregate_prefill_tokens_per_second);
+    $('insight-ram').textContent = bytes(host.available_host_ram_bytes);
+    const gpuUsed = memory.gpu_live_owned_allocation_bytes;
+    const gpuCap = memory.gpu_allocation_budget_bytes;
+    $('insight-vram').textContent = gpuUsed === null || gpuUsed === undefined ? 'Not measured'
+      : bytes(gpuUsed) + (gpuCap !== null && gpuCap !== undefined ? ' / ' + bytes(gpuCap) : '');
+    $('insight-trend').replaceChildren();
+    const visible = samples.slice(-24);
+    const maximum = Math.max(1, ...visible.map(sample => Number(sample.generation_tokens_per_second) || 0));
+    visible.forEach((sample, i) => {
+      const speed = Math.max(0, Number(sample.generation_tokens_per_second) || 0);
+      const item = node('span', 'insight-trend-bar');
+      item.style.height = Math.max(2, Math.min(100, speed / maximum * 100)) + '%';
+      item.title = 'Completed request ' + (i + 1) + ': ' + speed.toFixed(1) + ' output tok/s';
+      $('insight-trend').append(item);
+    });
+    $('insight-trend').setAttribute('aria-label', visible.length
+      ? visible.length + ' completed requests, latest ' + Number(visible[visible.length - 1].generation_tokens_per_second || 0).toFixed(1) + ' output tokens per second'
+      : 'No completed request measurements yet');
+    $('insight-sample-note').textContent = samples.length
+      ? (m.completed_requests || 0) + ' successful requests · ' + (m.interrupted_or_failed_requests || 0) + ' interrupted/failed · last ' + samples.length + ' shown · ' + (result.admission?.queued || 0) + ' waiting'
+      : 'No successful completed requests. Rates only appear after real inference.';
+    const rec = $('insight-recommendations');
+    rec.replaceChildren();
+    const recommendations = Array.isArray(result.recommendations) ? result.recommendations : [];
+    if (!recommendations.length) rec.append(node('p', 'small-note',
+      'No immediate recommendations from the currently available evidence.'));
+    for (const recommendation of recommendations.slice(0, 5)) {
+      const item = node('div', 'insight-recommendation');
+      const heading = node('strong', '', (recommendation.id || 'Review').replace(/-/g, ' '));
+      const evidence = node('p', 'insight-evidence', recommendation.evidence || '');
+      const action = node('p', '', recommendation.action || '');
+      const purchase = node('span', 'insight-purchase', recommendation.purchase === 'conditional_only'
+        ? 'Upgrade only if measured' : 'Try before spending');
+      item.append(heading, evidence, action, purchase);
+      rec.append(item);
+    }
+    $('insight-status').textContent = 'Local only · ' + (result.backend || 'No active model') + ' · live snapshot';
+  }
+  async function refreshInsight() {
+    if (!state.connected || state.insightLoading || document.hidden) return;
+    state.insightLoading = true;
+    try {
+      renderInsight(await api('/api/insight/live', { timeout: 10000 }));
+    } catch (error) {
+      $('insight-status').textContent = 'Insight unavailable: ' + error.message;
+    } finally { state.insightLoading = false; }
+  }
+
   function renderStatus(status) {
     state.status = status;
     const admission = status.admission || {};
@@ -462,6 +522,7 @@
       rememberConfig(config, resetForm || !state.config);
       await refreshStatus();
       void refreshHardware();
+      void refreshInsight();
     } catch (error) {
       if (error.status !== 401) showError(error);
       else if (state.apiKey) notice('The service did not accept that API key. Check the key used to start the service and try again.', 'error');
@@ -559,6 +620,7 @@
   $('settings-form').addEventListener('submit', applyProfile);
   $('unload-model').addEventListener('click', unloadModel);
   $('refresh-hardware').addEventListener('click', refreshHardware);
+  $('insight-refresh').addEventListener('click', refreshInsight);
   $('refresh-status').addEventListener('click', () => connect(!state.config));
   $('export-settings').addEventListener('click', exportSettings);
   $('copy-api-base').addEventListener('click', () => copyText('api-base', 'copy-api-base'));
@@ -578,5 +640,6 @@
   updateControls();
   void connect(true);
   setInterval(() => { if (!document.hidden) void refreshStatus(true); }, 2500);
+  setInterval(() => { if (!document.hidden) void refreshInsight(); }, 5000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) void refreshStatus(true); });
 })();
