@@ -23,6 +23,7 @@
         <a class="nav-link" href="#overview"><span class="nav-glyph" aria-hidden="true">◫</span> Overview</a>
         <a class="nav-link" href="#models"><span class="nav-glyph" aria-hidden="true">◇</span> Models</a>
         <a class="nav-link" href="#configuration"><span class="nav-glyph" aria-hidden="true">≋</span> Configuration</a>
+        <a class="nav-link" href="#insight"><span class="nav-glyph" aria-hidden="true">◈</span> Insight</a>
         <a class="nav-link" href="#connect"><span class="nav-glyph" aria-hidden="true">↗</span> Connect a client</a>
       </nav>
       <div class="sidebar-bottom">
@@ -61,6 +62,33 @@
         <div class="metric"><span class="metric-label">EXECUTION</span><strong id="execution-name">—</strong><span id="execution-detail" class="metric-note">Runtime starts when a model loads</span></div>
         <div class="metric"><span class="metric-label">ACTIVE REQUESTS</span><strong><span id="active-count">0</span><span class="metric-denominator"> / <span id="active-capacity">1</span></span></strong><span class="metric-note">Independent sequence slots</span></div>
         <div class="metric"><span class="metric-label">WAITING IN QUEUE</span><strong><span id="queued-count">0</span><span class="metric-denominator"> / <span id="queue-capacity">32</span></span></strong><span class="metric-note">First in, first out</span></div>
+      </section>
+
+      <section id="insight" class="card insight-panel" aria-labelledby="insight-heading">
+        <div class="section-heading">
+          <div><span class="step-label">PERFORMANCE / LIVE OBSERVATIONS</span><h2 id="insight-heading">Nextora Insight</h2></div>
+          <span class="badge">LOCAL ONLY</span>
+        </div>
+        <p class="section-description">Observed performance, model memory and safe next steps. Sample history resets when the service restarts. No benchmark data leaves this machine.</p>
+        <div class="insight-metrics" aria-live="off">
+          <div class="insight-metric"><span>OUTPUT THROUGHPUT</span><strong id="insight-generation">No samples</strong><small>Measured completed requests</small></div>
+          <div class="insight-metric"><span>PROMPT PROCESSING</span><strong id="insight-prefill">No samples</strong><small>Uncached prompt tokens</small></div>
+          <div class="insight-metric"><span>AVAILABLE HOST RAM</span><strong id="insight-ram">—</strong><small>Snapshot, not installed RAM</small></div>
+          <div class="insight-metric"><span>OWNED GPU MEMORY</span><strong id="insight-vram">—</strong><small>Nextora allocations, not total VRAM</small></div>
+        </div>
+        <div class="insight-detail-grid">
+          <div>
+            <h3>Recent request speed</h3>
+            <div id="insight-trend" class="insight-trend" role="img" aria-label="No completed request measurements yet"></div>
+            <p id="insight-sample-note" class="small-note">Run a supported model to collect real request measurements.</p>
+          </div>
+          <div>
+            <h3>What to measure next</h3>
+            <div id="insight-recommendations" class="insight-recommendations" aria-live="polite"><p class="small-note">Waiting for the local service…</p></div>
+          </div>
+        </div>
+        <div class="insight-footer"><span id="insight-status" role="status">Connecting to local metrics…</span><button id="insight-refresh" class="button button-secondary" type="button">Refresh insight</button></div>
+        <p class="small-note">Hardware upgrades are conditional on sustained measured bottlenecks. GPU heap capacity, model file size and test-run rates do not prove an upgrade benefit.</p>
       </section>
 
       <div class="content-grid">
