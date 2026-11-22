@@ -15,8 +15,8 @@
   <div class="shell">
     <aside class="sidebar">
       <a class="brand" href="#overview" aria-label="Nextora overview">
-        <span class="brand-mark" aria-hidden="true">F</span>
-        <span>Forge<span class="brand-number">9070</span><small>LOCAL INFERENCE</small></span>
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>Nextora<small>LOCAL INFERENCE</small></span>
       </a>
       <div class="workspace-label">WORKSPACE</div>
       <nav aria-label="Console navigation">
@@ -71,8 +71,8 @@
         </div>
         <p class="section-description">Observed performance, model memory and safe next steps. Sample history resets when the service restarts. No benchmark data leaves this machine.</p>
         <div class="insight-metrics" aria-live="off">
-          <div class="insight-metric"><span>OUTPUT THROUGHPUT</span><strong id="insight-generation">No samples</strong><small>Measured completed requests</small></div>
-          <div class="insight-metric"><span>PROMPT PROCESSING</span><strong id="insight-prefill">No samples</strong><small>Uncached prompt tokens</small></div>
+          <div class="insight-metric"><span>OBSERVED OUTPUT RATE</span><strong id="insight-generation">No samples</strong><small>Measured completed requests</small></div>
+          <div class="insight-metric"><span>OBSERVED PROMPT RATE</span><strong id="insight-prefill">No samples</strong><small>Uncached prompt tokens</small></div>
           <div class="insight-metric"><span>AVAILABLE HOST RAM</span><strong id="insight-ram">—</strong><small>Snapshot, not installed RAM</small></div>
           <div class="insight-metric"><span>OWNED GPU MEMORY</span><strong id="insight-vram">—</strong><small>Nextora allocations, not total VRAM</small></div>
         </div>
@@ -187,7 +187,7 @@
           <section class="profile-card" aria-labelledby="profile-heading">
             <h2 id="profile-heading">Keep your setup</h2><p>Export the selected model and runtime settings. API keys are never included.</p>
             <button id="export-settings" class="button button-secondary button-full" type="button">Export settings</button>
-            <p class="small-note">Start the service with your saved profile:</p><code class="launch-command">nextora-engine serve --settings-file forge-service.json --open-ui</code>
+            <p class="small-note">Start the service with your saved profile:</p><code class="launch-command">nextora serve --settings-file nextora-service.json --open-ui</code>
             <p class="small-note">Host, port, API key, and CPU worker count are startup options.</p>
           </section>
         </aside>
