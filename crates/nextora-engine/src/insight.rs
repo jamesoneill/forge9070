@@ -76,7 +76,7 @@ fn is_wsl() -> bool {
     false
 }
 
-fn host_snapshot() -> Value {
+pub(crate) fn host_snapshot() -> Value {
     let (available_ram_bytes, memory_error) = match crate::memory::available_memory() {
         Ok(bytes) => (Some(bytes), None),
         Err(error) => (None, Some(error.to_string())),
@@ -260,7 +260,7 @@ mod tests {
     fn mock_host(wsl: bool, ram: u64) -> Value {
         json!({"wsl": wsl, "available_host_ram_bytes": ram})
     }
-    fn mock_benchmark() -> Value {
+    pub(super) fn mock_benchmark() -> Value {
         json!({
             "engine": crate::ENGINE_ID,
             "engine_version": crate::ENGINE_VERSION,
@@ -316,5 +316,116 @@ mod tests {
         benchmark = mock_benchmark();
         benchmark["median_aggregate_prefill_tokens_per_second"] = json!(-2.0);
         assert!(validate_benchmark(&benchmark).is_err());
+    }
+}
+
+
+/// Conservative runtime recommendations from measured, local-only live status.
+/// A spike, allocation count, or heap size is not proof of a hardware bottleneck.
+pub fn live_recommendations(host: &Value, admission: &Value, memory: &Value, measurements: &Value, backend: Option<&str>) -> Vec<Value> {
+    let mut out = vec![];
+    let complete=measurements["completed_requests"].as_u64().unwrap_or(0);
+    let queued=admission["queued"].as_u64().unwrap_or(0);
+    let capacity=admission["capacity"].as_u64().unwrap_or(1);
+    if complete==0 {
+        out.push(advice("run-representative-request","high","No successfully completed real service requests recorded",
+            "Use a supported pretrained checkpoint and repeat representative requests before assessing performance or buying hardware.","no_purchase"));
+    }
+    if queued>0 {
+        out.push(advice("queue-pressure","medium","One or more requests are waiting in the queue at this instant",
+            "Review throughput and tail latency over a sustained test; compare request slots 1, 2 and 4 before considering new hardware.","no_purchase"));
+    }
+    if let (Some(live),Some(budget)) = (memory["gpu_live_owned_allocation_bytes"].as_u64(),memory["gpu_allocation_budget_bytes"].as_u64()) {
+        if budget>0 && live >= budget.saturating_mul(9)/10 {
+            out.push(advice("gpu-budget-headroom","medium","Nextora-owned Vulkan allocations are at least 90% of its configured allocation ceiling",
+                "Inspect allocation failures, CPU expert fallbacks and cache misses; reduce concurrent state or context first. Larger VRAM is conditional on sustained measured pressure.","conditional_only"));
+        }
+    }
+    if memory["gpu_cpu_expert_fallbacks"].as_u64().unwrap_or(0)>0 {
+        out.push(advice("expert-fallback-observed","medium","CPU expert fallback counter is non-zero on this loaded model",
+            "Benchmark a supported workload, check transfer costs and allocation constraints, then compare memory tuning before considering a larger-VRAM card.","conditional_only"));
+    }
+    if host["available_host_ram_bytes"].as_u64().is_some_and(|n|n<4*GIB) {
+        out.push(advice("available-host-memory-low","medium","Less than 4 GiB host RAM available to this process in the current snapshot",
+            "Measure paging during a real workload before recommending more RAM. Available memory is not installed memory.","conditional_only"));
+    }
+    if backend==Some("cpu") && complete>0 {
+        out.push(advice("cpu-execution","medium","Current model is executing on CPU",
+            "Run hardware discovery and a correctness-checked Vulkan benchmark before considering a GPU purchase; CPU execution may be deliberate.","no_purchase"));
+    }
+    if complete>0 && capacity==1 {
+        out.push(advice("test-concurrent-requests","low","Configured for one active request",
+            "Use the native benchmark to test whether additional slots improve aggregate throughput without unacceptable tail latency.","no_purchase"));
+    }
+    out
+}
+
+/// Compare observed benchmark rates without pretending the driver, checkpoint
+/// contents, input tokens or quantization were identical when not fingerprinted.
+pub fn compare_benchmarks(first: &Value, second: &Value) -> Result<Value> {
+    validate_benchmark(first)?;
+    validate_benchmark(second)?;
+    let conditions = [
+        "concurrent_requests","prompt_tokens_per_request","decode_steps_per_request","model_file_bytes",
+    ];
+    for key in conditions {
+        ensure!(first[key]==second[key], "cannot compare benchmarks: {key} differs");
+    }
+    let a=first.pointer("/runtime/execution/backend").and_then(Value::as_str);
+    let b=second.pointer("/runtime/execution/backend").and_then(Value::as_str);
+    ensure!(a==b, "cannot compare benchmarks: execution backend differs");
+    // Equal reported size is *not* an equal model. This is not sufficient to
+    // assert causality, represent model quality, or advise a purchase.
+    let speed = |key:&str| -> Value {
+        let old=first[key].as_f64().unwrap_or(0.);
+        let new=second[key].as_f64().unwrap_or(0.);
+        json!({"baseline":old,"candidate":new,"observed_ratio":new/old})
+    };
+    Ok(json!({
+        "schema":"nextora.insight.comparison.v1",
+        "status":"exploratory_not_controlled",
+        "workload_fields_matched":true,
+        "baseline":summary(first),
+        "candidate":summary(second),
+        "prefill":speed("median_aggregate_prefill_tokens_per_second"),
+        "decode":speed("median_aggregate_decode_steps_per_second"),
+        "p95_completion_seconds":speed("p95_request_decode_completion_seconds"),
+        "evidence_limitations":[
+            "No model file digest, checkpoint revision, prompt token IDs, GPU driver version or thermal conditions verified",
+            "Ratios describe these two reported runs only, not a speedup attributable to any hardware change",
+            "Identical greedy checksums are within-run only; cross-run quality parity is unverified",
+            "Never infer upgrade value, price-to-performance or universal speed from this comparison"
+        ],
+        "upgrade_recommendation":"insufficient_evidence_for_purchase",
+    }))
+}
+
+#[cfg(test)]
+mod live_and_comparison_tests {
+    use super::*;
+    #[test]
+    fn live_memory_limit_recommends_measure_before_purchase() {
+        let r=live_recommendations(&json!({"available_host_ram_bytes":8*GIB}),
+            &json!({"capacity":1,"queued":0}),&json!({"gpu_live_owned_allocation_bytes":950,"gpu_allocation_budget_bytes":1000,"gpu_cpu_expert_fallbacks":2}),
+            &json!({"completed_requests":4}),Some("vulkan"));
+        assert!(r.iter().any(|x|x["id"]=="gpu-budget-headroom"));
+        assert!(r.iter().any(|x|x["id"]=="expert-fallback-observed"));
+        assert!(r.iter().all(|x|x["estimated_speedup"].is_null()));
+    }
+    #[test]
+    fn comparison_rejects_unmatched_concurrency() {
+        let a=super::tests::mock_benchmark();
+        let mut b=a.clone();
+        b["concurrent_requests"]=json!(4);
+        assert!(compare_benchmarks(&a,&b).is_err());
+    }
+    #[test]
+    fn comparison_never_claims_verified_purchase_benefit() {
+        let a=super::tests::mock_benchmark();
+        let mut b=a.clone();
+        b["median_aggregate_decode_steps_per_second"]=json!(18.);
+        let cmp=compare_benchmarks(&a,&b).unwrap();
+        assert_eq!(cmp["decode"]["observed_ratio"],1.5);
+        assert_eq!(cmp["upgrade_recommendation"],"insufficient_evidence_for_purchase");
     }
 }
