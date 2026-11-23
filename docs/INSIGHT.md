@@ -1,6 +1,6 @@
 # Nextora Insight — evidence-based hardware performance advice
 
-**Status:** First implementation; read-only diagnostic CLI. Not a benchmark database, live profiler, tuning engine or upgrade-price service.
+Use `nextora insight` for a hardware snapshot, `nextora insight-compare` to compare saved reports, and the [local console](#live-performance-dashboard) to see measurements from the running service.
 
 Nextora Insight helps identify the *next useful measurement* before suggesting an upgrade. It uses the native engine's existing Vulkan adapter discovery and benchmark output. It does **not** install drivers, change model settings, send telemetry, scrape prices or claim a faster GPU will deliver a particular token rate.
 
@@ -57,13 +57,13 @@ All upgrade suggestions remain **conditional**. Neither host RAM availability no
 - Insight does not capture usernames, serial numbers, model paths or prompts in its output. Hardware adapter names and an optional host timestamp are included, so review a report before sharing it.
 - The benchmark output you provide to Insight can still contain paths and prompts on your local disk; Insight only emits a reduced summary.
 - No external network calls or server-side benchmark uploads are added.
-- No raw performance comparisons are attempted between reports lacking driver and checkpoint fingerprints.
+- Comparisons without driver and checkpoint fingerprints are exploratory.
 
 ## Next milestones
 
 1. Measure physical AMD RX 9070 XT execution under Windows Vulkan and verify correctness against a deterministic CPU/reference run.
 2. Record model hashes, driver revisions, OS build, context, quantization, backend and observed allocations to make A/B comparisons auditable.
-3. Add live host/GPU memory, transfer and cache-miss counters with privacy-safe export controls.
+3. Extend the console’s available RAM, owned allocation and cache snapshots with transfer, memory-pressure and cache-miss measurements.
 4. Benchmark local tuning candidates only after correctness gates, comparing median and tail latencies on representative workloads.
 5. Add an opt-in price-aware hardware upgrade planner based on measured outcomes, not vendor marketing estimates.
 
@@ -71,7 +71,7 @@ All upgrade suggestions remain **conditional**. Neither host RAM availability no
 
 See [model loading and quality](MODEL-LOADING.md), [hardware support](HARDWARE-SUPPORT.md), [validation evidence](../VALIDATION.md) and [roadmap](ROADMAP.md).
 
-## Live performance dashboard (new)
+## Live performance dashboard
 
 Start the single native service with `nextora serve --open-ui --backend auto`. The existing browser console at `http://127.0.0.1:9070/` includes a **Nextora Insight** section and obtains its readings from authenticated `GET /api/insight/live`. Its read-only panel shows:
 

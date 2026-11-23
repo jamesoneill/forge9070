@@ -35,6 +35,6 @@ see [governance](REPOSITORY-GOVERNANCE.md).
 
 ## Nextora Insight — hardware performance advisor
 
-The first milestone is a read-only `nextora insight` command. It combines native Vulkan discovery, available RAM and logical CPU information with existing verified `nextora bench` reports. It suggests benchmark follow-ups and **conditional** capacity checks without pretending model files are resident VRAM or claiming a speedup from a new GPU.
+The read-only `nextora insight` command combines Vulkan discovery, available RAM and CPU thread counts with verified native benchmark reports. The local console shows recent request rates, queue depth and Nextora-owned allocations. Use `nextora insight-compare` to compare two reports with matching recorded workload fields. See [Nextora Insight](INSIGHT.md) for commands and measurement limits.
 
-Future milestones (not implemented yet): benchmark fingerprinting (driver, model digest, operating-system build), live memory/transfer and queue profiling, controlled A/B optimisation trials, thermal/power/storage measurements, a local UI, opt-in anonymous benchmark sharing and price-aware upgrade comparisons. No benchmark upload or hardware purchase is authorised by this roadmap.
+Future work includes driver and model fingerprinting, transfer and memory-pressure profiling, controlled tuning trials, thermal and power measurements, storage analysis, opt-in benchmark sharing and price-aware upgrade comparisons. Benchmark uploads and hardware purchases require separate approval.
