@@ -60,6 +60,38 @@ Include `"cache_salt": "my-agent"` on each request from an agent that should reu
 
 Inspect `GET /v1/status` for queue prompt-token accounting and the configured prefill chunk size. Neither control alone improves token computation throughput; physical-GPU benchmarking is required.
 
+## Bounded host/GPU overlap for MoE expert misses
+
+The native Vulkan Qwen3.8 path can overlap **CPU expert fallback calculations**
+with the **final in-flight batch of packed expert uploads**. Previously it
+waited for all transfers to finish before starting CPU fallback work. The
+transfer now submits, CPU-only fallback runs while the GPU copy is in flight,
+and the fence must complete before any transferred expert buffer is used.
+
+This design is deliberately conservative:
+
+- Bounded host expert caching and Vulkan allocation budgets still apply.
+- Each staging window is reused only after its Vulkan fence completes.
+  Earlier chunks still wait synchronously; this is not a dedicated async
+  transfer queue.
+- CPU host work runs outside the shared GPU-cache mutex.
+- A host calculation error still waits for the transfer fence before buffers
+  are released.
+- Prefill does not evict decode-hot experts, and no routed expert is omitted.
+- The Qwen3.8 memory report includes
+  `cpu_gpu_transfer_overlap_batches` to count batches with both an outstanding
+  transfer and some CPU fallback work, not measured overlapping milliseconds.
+
+**Scope:** This is CPU calculation against GPU transfer of other selected
+experts in the same layer. It does **not** yet overlap GPU compute with GPU
+transfers, use a separate transfer queue, predict future routing, or establish
+a token-rate improvement on the RX 9070 XT. If all selected experts fit the
+GPU or all fall back to CPU, there may be no overlap opportunity.
+
+Use identical weights, prompts and context settings to compare cold and warm
+caches, memory pressure, CPU fallbacks, prefill/decode latency and numerical
+correctness with the prior release.
+
 ## Configure the service in a browser
 
 The native server embeds its own HTML, CSS and JavaScript. It needs no frontend
