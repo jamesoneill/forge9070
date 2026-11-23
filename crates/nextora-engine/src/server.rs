@@ -366,8 +366,8 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         admission: Admission::new(
             profile.settings.parallel,
             profile.settings.max_queued,
-            profile.settings.queue_token_budget(&args),
             Duration::from_secs(profile.settings.queue_timeout_secs),
+            profile.settings.queue_token_budget(&args),
         ),
         args,
         profile: RwLock::new(profile),
@@ -1151,8 +1151,6 @@ mod tests {
         drop(permit);
     }
 
-    #[test]
-    }
     #[test]
     fn generation_permit_releases_and_queue_limits_apply() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
