@@ -69,6 +69,9 @@ expert triplets for future decode requests. Only repeated hot selections qualify
 One candidate is scheduled every 32 decoded tokens using a per-layer
 round-robin policy. Work is handled by one background worker with a queue of
 capacity one; if the queue is busy the hint is dropped, not accumulated.
+Set `NEXTORA_MOE_PREFETCH=0` in the Nextora process environment to
+disable background host prefetch and compare latency with the baseline. The
+default is enabled. Restart the service after changing this environment variable.
 
 Key invariants:
 
