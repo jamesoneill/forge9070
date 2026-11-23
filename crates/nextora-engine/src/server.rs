@@ -1,5 +1,6 @@
 //! Independent local HTTP API, reusable sequence pool and bounded FIFO admission.
 mod control;
+mod insight;
 use crate::{
     model::Step,
     protocol::{ChatRequest, ChatTemplate, Sampler, parse_output},
@@ -252,6 +253,7 @@ struct Server {
     pool: rayon::ThreadPool,
     connections: AtomicUsize,
     ids: AtomicU64,
+    insight: insight::LiveTelemetry,
 }
 
 pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
@@ -314,6 +316,7 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         pool,
         connections: AtomicUsize::new(0),
         ids: AtomicU64::new(1),
+        insight: insight::LiveTelemetry::new(),
     });
     // Monitor memory even when no browser or inference client is connected.
     // The controller owns no model; each sample looks up the current one.
@@ -605,6 +608,7 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
                 &json!({"status":if ready{"ok"}else{"no_model"},"engine":crate::ENGINE_ID}),
             )
         }
+        ("GET", "/api/insight/live") => json_response(stream, 200, &insight::live(server)),
         ("GET", "/v1/models") => {
             let active = server.loaded.read().unwrap().as_ref().map(|m| m.id.clone());
             let data=server.catalogue.read().unwrap().keys().map(|id|json!({"id":id,"object":"model","created":0,"owned_by":"local","loaded":active.as_ref()==Some(id)})).collect::<Vec<_>>();
@@ -778,6 +782,7 @@ fn generate(
         server.ids.fetch_add(1, Ordering::Relaxed)
     );
     let cached_prompt_tokens = lease.history.len();
+    let mut insight_trace = server.insight.begin(prompt.len(), cached_prompt_tokens);
     let state = lease.state.as_mut().unwrap();
     let start = Instant::now();
     let output = &mut lease.output;
@@ -798,6 +803,7 @@ fn generate(
         }
     }
     let prefill_seconds = start.elapsed().as_secs_f64();
+    insight_trace.prefill_finished(start.elapsed());
     if request.stream {
         write!(
             stream,
@@ -924,6 +930,7 @@ fn generate(
     if message.get("tool_calls").is_some() {
         finish = "tool_calls";
     }
+    insight_trace.complete(tokens.len(), start.elapsed().as_secs_f64());
     let usage = json!({"prompt_tokens":prompt.len(),"completion_tokens":tokens.len(),"total_tokens":prompt.len()+tokens.len(),"prompt_tokens_details":{"cached_tokens":cached_prompt_tokens}});
     if request.stream {
         if let Some(reasoning) = message.get("reasoning_content") {
