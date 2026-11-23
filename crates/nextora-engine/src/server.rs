@@ -1114,6 +1114,9 @@ mod tests {
         let ipv6 = "fd00::9070".parse().unwrap();
         assert!(host_allowed("[fd00::9070]:9070", ipv6));
         assert!(!host_allowed("[fd00::9071]:9070", ipv6));
+    }
+
+    #[test]
     fn cache_namespaces_reuse_only_identical_executed_prefixes() {
         assert!(reusable_prefix(&[1, 2], None, &[1, 2, 3], None));
         assert!(reusable_prefix(&[1, 2], Some("agent-a"), &[1, 2, 3], Some("agent-a")));
