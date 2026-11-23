@@ -1462,6 +1462,10 @@ mod tests {
         let again = model.warm_expert_cache().unwrap();
         assert_eq!((again.matrices_loaded, again.payload_bytes_loaded), (0, 0));
         assert_eq!(model.expert_cache_stats().unwrap().resident_bytes, 48);
+        // Opportunistic hints never evict existing expert triplets.
+        assert_eq!(model.prefetch_expert_triplet(0, 1).unwrap(), None);
+        assert_eq!(model.prefetch_expert_triplet(0, 0).unwrap(), Some((0, 0)));
+        assert_eq!(model.expert_cache_stats().unwrap().evictions, 0);
         assert!(model.set_expert_cache_capacity(128).is_err());
         let disabled = Gguf::open(&file.0).unwrap();
         assert_eq!(disabled.warm_expert_cache().unwrap().experts_considered, 0);
