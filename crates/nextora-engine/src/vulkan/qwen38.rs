@@ -537,6 +537,7 @@ impl QwenGpuModel {
         let counts = &self.prefetch.counts;
         value["predictive_host_prefetch"] = json!({
             "policy": "bounded_non_eviction_host_triplets",
+            "enabled": self.prefetch.enabled,
             "scheduled": counts.scheduled.load(Ordering::Relaxed),
             "completed": counts.completed.load(Ordering::Relaxed),
             "bytes_loaded": counts.bytes_loaded.load(Ordering::Relaxed),
