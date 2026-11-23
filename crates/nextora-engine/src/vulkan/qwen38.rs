@@ -4,6 +4,9 @@
 //! and a small FFN input are read at layer boundaries; the latter permits exact
 //! CPU execution of an expert when its packed working set cannot fit the GPU
 //! budget. Cold PLE and token-embedding rows are gathered lazily on the host.
+#[path = "prefetch.rs"]
+mod prefetch;
+use prefetch::Prefetcher;
 use super::{
     GpuMatvecExecutor,
     context::{
@@ -85,6 +88,7 @@ pub struct QwenGpuModel {
     cpu_experts: AtomicU64,
     gpu_experts: AtomicU64,
     cpu_gpu_overlap_batches: AtomicU64,
+    prefetch: Prefetcher,
     tokens: AtomicU64,
 }
 #[derive(Debug)]
@@ -331,7 +335,7 @@ fn record(commands: &Commands, graph: &Graph, position: usize) {
 
 impl QwenGpuModel {
     pub fn load(source: Arc<Gguf>, context: usize, options: DeviceOptions) -> Result<Self> {
-        let plan = Qwen38::load(source, context, Arc::new(CpuMatvec))?;
+        let plan = Qwen38::load(Arc::clone(&source), context, Arc::new(CpuMatvec))?;
         let cache = GpuMatvecExecutor::new(options)?;
         let device = cache.device();
         let max_x = device.properties.limits.max_compute_work_group_count[0] as usize;
@@ -498,6 +502,11 @@ impl QwenGpuModel {
             cpu_experts: AtomicU64::new(0),
             gpu_experts: AtomicU64::new(0),
             cpu_gpu_overlap_batches: AtomicU64::new(0),
+            prefetch: Prefetcher::new(
+                Arc::clone(&plan.source),
+                plan.common.block_count,
+                plan.common.expert_count,
+            ),
             tokens: AtomicU64::new(0),
         })
     }
@@ -524,6 +533,17 @@ impl QwenGpuModel {
         value["cpu_expert_fallbacks"] = json!(self.cpu_experts.load(Ordering::Relaxed));
         value["cpu_gpu_transfer_overlap_batches"] =
             json!(self.cpu_gpu_overlap_batches.load(Ordering::Relaxed));
+        let counts = &self.prefetch.counts;
+        value["predictive_host_prefetch"] = json!({
+            "policy": "bounded_non_eviction_host_triplets",
+            "scheduled": counts.scheduled.load(Ordering::Relaxed),
+            "completed": counts.completed.load(Ordering::Relaxed),
+            "bytes_loaded": counts.bytes_loaded.load(Ordering::Relaxed),
+            "busy_skips": counts.busy_skips.load(Ordering::Relaxed),
+            "budget_skips": counts.budget_skips.load(Ordering::Relaxed),
+            "errors": counts.errors.load(Ordering::Relaxed),
+            "gpu_residency_predicted": false
+        });
         value["gpu_expert_executions"] = json!(self.gpu_experts.load(Ordering::Relaxed));
         value["completed_tokens"] = json!(self.tokens.load(Ordering::Relaxed));
         value["kv_precision"] = json!("F32");
@@ -1984,6 +2004,7 @@ impl QwenGpuModel {
             Ordering::Relaxed,
         );
         for layer in 0..c.block_count {
+            self.prefetch.observe(layer, &s.selected, admit);
             let e = &self.plan.layers[layer].experts;
             let mut gpu_jobs = Vec::with_capacity(c.experts_per_token);
             let mut cpu_slots = Vec::new();
@@ -2241,6 +2262,7 @@ impl QwenGpuModel {
             s.previous = [token as i64, s.previous[0]];
         }
         s.position += 1;
+        self.prefetch.schedule(s.position, admit);
         self.tokens.fetch_add(1, Ordering::Relaxed);
         Ok(())
     }
