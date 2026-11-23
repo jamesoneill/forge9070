@@ -42,13 +42,13 @@ pub struct ServeArgs {
     #[arg(long, default_value_t = 1)]
     pub parallel: usize,
     #[arg(long, default_value_t = 32)]
+    pub max_queued: usize,
     /// Waiting prompt-token budget; zero derives a bounded budget from context and parallelism.
     #[arg(long, default_value_t = 0)]
     pub max_queued_prompt_tokens: usize,
     /// Prefill tokens per model call; tune using measured prefill and first-token latency.
     #[arg(long, default_value_t = 32)]
     pub prefill_chunk_tokens: usize,
-    pub max_queued: usize,
     #[arg(long, default_value_t = 120)]
     pub queue_timeout_secs: u64,
     #[arg(long, default_value_t = 128)]
