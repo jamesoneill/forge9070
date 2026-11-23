@@ -1138,6 +1138,14 @@ impl Commands {
         }
     }
     pub fn submit(&mut self) -> Result<()> {
+        self.submit_with_host_work(|| Ok(()))
+    }
+
+    /// Submit Vulkan work, then perform CPU-only work while its fence is pending.
+    /// The fence is always waited even when host work fails; staging buffers
+    /// and packed-weight leases cannot be released while GPU copies are in flight.
+    /// The callback must never access in-flight GPU buffer contents.
+    pub fn submit_with_host_work(&mut self, host_work: impl FnOnce() -> Result<()>) -> Result<()> {
         unsafe {
             self.device.raw.end_command_buffer(self.raw)?;
             self.device.raw.reset_fences(&[self.fence])?;
@@ -1159,14 +1167,18 @@ impl Commands {
             self.inflight = true;
         }
         self.device.submissions.fetch_add(1, Ordering::Relaxed);
-        unsafe {
+        let host_result = host_work();
+        let fence_result = unsafe {
             self.device
                 .raw
                 .wait_for_fences(&[self.fence], true, u64::MAX)
         }
-        .context("wait for independent Vulkan computation")?;
-        self.inflight = false;
-        Ok(())
+        .context("wait for independent Vulkan computation");
+        if fence_result.is_ok() {
+            self.inflight = false;
+        }
+        fence_result?;
+        host_result
     }
 }
 impl Drop for Commands {
