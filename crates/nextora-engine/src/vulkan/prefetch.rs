@@ -71,7 +71,8 @@ pub(super) struct Counts {
 #[derive(Debug)]
 pub(super) struct Prefetcher {
     forecast: Mutex<Forecast>,
-    sender: SyncSender<(usize, usize)>,
+    sender: Option<SyncSender<(usize, usize)>>,
+    pub(super) enabled: bool,
     pub(super) counts: Arc<Counts>,
 }
 
@@ -95,11 +96,21 @@ fn worker(source: Arc<Gguf>, receiver: Receiver<(usize, usize)>, counts: Arc<Cou
 
 impl Prefetcher {
     pub(super) fn new(source: Arc<Gguf>, layers: usize, experts: usize) -> Self {
-        let (sender, receiver) = sync_channel(ONE_REQUEST_CAPACITY);
+        // Opt out of speculative disk I/O if the host cache contends with decode.
+        // The setting affects performance only, never model routing or maths.
+        let enabled = std::env::var("NEXTORA_MOE_PREFETCH")
+            .map(|value| value != "0")
+            .unwrap_or(true);
         let counts = Arc::new(Counts::default());
-        let worker_counts = Arc::clone(&counts);
-        std::thread::spawn(move || worker(source, receiver, worker_counts));
-        Self { forecast: Mutex::new(Forecast::new(layers, experts)), sender, counts }
+        let sender = if enabled {
+            let (sender, receiver) = sync_channel(ONE_REQUEST_CAPACITY);
+            let worker_counts = Arc::clone(&counts);
+            std::thread::spawn(move || worker(source, receiver, worker_counts));
+            Some(sender)
+        } else {
+            None
+        };
+        Self { forecast: Mutex::new(Forecast::new(layers, experts)), sender, enabled, counts }
     }
 
     pub(super) fn observe(&self, layer: usize, selected: &[(usize, f32)], decode: bool) {
@@ -111,9 +122,10 @@ impl Prefetcher {
 
     pub(super) fn schedule(&self, position: usize, decode: bool) {
         if !decode || position % SCHEDULE_EVERY_DECODE_TOKENS != 0 { return }
+        let Some(sender) = &self.sender else { return };
         let candidate = self.forecast.lock().ok().and_then(|mut f| f.prediction());
         if let Some(candidate) = candidate {
-            match self.sender.try_send(candidate) {
+            match sender.try_send(candidate) {
                 Ok(()) => { self.counts.scheduled.fetch_add(1, Ordering::Relaxed); }
                 Err(TrySendError::Full(_)) => {
                     self.counts.busy_skips.fetch_add(1, Ordering::Relaxed);
