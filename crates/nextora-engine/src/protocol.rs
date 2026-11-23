@@ -156,6 +156,8 @@ pub struct ChatRequest {
     pub temperature: f32,
     pub top_p: f32,
     pub seed: u64,
+    /// Opaque cache namespace. Identical namespaces may reuse completed prefix state.
+    pub cache_salt: Option<String>,
     pub frequency_penalty: f32,
     pub presence_penalty: f32,
     pub parallel_tool_calls: bool,
@@ -211,6 +213,7 @@ impl ChatRequest {
             "presence_penalty",
             "n",
             "user",
+            "cache_salt",
             "chat_template_kwargs",
         ];
         for k in object.keys() {
@@ -443,6 +446,11 @@ impl ChatRequest {
                 .map(|x| x.as_u64().context("seed must be a nonnegative integer"))
                 .transpose()?
                 .unwrap_or(0x9070),
+            cache_salt: match v.get("cache_salt") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(s)) if !s.is_empty() && s.len() <= 256 => Some(s.clone()),
+                _ => bail!("cache_salt must be null or a nonempty string of at most 256 bytes"),
+            },
             frequency_penalty: float_value(v, "frequency_penalty", 0.0, -2.0, 2.0)?,
             presence_penalty: float_value(v, "presence_penalty", 0.0, -2.0, 2.0)?,
             parallel_tool_calls: bool_value(v, "parallel_tool_calls", true)?,
@@ -754,6 +762,22 @@ mod tests {
     fn req() -> ChatRequest {
         ChatRequest::parse(&json!({"model":"m","messages":[{"role":"user","content":"hi"}],"chat_template_kwargs":{"enable_thinking":false},"tools":[{"type":"function","function":{"name":"read_file","parameters":{"type":"object","properties":{"path":{"type":"string"}}}}}]}),128).unwrap()
     }
+    #[test]
+    fn cache_salt_is_validated_and_kept_out_of_the_prompt() {
+        let request = json!({"model":"m","messages":[{"role":"user","content":"hi"}],"cache_salt":"agent-a"});
+        let parsed = ChatRequest::parse(&request, 128).unwrap();
+        assert_eq!(parsed.cache_salt.as_deref(), Some("agent-a"));
+        assert_eq!(parsed.messages[0]["content"], "hi");
+        for bad in [json!(""), json!(42), json!(true), json!("x".repeat(257))] {
+            let mut request = request.clone();
+            request["cache_salt"] = bad;
+            assert!(ChatRequest::parse(&request, 128).is_err());
+        }
+        let mut request = request.clone();
+        request["cache_salt"] = Value::Null;
+        assert!(ChatRequest::parse(&request, 128).unwrap().cache_salt.is_none());
+    }
+
     #[test]
     fn template_json_keeps_utf8_html_and_python_spacing() {
         let mut env = minijinja::Environment::new();
