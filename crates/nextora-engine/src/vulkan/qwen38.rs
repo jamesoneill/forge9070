@@ -491,6 +491,11 @@ impl QwenGpuModel {
                 upload(format!("{i}/pc"), &ple.convolution)?;
             }
         }
+        let prefetch = Prefetcher::new(
+            Arc::clone(&plan.source),
+            plan.common.block_count,
+            plan.common.expert_count,
+        );
         Ok(Self {
             plan,
             cache,
@@ -502,11 +507,7 @@ impl QwenGpuModel {
             cpu_experts: AtomicU64::new(0),
             gpu_experts: AtomicU64::new(0),
             cpu_gpu_overlap_batches: AtomicU64::new(0),
-            prefetch: Prefetcher::new(
-                Arc::clone(&plan.source),
-                plan.common.block_count,
-                plan.common.expert_count,
-            ),
+            prefetch,
             tokens: AtomicU64::new(0),
         })
     }
