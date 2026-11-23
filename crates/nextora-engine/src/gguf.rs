@@ -395,6 +395,33 @@ impl Gguf {
         Ok(report)
     }
 
+    /// Opportunistic all-or-nothing host-cache prefetch for a predicted expert.
+    /// Never evicts a resident or leased entry, never reads embedding tables,
+    /// and does not change which experts the model evaluates.
+    /// Ok(None) means insufficient free cache budget; this is not an error.
+    pub fn prefetch_expert_triplet(
+        &self,
+        layer: usize,
+        expert: usize,
+    ) -> Result<Option<(usize, usize)>> {
+        let names = [
+            format!("blk.{layer}.ffn_gate_exps.weight"),
+            format!("blk.{layer}.ffn_up_exps.weight"),
+            format!("blk.{layer}.ffn_down_exps.weight"),
+        ];
+        let mut ranges = Vec::with_capacity(3);
+        for name in &names {
+            let matrix = self.tensor(name)?.expert(expert)?;
+            ranges.push((matrix.cache_key(), matrix.bytes().len()));
+        }
+        self.cache.warm_batch(&ranges, |key, length| {
+            self.sources
+                .get(key.shard as usize)
+                .context("prefetch source shard missing")?
+                .read(key.offset, length)
+        })
+    }
+
     /// A lease always identifies the same expert bytes, whether owned in the
     /// cache or borrowed directly from its shard. Active leases prevent eviction.
     pub fn expert_cached(&self, name: &str, expert: usize) -> Result<ExpertLease<'_>> {
