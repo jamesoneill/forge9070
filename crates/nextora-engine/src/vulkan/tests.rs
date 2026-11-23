@@ -185,6 +185,54 @@ fn software_vulkan_full_validation() {
             close(&actual, &reference, "cached packed projection");
         }
     }
+    // An uncached expert is submitted before independent host work. The
+    // callback may inspect allocated handles, but the caller must wait for
+    // the transfer fence before using those handles in GPU compute.
+    let overlap_file = matrix_file(QuantType::F32, 256, 5, 193);
+    let overlap_source = Gguf::open(&overlap_file.0).unwrap();
+    let overlap_tensor = overlap_source.tensor("matrix").unwrap();
+    let mut observed_inflight = false;
+    let uploaded = executor
+        .prepare_batch_with_host_work(&[overlap_tensor], true, |ready, in_flight| {
+            assert!(in_flight, "uncached matrix should require GPU transfer");
+            assert!(ready[0].is_some());
+            observed_inflight = true;
+            Ok(())
+        })
+        .unwrap();
+    assert!(observed_inflight && uploaded[0].is_some());
+    drop(uploaded);
+    let mut observed_hit = false;
+    let cached = executor
+        .prepare_batch_with_host_work(&[overlap_tensor], true, |ready, in_flight| {
+            assert!(!in_flight, "cached matrix needs no transfer");
+            assert!(ready[0].is_some());
+            observed_hit = true;
+            Ok(())
+        })
+        .unwrap();
+    assert!(observed_hit && cached[0].is_some());
+    drop(cached);
+
+    // Even an error in CPU-only host work must first join the GPU fence.
+    let failed_file = matrix_file(QuantType::F32, 256, 5, 194);
+    let failed_source = Gguf::open(&failed_file.0).unwrap();
+    let failed_tensor = failed_source.tensor("matrix").unwrap();
+    assert!(executor
+        .prepare_batch_with_host_work(&[failed_tensor], false, |_, in_flight| {
+            assert!(in_flight);
+            anyhow::bail!("synthetic CPU fallback failure");
+        })
+        .is_err());
+    assert!(executor
+        .prepare_batch_with_host_work(&[failed_tensor], false, |ready, in_flight| {
+            assert!(in_flight);
+            assert!(ready[0].is_some());
+            Ok(())
+        })
+        .unwrap()[0]
+        .is_some());
+
     let stats = executor.stats();
     assert_eq!(stats["gpu_projection_calls"].as_u64(), Some(56));
     assert!(stats["cache_hits"].as_u64().unwrap() >= 28);
