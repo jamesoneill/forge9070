@@ -1,5 +1,6 @@
 //! Independent local HTTP API, reusable sequence pool and bounded FIFO admission.
 mod control;
+mod insight;
 use crate::{
     model::Step,
     protocol::{ChatRequest, ChatTemplate, Sampler, parse_output},
@@ -41,13 +42,13 @@ pub struct ServeArgs {
     #[arg(long, default_value_t = 1)]
     pub parallel: usize,
     #[arg(long, default_value_t = 32)]
-    pub max_queued: usize,
     /// Waiting prompt-token budget; zero derives a bounded budget from context and parallelism.
     #[arg(long, default_value_t = 0)]
     pub max_queued_prompt_tokens: usize,
     /// Prefill tokens per model call; tune using measured prefill and first-token latency.
     #[arg(long, default_value_t = 32)]
     pub prefill_chunk_tokens: usize,
+    pub max_queued: usize,
     #[arg(long, default_value_t = 120)]
     pub queue_timeout_secs: u64,
     #[arg(long, default_value_t = 128)]
@@ -62,12 +63,12 @@ pub struct ServeArgs {
     #[arg(long)]
     pub settings_file: Option<PathBuf>,
 }
-
 #[derive(Clone, Copy)]
 struct QueuedRequest {
     ticket: u64,
     prompt_tokens: usize,
 }
+
 struct GateState {
     active: usize,
     queue: VecDeque<QueuedRequest>,
@@ -308,6 +309,7 @@ struct Server {
     pool: rayon::ThreadPool,
     connections: AtomicUsize,
     ids: AtomicU64,
+    insight: insight::LiveTelemetry,
 }
 
 pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
@@ -317,7 +319,6 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
     );
     if let Some(n) = threads {
         ensure!((1..=1024).contains(&n), "invalid CPU worker count");
-    }
     ensure!(
         (1..=4096).contains(&args.prefill_chunk_tokens),
         "prefill_chunk_tokens must be in 1..=4096"
@@ -326,6 +327,7 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         args.max_queued_prompt_tokens <= 16_777_216,
         "max_queued_prompt_tokens must be at most 16777216 (0 means automatic)"
     );
+    }
     let (profile, catalogue, loaded, startup_error, desired_model) = control::startup(&mut args)?;
     let pool = if let Some(n) = threads {
         rayon::ThreadPoolBuilder::new().num_threads(n).build()?
@@ -364,8 +366,8 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         admission: Admission::new(
             profile.settings.parallel,
             profile.settings.max_queued,
-            Duration::from_secs(profile.settings.queue_timeout_secs),
             profile.settings.queue_token_budget(&args),
+            Duration::from_secs(profile.settings.queue_timeout_secs),
         ),
         args,
         profile: RwLock::new(profile),
@@ -379,6 +381,7 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         pool,
         connections: AtomicUsize::new(0),
         ids: AtomicU64::new(1),
+        insight: insight::LiveTelemetry::new(),
     });
     // Monitor memory even when no browser or inference client is connected.
     // The controller owns no model; each sample looks up the current one.
@@ -670,6 +673,7 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
                 &json!({"status":if ready{"ok"}else{"no_model"},"engine":crate::ENGINE_ID}),
             )
         }
+        ("GET", "/api/insight/live") => json_response(stream, 200, &insight::live(server)),
         ("GET", "/v1/models") => {
             let active = server.loaded.read().unwrap().as_ref().map(|m| m.id.clone());
             let data=server.catalogue.read().unwrap().keys().map(|id|json!({"id":id,"object":"model","created":0,"owned_by":"local","loaded":active.as_ref()==Some(id)})).collect::<Vec<_>>();
@@ -843,6 +847,7 @@ fn generate(
         server.ids.fetch_add(1, Ordering::Relaxed)
     );
     let cached_prompt_tokens = lease.history.len();
+    let mut insight_trace = server.insight.begin(prompt.len(), cached_prompt_tokens);
     let state = lease.state.as_mut().unwrap();
     let start = Instant::now();
     let output = &mut lease.output;
@@ -863,6 +868,7 @@ fn generate(
         }
     }
     let prefill_seconds = start.elapsed().as_secs_f64();
+    insight_trace.prefill_finished(start.elapsed());
     if request.stream {
         write!(
             stream,
@@ -989,6 +995,7 @@ fn generate(
     if message.get("tool_calls").is_some() {
         finish = "tool_calls";
     }
+    insight_trace.complete(tokens.len(), start.elapsed().as_secs_f64());
     let usage = json!({"prompt_tokens":prompt.len(),"completion_tokens":tokens.len(),"total_tokens":prompt.len()+tokens.len(),"prompt_tokens_details":{"cached_tokens":cached_prompt_tokens}});
     if request.stream {
         if let Some(reasoning) = message.get("reasoning_content") {
@@ -1107,8 +1114,6 @@ mod tests {
         let ipv6 = "fd00::9070".parse().unwrap();
         assert!(host_allowed("[fd00::9070]:9070", ipv6));
         assert!(!host_allowed("[fd00::9071]:9070", ipv6));
-    }
-    #[test]
     fn cache_namespaces_reuse_only_identical_executed_prefixes() {
         assert!(reusable_prefix(&[1, 2], None, &[1, 2, 3], None));
         assert!(reusable_prefix(&[1, 2], Some("agent-a"), &[1, 2, 3], Some("agent-a")));
@@ -1146,6 +1151,8 @@ mod tests {
         drop(permit);
     }
 
+    #[test]
+    }
     #[test]
     fn generation_permit_releases_and_queue_limits_apply() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();

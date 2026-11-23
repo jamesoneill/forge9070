@@ -120,8 +120,19 @@ def main():
         (directory/'invalid.gguf').write_bytes(b'not a model')
         with server(binary,plain) as (port,request):
             check(request('/v1/models',auth=False)[0]==401,'API key was not enforced');passed('Bearer authentication is enforced')
+            check(request('/api/insight/live',auth=False)[0]==401,'Insight endpoint must require API key')
+            insight_code,insight=json_call(request,'/api/insight/live')
+            check(insight_code==200 and insight['measurements']['completed_requests']==0 and insight['measurements']['recent_window']==0,str(insight))
+            check(insight['schema']=='nextora.insight.live.v1' and insight['privacy'].startswith('local '),str(insight))
+            passed('Insight is authenticated and starts with truthful empty evidence')
             status,models=json_call(request,'/v1/models');check(status==200 and {m['id'] for m in models['data']}=={'plain.gguf','tools.gguf','literal.gguf'},str(models));passed('Catalogue exposes supported complete models and excludes malformed files')
             status,response=json_call(request,'/v1/chat/completions',body('plain.gguf'));check(status==200 and response['choices'][0]['message']['content']=='AAAA',str(response));check(response['usage']['completion_tokens']==4,str(response));passed('Native model execution returns exact nonstreaming output and usage')
+            insight_code,insight=json_call(request,'/api/insight/live')
+            measured=insight['measurements']
+            check(insight_code==200 and measured['completed_requests']>=1 and measured['recent_window']>=1,str(insight))
+            check(measured['recent_samples'][-1]['generated_tokens']==4,str(insight))
+            check('model' not in json.dumps(insight['measurements']) and 'prompt_text' not in json.dumps(insight['measurements']),str(insight))
+            passed('Insight exposes measured completed-request tokens without prompt or model text')
             expected_executed=response['usage']['prompt_tokens']+response['usage']['completion_tokens']-1
             follow=body('plain.gguf',messages=[{'role':'user','content':'hello'},{'role':'assistant','content':'AAAA'},{'role':'user','content':'next'}])
             status,response=json_call(request,'/v1/chat/completions',follow);check(status==200 and response['usage']['prompt_tokens_details']['cached_tokens']==expected_executed,str(response));passed('Exact executed prefix is reused; the final sampled but unexecuted token is excluded')

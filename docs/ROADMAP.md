@@ -32,3 +32,9 @@ Keep Windows and Linux builds repeatable, release archives self-contained with
 notices, docs explicit about native versus compatibility commands, and CI
 usable for fork pull requests. Only the repository owner merges into `main`;
 see [governance](REPOSITORY-GOVERNANCE.md).
+
+## Nextora Insight — hardware performance advisor
+
+The read-only `nextora insight` command combines Vulkan discovery, available RAM and CPU thread counts with verified native benchmark reports. The local console shows recent request rates, queue depth and Nextora-owned allocations. Use `nextora insight-compare` to compare two reports with matching recorded workload fields. See [Nextora Insight](INSIGHT.md) for commands and measurement limits.
+
+Future work includes driver and model fingerprinting, transfer and memory-pressure profiling, controlled tuning trials, thermal and power measurements, storage analysis, opt-in benchmark sharing and price-aware upgrade comparisons. Benchmark uploads and hardware purchases require separate approval.
