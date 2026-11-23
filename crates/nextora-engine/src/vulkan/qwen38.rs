@@ -84,6 +84,7 @@ pub struct QwenGpuModel {
     fixed_bytes: usize,
     cpu_experts: AtomicU64,
     gpu_experts: AtomicU64,
+    cpu_gpu_overlap_batches: AtomicU64,
     tokens: AtomicU64,
 }
 #[derive(Debug)]
@@ -496,6 +497,7 @@ impl QwenGpuModel {
             fixed_bytes,
             cpu_experts: AtomicU64::new(0),
             gpu_experts: AtomicU64::new(0),
+            cpu_gpu_overlap_batches: AtomicU64::new(0),
             tokens: AtomicU64::new(0),
         })
     }
@@ -520,6 +522,8 @@ impl QwenGpuModel {
         value["pinned_dense_bytes"] = json!(self.fixed_bytes);
         value["cpu_state_operations"] = json!(false);
         value["cpu_expert_fallbacks"] = json!(self.cpu_experts.load(Ordering::Relaxed));
+        value["cpu_gpu_transfer_overlap_batches"] =
+            json!(self.cpu_gpu_overlap_batches.load(Ordering::Relaxed));
         value["gpu_expert_executions"] = json!(self.gpu_experts.load(Ordering::Relaxed));
         value["completed_tokens"] = json!(self.tokens.load(Ordering::Relaxed));
         value["kv_precision"] = json!("F32");
@@ -2004,25 +2008,45 @@ impl QwenGpuModel {
                 }
             }
             let views: Vec<_> = leases.iter().map(|lease| lease.tensor()).collect();
-            let uploaded = self.cache.prepare_batch(&views, admit)?;
-            for (index, buffer) in misses.into_iter().zip(uploaded) {
-                weights[index] = buffer;
-            }
             let staged: BTreeMap<_, _> =
                 views.iter().map(|view| (view.cache_key(), *view)).collect();
+            let mut overlap_used = false;
+            // Classify all routed expert triplets before attempting GPU compute.
+            // For incomplete triplets, compute the *same exact CPU fallback*
+            // while the final packed-weight upload batch is in flight.
+            // Buffers returned in "ready" cannot be used until the fence joins.
+            let uploaded = self.cache.prepare_batch_with_host_work(
+                &views, admit, |ready, transfer_in_flight| {
+                    for (&index, buffer) in misses.iter().zip(ready.iter()) {
+                        weights[index] = buffer.clone();
+                    }
+                    for slot in 0..c.experts_per_token {
+                        if (0..3).any(|matrix| weights[slot * 3 + matrix].is_none()) {
+                            let expert = s.selected[slot].0;
+                            self.cpu_expert(layer, expert, admit, s, slot, &staged)?;
+                            cpu_slots.push(slot);
+                            if transfer_in_flight {
+                                overlap_used = true;
+                            }
+                        }
+                    }
+                    Ok(())
+                }
+            )?;
+            drop(uploaded);
+            if overlap_used {
+                self.cpu_gpu_overlap_batches.fetch_add(1, Ordering::Relaxed);
+            }
             for slot in 0..c.experts_per_token {
                 let expert = s.selected[slot].0;
                 let gate = weights[slot * 3].take();
                 let up = weights[slot * 3 + 1].take();
                 let down = weights[slot * 3 + 2].take();
-                match (gate, up, down) {
-                    (Some(g), Some(u), Some(d)) => gpu_jobs.push((slot, expert, g, u, d)),
-                    _ => {
-                        self.cpu_expert(layer, expert, admit, s, slot, &staged)?;
-                        cpu_slots.push(slot);
-                    }
+                if let (Some(g), Some(u), Some(d)) = (gate, up, down) {
+                    gpu_jobs.push((slot, expert, g, u, d));
                 }
             }
+            debug_assert_eq!(gpu_jobs.len() + cpu_slots.len(), c.experts_per_token);
             drop(staged);
             drop(views);
             drop(leases);

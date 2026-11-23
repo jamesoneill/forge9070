@@ -149,10 +149,27 @@ impl GpuMatvecExecutor {
     /// A fence protects each reused staging window, not each matrix. Returned
     /// immutable leases remain valid through the caller's compute submission.
     /// Prefill misses never evict existing cache entries or enter the cache.
+    /// Synchronous compatibility path for callers without independent CPU work.
+    #[allow(dead_code)]
     pub(crate) fn prepare_batch(
         &self,
         tensors: &[Tensor<'_>],
         admit: bool,
+    ) -> Result<Vec<Option<Arc<Buffer>>>> {
+        self.prepare_batch_with_host_work(tensors, admit, |_, _| Ok(()))
+    }
+
+    /// Overlap CPU-only fallback with the final outstanding Vulkan upload batch.
+    /// Prepared GPU buffer handles are for classification only until this returns:
+    /// they must not be submitted for compute before the transfer fence completes.
+    /// The callback runs exactly once, outside the cache mutex, including on
+    /// cache hits and out-of-budget paths. A callback failure still joins the
+    /// outstanding GPU submission before any staging or output buffer is dropped.
+    pub(crate) fn prepare_batch_with_host_work(
+        &self,
+        tensors: &[Tensor<'_>],
+        admit: bool,
+        host_work: impl FnOnce(&[Option<Arc<Buffer>>], bool) -> Result<()>,
     ) -> Result<Vec<Option<Arc<Buffer>>>> {
         let mut state = self
             .state
@@ -181,6 +198,8 @@ impl GpuMatvecExecutor {
             }
         }
         if misses.is_empty() {
+            drop(state);
+            host_work(&result, false)?;
             return Ok(result);
         }
         let bytes = misses.iter().try_fold(0usize, |sum, &i| {
@@ -205,6 +224,8 @@ impl GpuMatvecExecutor {
                     staging_bytes = (staging_bytes / 2).max(4096).next_multiple_of(4);
                     continue;
                 }
+                drop(state);
+                host_work(&result, false)?;
                 return Ok(result);
             }
             match self.device.host(staging_bytes) {
@@ -213,6 +234,8 @@ impl GpuMatvecExecutor {
                     if admit && state.evict_one() {
                         continue;
                     }
+                    drop(state);
+                    host_work(&result, false)?;
                     return Ok(result);
                 }
                 Err(error) => return Err(error),
@@ -250,7 +273,15 @@ impl GpuMatvecExecutor {
             }
         }
         if pending.is_empty() {
+            drop(state);
+            host_work(&result, false)?;
             return Ok(result);
+        }
+        // These are immutable handles to allocated destinations, not evidence
+        // that their transfer has completed. CPU-only fallback can use the
+        // allocation map while Vulkan is writing to those buffers.
+        for (i, buffer) in &pending {
+            result[*i] = Some(Arc::clone(buffer));
         }
         let mut commands = Commands::new(Arc::clone(&self.device), 1)?;
         commands.begin()?;
@@ -289,10 +320,20 @@ impl GpuMatvecExecutor {
                 copied_total += count;
             }
         }
+        // Release shared cache state before CPU fallback, preventing lengthy
+        // host computation from serialising all other inference requests.
+        // A buffer held in pending/result is safe against cache eviction.
+        drop(state);
         if used > 0 {
             commands.transfer_to_compute();
-            commands.submit()?;
+            commands.submit_with_host_work(|| host_work(&result, true))?;
+        } else {
+            host_work(&result, false)?;
         }
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| anyhow::anyhow!("GPU projection cache lock poisoned"))?;
         self.device
             .uploads
             .fetch_add(copied_total as u64, Ordering::Relaxed);
@@ -301,18 +342,18 @@ impl GpuMatvecExecutor {
             if admit {
                 state.clock = state.clock.wrapping_add(1);
                 let tick = state.clock;
-                state.cache.insert(
-                    tensors[i].cache_key(),
-                    Cached {
-                        buffer: Arc::clone(&buffer),
-                        last_use: tick,
-                        pinned: false,
-                    },
-                );
+                // Another request may have inserted this same expert during
+                // our transfer. Keep its cached object; this caller still owns
+                // the completed upload through result and other Arc leases.
+                state.cache.entry(tensors[i].cache_key()).or_insert_with(|| Cached {
+                    buffer: Arc::clone(&buffer),
+                    last_use: tick,
+                    pinned: false,
+                });
             } else {
                 state.counts.transient_uploads += 1;
             }
-            result[i] = Some(buffer);
+            // result[i] already holds the prepared (now complete) GPU buffer.
         }
         Ok(result)
     }
