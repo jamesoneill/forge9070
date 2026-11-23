@@ -43,6 +43,12 @@ pub struct ServeArgs {
     pub parallel: usize,
     #[arg(long, default_value_t = 32)]
     pub max_queued: usize,
+    /// Waiting prompt-token budget; zero derives a bounded budget from context and parallelism.
+    #[arg(long, default_value_t = 0)]
+    pub max_queued_prompt_tokens: usize,
+    /// Prefill tokens per model call; tune using measured prefill and first-token latency.
+    #[arg(long, default_value_t = 32)]
+    pub prefill_chunk_tokens: usize,
     #[arg(long, default_value_t = 120)]
     pub queue_timeout_secs: u64,
     #[arg(long, default_value_t = 128)]
@@ -57,15 +63,32 @@ pub struct ServeArgs {
     #[arg(long)]
     pub settings_file: Option<PathBuf>,
 }
+#[derive(Clone, Copy)]
+struct QueuedRequest {
+    ticket: u64,
+    prompt_tokens: usize,
+}
 
 struct GateState {
     active: usize,
-    queue: VecDeque<u64>,
+    queue: VecDeque<QueuedRequest>,
+    queued_prompt_tokens: usize,
+    queued_prompt_token_limit: usize,
     changing: bool,
     high_water: usize,
     capacity: usize,
     queue_limit: usize,
     timeout: Duration,
+}
+impl GateState {
+    /// Maintain queue token accounting on cancellation, timeout and disconnect.
+    fn remove_waiter(&mut self, ticket: u64) {
+        if let Some(index) = self.queue.iter().position(|entry| entry.ticket == ticket) {
+            if let Some(entry) = self.queue.remove(index) {
+                self.queued_prompt_tokens -= entry.prompt_tokens;
+            }
+        }
+    }
 }
 struct Admission {
     state: Mutex<GateState>,
@@ -81,11 +104,18 @@ impl Drop for Permit {
     }
 }
 impl Admission {
-    fn new(capacity: usize, queue_limit: usize, timeout: Duration) -> Arc<Self> {
+    fn new(
+        capacity: usize,
+        queue_limit: usize,
+        timeout: Duration,
+        queued_prompt_token_limit: usize,
+    ) -> Arc<Self> {
         Arc::new(Self {
             state: Mutex::new(GateState {
                 active: 0,
                 queue: VecDeque::new(),
+                queued_prompt_tokens: 0,
+                queued_prompt_token_limit,
                 changing: false,
                 high_water: 0,
                 capacity,
@@ -99,6 +129,7 @@ impl Admission {
     fn acquire(
         self: &Arc<Self>,
         stream: &TcpStream,
+        prompt_tokens: usize,
     ) -> std::result::Result<Permit, (u16, &'static str)> {
         let mut s = self.state.lock().unwrap();
         if s.changing {
@@ -112,22 +143,33 @@ impl Admission {
         if s.queue.len() >= s.queue_limit {
             return Err((429, "generation queue is full"));
         }
+        let Some(queued_tokens) = s.queued_prompt_tokens.checked_add(prompt_tokens) else {
+            return Err((429, "generation queued prompt token budget exceeded"));
+        };
+        if queued_tokens > s.queued_prompt_token_limit {
+            return Err((429, "generation queued prompt token budget exceeded"));
+        }
         let ticket = self.next.fetch_add(1, Ordering::Relaxed);
-        s.queue.push_back(ticket);
+        s.queue.push_back(QueuedRequest { ticket, prompt_tokens });
+        s.queued_prompt_tokens = queued_tokens;
         let deadline = Instant::now() + s.timeout;
         loop {
             if disconnected(stream) {
-                s.queue.retain(|x| *x != ticket);
+                s.remove_waiter(ticket);
                 self.changed.notify_all();
                 return Err((499, "client disconnected"));
             }
             if Instant::now() >= deadline {
-                s.queue.retain(|x| *x != ticket);
+                s.remove_waiter(ticket);
                 self.changed.notify_all();
                 return Err((504, "generation queue deadline exceeded"));
             }
-            if !s.changing && s.active < s.capacity && s.queue.front() == Some(&ticket) {
-                s.queue.pop_front();
+            if !s.changing
+                && s.active < s.capacity
+                && s.queue.front().is_some_and(|entry| entry.ticket == ticket)
+            {
+                let admitted = s.queue.pop_front().expect("front ticket exists");
+                s.queued_prompt_tokens -= admitted.prompt_tokens;
                 s.active += 1;
                 s.high_water = s.high_water.max(s.active);
                 self.changed.notify_all();
@@ -142,7 +184,7 @@ impl Admission {
     }
     fn snapshot(&self) -> Value {
         let s = self.state.lock().unwrap();
-        json!({"active":s.active,"queued":s.queue.len(),"capacity":s.capacity,"queue_limit":s.queue_limit,"queue_timeout_secs":s.timeout.as_secs(),"active_high_water":s.high_water,"model_changing":s.changing,"policy":"fifo","allocation":"state on demand; reusable per-model sequence pool"})
+        json!({"active":s.active,"queued":s.queue.len(),"queued_prompt_tokens":s.queued_prompt_tokens,"queued_prompt_token_limit":s.queued_prompt_token_limit,"capacity":s.capacity,"queue_limit":s.queue_limit,"queue_timeout_secs":s.timeout.as_secs(),"active_high_water":s.high_water,"model_changing":s.changing,"policy":"fifo","allocation":"state on demand; reusable per-model sequence pool"})
     }
 }
 
@@ -169,12 +211,12 @@ impl ServedModel {
             idle: Mutex::new(vec![]),
         }))
     }
-    fn lease(self: &Arc<Self>, prompt: &[u32]) -> Result<SequenceLease> {
+    fn lease(self: &Arc<Self>, prompt: &[u32], cache_salt: Option<&str>) -> Result<SequenceLease> {
         let mut idle = self.idle.lock().unwrap();
         let best = idle
             .iter()
             .enumerate()
-            .filter(|(_, s)| !s.history.is_empty() && prompt.starts_with(&s.history))
+            .filter(|(_, s)| reusable_prefix(&s.history, s.cache_salt.as_deref(), prompt, cache_salt))
             .max_by_key(|(_, s)| s.history.len())
             .map(|(i, _)| i);
         let cached = best.map(|i| idle.swap_remove(i));
@@ -191,6 +233,7 @@ impl ServedModel {
                     state: self.model.new_sequence()?,
                     history: vec![],
                     output: Step::default(),
+                    cache_salt: None,
                 },
             },
         };
@@ -199,20 +242,32 @@ impl ServedModel {
             state: Some(cached.state),
             history: cached.history,
             output: cached.output,
+            cache_salt: cache_salt.map(str::to_owned),
             cacheable: true,
         })
     }
+}
+/// Reuse only complete executed histories inside the same cache namespace.
+fn reusable_prefix(
+    history: &[u32],
+    history_salt: Option<&str>,
+    prompt: &[u32],
+    requested_salt: Option<&str>,
+) -> bool {
+    !history.is_empty() && history_salt == requested_salt && prompt.starts_with(history)
 }
 struct CachedSequence {
     state: RuntimeSequence,
     history: Vec<u32>,
     output: Step,
+    cache_salt: Option<String>,
 }
 struct SequenceLease {
     owner: Arc<ServedModel>,
     state: Option<RuntimeSequence>,
     history: Vec<u32>,
     output: Step,
+    cache_salt: Option<String>,
     cacheable: bool,
 }
 impl Drop for SequenceLease {
@@ -234,6 +289,7 @@ impl Drop for SequenceLease {
                     } else {
                         Step::default()
                     },
+                    cache_salt: if valid { self.cache_salt.take() } else { None },
                 });
             }
         }
@@ -263,6 +319,14 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
     );
     if let Some(n) = threads {
         ensure!((1..=1024).contains(&n), "invalid CPU worker count");
+    ensure!(
+        (1..=4096).contains(&args.prefill_chunk_tokens),
+        "prefill_chunk_tokens must be in 1..=4096"
+    );
+    ensure!(
+        args.max_queued_prompt_tokens <= 16_777_216,
+        "max_queued_prompt_tokens must be at most 16777216 (0 means automatic)"
+    );
     }
     let (profile, catalogue, loaded, startup_error, desired_model) = control::startup(&mut args)?;
     let pool = if let Some(n) = threads {
@@ -303,6 +367,7 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
             profile.settings.parallel,
             profile.settings.max_queued,
             Duration::from_secs(profile.settings.queue_timeout_secs),
+            profile.settings.queue_token_budget(&args),
         ),
         args,
         profile: RwLock::new(profile),
@@ -620,7 +685,7 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
             json_response(
                 stream,
                 200,
-                &json!({"model":m.as_ref().map(|m|&m.id),"runtime":m.as_ref().map(|m|m.model.report()),"admission":admission,"idle_sequences":m.as_ref().map(|m|m.idle.lock().unwrap().len()).unwrap_or(0),"connections":server.connections.load(Ordering::Relaxed)}),
+                &json!({"model":m.as_ref().map(|m|&m.id),"runtime":m.as_ref().map(|m|m.model.report()),"admission":admission,"idle_sequences":m.as_ref().map(|m|m.idle.lock().unwrap().len()).unwrap_or(0),"prefill_chunk_tokens":server.args.prefill_chunk_tokens,"connections":server.connections.load(Ordering::Relaxed)}),
             )
         }
         ("POST", "/v1/chat/completions") | ("POST", "/api/context") => {
@@ -718,7 +783,7 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
                 );
             }
             // Preparation happens before admission and before any SSE headers.
-            let _permit = match server.admission.acquire(stream) {
+            let _permit = match server.admission.acquire(stream, prompt.len()) {
                 Ok(p) => p,
                 Err((code, message)) => {
                     return if code == 499 {
@@ -741,7 +806,7 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
                     &error_value("model changed while request was preparing; retry"),
                 );
             }
-            let lease = match loaded.lease(&prompt) {
+            let lease = match loaded.lease(&prompt, parsed.cache_salt.as_deref()) {
                 Ok(s) => s,
                 Err(e) => {
                     return json_response(
@@ -787,7 +852,7 @@ fn generate(
     let start = Instant::now();
     let output = &mut lease.output;
     // Check disconnects during long prefill; final prefix returns actual logits.
-    for chunk in prompt[cached_prompt_tokens..].chunks(32) {
+    for chunk in prompt[cached_prompt_tokens..].chunks(server.args.prefill_chunk_tokens) {
         if disconnected(stream) {
             return Ok(());
         }
@@ -1050,17 +1115,56 @@ mod tests {
         assert!(host_allowed("[fd00::9070]:9070", ipv6));
         assert!(!host_allowed("[fd00::9071]:9070", ipv6));
     }
+
+    #[test]
+    fn cache_namespaces_reuse_only_identical_executed_prefixes() {
+        assert!(reusable_prefix(&[1, 2], None, &[1, 2, 3], None));
+        assert!(reusable_prefix(&[1, 2], Some("agent-a"), &[1, 2, 3], Some("agent-a")));
+        assert!(!reusable_prefix(&[1, 2], Some("agent-a"), &[1, 2, 3], Some("agent-b")));
+        assert!(!reusable_prefix(&[1, 2], None, &[1, 2, 3], Some("agent-a")));
+        assert!(!reusable_prefix(&[1, 2], Some("agent-a"), &[1, 2, 3], None));
+        assert!(!reusable_prefix(&[], None, &[1, 2, 3], None));
+        assert!(!reusable_prefix(&[1, 2, 4], None, &[1, 2, 3], None));
+    }
+
+    #[test]
+    fn queued_token_budget_is_accounted_on_removal() {
+        let gate = Admission::new(1, 2, Duration::from_secs(1), 12);
+        let mut state = gate.state.lock().unwrap();
+        state.queue.push_back(QueuedRequest { ticket: 1, prompt_tokens: 5 });
+        state.queue.push_back(QueuedRequest { ticket: 2, prompt_tokens: 7 });
+        state.queued_prompt_tokens = 12;
+        state.remove_waiter(1);
+        assert_eq!(state.queued_prompt_tokens, 7);
+        assert_eq!(state.queue.front().map(|x| x.ticket), Some(2));
+        state.remove_waiter(2);
+        assert_eq!(state.queued_prompt_tokens, 0);
+        assert!(state.queue.is_empty());
+    }
+
+    #[test]
+    fn queued_prompt_budget_rejects_oversized_waiters() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let _client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        let (socket, _) = listener.accept().unwrap();
+        let gate = Admission::new(1, 2, Duration::from_secs(1), 4);
+        let permit = gate.acquire(&socket, 3).unwrap();
+        assert_eq!(gate.acquire(&socket, 5).err().unwrap().0, 429);
+        assert_eq!(gate.snapshot()["queued_prompt_tokens"], 0);
+        drop(permit);
+    }
+
     #[test]
     fn generation_permit_releases_and_queue_limits_apply() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let _client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
         let (socket, _) = listener.accept().unwrap();
-        let gate = Admission::new(1, 0, Duration::from_secs(1));
-        let permit = gate.acquire(&socket).unwrap_or_else(|_| panic!("first"));
+        let gate = Admission::new(1, 0, Duration::from_secs(1), 4);
+        let permit = gate.acquire(&socket, 3).unwrap_or_else(|_| panic!("first"));
         assert_eq!(gate.snapshot()["active"], 1);
-        assert_eq!(gate.acquire(&socket).err().unwrap().0, 429);
+        assert_eq!(gate.acquire(&socket, 2).err().unwrap().0, 429);
         drop(permit);
         assert_eq!(gate.snapshot()["active"], 0);
-        assert!(gate.acquire(&socket).is_ok());
+        assert!(gate.acquire(&socket, 2).is_ok());
     }
 }

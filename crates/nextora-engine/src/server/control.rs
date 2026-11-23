@@ -59,6 +59,16 @@ impl ServiceSettings {
         })
     }
 
+    /// Defaults to four context-sized waiting prompts per active slot.
+    /// Deliberately separate from the queued request count.
+    pub(super) fn queue_token_budget(&self, args: &ServeArgs) -> usize {
+        if args.max_queued_prompt_tokens == 0 {
+            self.ctx.saturating_mul(self.parallel).saturating_mul(4)
+        } else {
+            args.max_queued_prompt_tokens
+        }
+    }
+
     fn backend(&self) -> Result<Backend> {
         Ok(match self.backend.as_str() {
             "auto" => Backend::Auto,
@@ -794,6 +804,7 @@ fn apply_profile(
             let mut gate = server.admission.state.lock().unwrap();
             gate.capacity = profile.settings.parallel;
             gate.queue_limit = profile.settings.max_queued;
+            gate.queued_prompt_token_limit = profile.settings.queue_token_budget(&server.args);
             gate.timeout = Duration::from_secs(profile.settings.queue_timeout_secs);
             gate.high_water = 0;
             Ok(())

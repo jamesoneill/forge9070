@@ -19,8 +19,8 @@ Use the `nextora` executable for the native engine. The auxiliary `nextora-cli` 
 | Vulkan | Capability-selected adapters, packed-weight kernels, device-owned model state, reusable command resources, independent sequences |
 | Native API | Chat Completions JSON/SSE, embedded model template, text/function-call histories, model catalogue and idle switching |
 | Configuration UI | Embedded browser panel, startup without a model, bounded folder scan, idle-only settings/load/unload and optional saved JSON profile |
-| Admission | One to four active requests, FIFO bounded wait queue, disconnect cancellation and deadlines |
-| Reuse | Exact executed-token prefix retains sequence state; unrelated histories reset state |
+| Admission | One to four active requests, FIFO bounded wait queue, aggregate queued-prompt token budget, disconnect cancellation and deadlines |
+| Reuse | Exact executed-token prefix retains sequence state; optional request-level cache salt isolates agent namespaces; unrelated histories reset state |
 | Numerical state | F32 KV and recurrent state; checkpoint quantization is retained |
 
 Generation and benchmarking require an explicit policy: `--backend auto`,
@@ -41,6 +41,24 @@ errors. Model names, marketing labels and “uncensored” are not compatibility
 checks. The server accepts original and modified model weights under the same
 architecture/format validation. A full downloaded model must include all its
 shards and its tokenizer/template metadata.
+
+## Serving controls informed by vLLM
+
+The native service retains **independent sequence slots**, not vLLM's continuous GPU batching or paged KV cache. The following safe serving controls allow measured tuning without changing model equations:
+
+- `--prefill-chunk-tokens N`: 1–4096, default **32**. Larger chunks reduce the frequency of request-disconnect checks; they may change throughput and time to first token, so benchmark rather than assuming larger is faster.
+- `--max-queued-prompt-tokens N`: aggregate prompt-token budget for **waiting** requests (not active slots). Default **0** derives `context × parallel × 4`; queued requests exceeding the budget receive HTTP 429. This complements the existing request-count limit and adjusts on idle configuration changes.
+- `cache_salt` in `/v1/chat/completions`: optional, nonempty string of at most 256 bytes. Reuse of an idle, executed prompt prefix requires an exact match between cache namespaces. Requests without a salt can reuse only other unsalted prefixes. This is an isolation aid, not authentication.
+
+Example startup with a larger prefill chunk and an explicit waiting budget:
+
+```powershell
+.\target\release\nextora.exe serve --backend auto --open-ui --prefill-chunk-tokens 128 --max-queued-prompt-tokens 65536
+```
+
+Include `"cache_salt": "my-agent"` on each request from an agent that should reuse its own history but not that of other agents. The cache salt is not included in the model prompt or written to the saved profile. Keep tenant authentication and access control separate.
+
+Inspect `GET /v1/status` for queue prompt-token accounting and the configured prefill chunk size. Neither control alone improves token computation throughput; physical-GPU benchmarking is required.
 
 ## Configure the service in a browser
 
