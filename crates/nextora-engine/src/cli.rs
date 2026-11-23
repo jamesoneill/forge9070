@@ -30,6 +30,24 @@ pub enum EngineCommand {
     Serve(crate::server::ServeArgs),
     /// Report CPU availability and eligible Vulkan adapters without claiming execution was verified.
     Doctor,
+    /// Read-only hardware advisor using discovery and existing successful native benchmark reports.
+    Insight {
+        /// JSON report from 'nextora bench --json-out' (repeat for several workloads).
+        #[arg(long = "bench-report")]
+        bench_reports: Vec<PathBuf>,
+        /// Save a sanitized JSON snapshot; does not contain model paths or prompt text.
+        #[arg(long)]
+        json_out: Option<PathBuf>,
+    },
+    /// Compare two accepted native benchmark reports without claiming controlled hardware gains.
+    InsightCompare {
+        #[arg(long)]
+        baseline: PathBuf,
+        #[arg(long)]
+        candidate: PathBuf,
+        #[arg(long)]
+        json_out: Option<PathBuf>,
+    },
     /// Compare runtime-selected CPU dot kernels with their scalar numerical reference.
     KernelBench {
         #[arg(long, default_value_t = 2048)]
@@ -145,6 +163,34 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             unreachable!("serve dispatches with its own shared worker budget")
         }
         EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
+        EngineCommand::Insight { bench_reports, json_out } => {
+            ensure!(bench_reports.len() <= 16, "Insight accepts no more than 16 benchmark reports");
+            for source in &bench_reports {
+                if let Some(destination) = json_out.as_deref() {
+                    check_report_destination(source, destination)?;
+                }
+            }
+            let evidence = bench_reports.iter().map(|p| crate::insight::read_benchmark(p))
+                .collect::<Result<Vec<_>>>()?;
+            let report = crate::insight::collect(&evidence);
+            if let Some(destination) = json_out {
+                write_report(&destination, &report, None)?;
+            }
+            print_json(&report)
+        },
+        EngineCommand::InsightCompare { baseline, candidate, json_out } => {
+            if let Some(destination) = json_out.as_deref() {
+                check_report_destination(&baseline, destination)?;
+                check_report_destination(&candidate, destination)?;
+            }
+            let a = crate::insight::read_benchmark(&baseline)?;
+            let b = crate::insight::read_benchmark(&candidate)?;
+            let report = crate::insight::compare_benchmarks(&a, &b)?;
+            if let Some(destination) = json_out {
+                write_report(&destination, &report, None)?;
+            }
+            print_json(&report)
+        }
         EngineCommand::KernelBench {
             width,
             rows,
