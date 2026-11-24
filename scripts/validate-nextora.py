@@ -95,6 +95,27 @@ def main() -> None:
     assert "ctx" in denied_fit.stderr.lower()
     checks.append("Model-fit inspects real GGUF geometry, rejects invalid input, and never claims conversion or GPU-fit success")
 
+    # Real numerical source/candidate comparison using two independently mapped
+    # copies of the same untrained fixture; this validates test machinery only.
+    with tempfile.TemporaryDirectory(prefix="nextora-quality-test-") as quality_dir:
+        candidate_fixture = Path(quality_dir) / "candidate.gguf"
+        candidate_fixture.write_bytes(fixture.read_bytes())
+        quality = document([
+            "quality", "--reference", str(fixture),
+            "--candidate", str(candidate_fixture),
+            "--prompt", "hello", "--ctx", "64", "--steps", "4",
+            "--ram-margin-mib", "0", "--max-mean-kl", "0",
+            "--min-top1-agreement", "1",
+        ])
+        assert quality["schema"] == "nextora.quality.v1"
+        assert quality["passed"] is True
+        assert quality["top1_agreement"] == 1
+        assert quality["mean_kl_reference_to_candidate"] == 0
+        assert quality["scored_positions"] > 0
+        assert quality["model_paths_exported"] is False
+        assert quality["prompt_text_exported"] is False
+    checks.append("Model-level source/candidate logit comparison reports exact fixture parity without exporting prompts")
+
     generation = ["generate", "--cpu", "--model", str(fixture), "--ctx", "64",
                   "--prompt", "hello", "--max-tokens", "4", "--json"]
     generated = document(generation)
