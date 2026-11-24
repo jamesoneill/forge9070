@@ -30,6 +30,12 @@ pub enum EngineCommand {
     Serve(crate::server::ServeArgs),
     /// Report CPU availability and eligible Vulkan adapters without claiming execution was verified.
     Doctor,
+    /// Inspect a local GGUF's size and build a conservative memory/quantisation plan.
+    ModelFit(crate::model_fit::ModelFitArgs),
+    /// Convert eligible floating-point GGUF matrix rows to Q4_0/Q8_0 in a NEW single-file output.
+    Quantize(crate::offline_quant::OfflineQuantArgs),
+    /// Compare model-level logits and next-token agreement on identical raw prompts.
+    Quality(crate::quality::QualityArgs),
     /// Read-only hardware advisor using discovery and existing successful native benchmark reports.
     Insight {
         /// JSON report from 'nextora bench --json-out' (repeat for several workloads).
@@ -163,6 +169,38 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             unreachable!("serve dispatches with its own shared worker budget")
         }
         EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
+        EngineCommand::Quantize(args) => print_json(&crate::offline_quant::quantize(&args)?),
+        EngineCommand::Quality(args) => {
+            if let Some(out) = &args.json_out {
+                let reference=Gguf::open(&args.reference)?;
+                let candidate=Gguf::open(&args.candidate)?;
+                for shard in reference.shard_paths().iter().chain(candidate.shard_paths()) {
+                    check_report_destination(shard, out)?;
+                }
+            }
+            let report=crate::quality::compare(&args)?;
+            if let Some(out) = &args.json_out {
+                write_report(out, &report, None)?;
+            }
+            print_json(&report)?;
+            ensure!(report["passed"].as_bool() == Some(true),
+                "model-level quality thresholds failed; inspect the report");
+            Ok(())
+        },
+        EngineCommand::ModelFit(args) => {
+            if let Some(out) = &args.json_out {
+                check_report_destination(&args.model, out)?;
+            }
+            let report = crate::model_fit::evaluate(&args)?;
+            if let Some(out) = &args.json_out {
+                let source = Gguf::open(&args.model)?;
+                for shard in source.shard_paths() {
+                    check_report_destination(shard, out)?;
+                }
+                write_report(out, &report, Some(&args.model))?;
+            }
+            print_json(&report)
+        },
         EngineCommand::Insight { bench_reports, json_out } => {
             ensure!(bench_reports.len() <= 16, "Insight accepts no more than 16 benchmark reports");
             for source in &bench_reports {

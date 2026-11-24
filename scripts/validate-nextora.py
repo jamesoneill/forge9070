@@ -78,6 +78,44 @@ def main() -> None:
     assert inspected["fallback"] == "none"
     checks.append("Independent loader validates the actual committed GGUF and reports inspection without compute")
 
+    # Model-fit is read-only and cannot turn file size into a VRAM fit claim.
+    fit = document(["model-fit", "--model", str(fixture), "--ctx", "4096",
+                    "--requests", "1", "--target-vram-mib", "16384",
+                    "--target-file-mib", "12288"])
+    assert fit["schema"] == "nextora.model_fit.v1"
+    assert fit["gpu"]["model_gpu_fit_verified"] is False
+    assert fit["hypothetical_file_quantizations"]["current_mapped_file_bytes"] == fixture.stat().st_size
+    assert all(candidate["converted_weights_written"] is False
+               and candidate["quality_verified"] is False
+               for candidate in fit["hypothetical_file_quantizations"]["candidates"])
+    assert not fit["model_path_exported"]
+    assert fit["native_text_architecture_supported"] is True
+    assert fit["status"] == "layout_inspected_execution_unverified"
+    denied_fit = run(["model-fit", "--model", str(fixture), "--ctx", "0"], success=False)
+    assert "ctx" in denied_fit.stderr.lower()
+    checks.append("Model-fit inspects real GGUF geometry, rejects invalid input, and never claims conversion or GPU-fit success")
+
+    # Real numerical source/candidate comparison using two independently mapped
+    # copies of the same untrained fixture; this validates test machinery only.
+    with tempfile.TemporaryDirectory(prefix="nextora-quality-test-") as quality_dir:
+        candidate_fixture = Path(quality_dir) / "candidate.gguf"
+        candidate_fixture.write_bytes(fixture.read_bytes())
+        quality = document([
+            "quality", "--reference", str(fixture),
+            "--candidate", str(candidate_fixture),
+            "--prompt", "hello", "--ctx", "64", "--steps", "4",
+            "--ram-margin-mib", "0", "--max-mean-kl", "0",
+            "--min-top1-agreement", "1",
+        ])
+        assert quality["schema"] == "nextora.quality.v1"
+        assert quality["passed"] is True
+        assert quality["top1_agreement"] == 1
+        assert quality["mean_kl_reference_to_candidate"] == 0
+        assert quality["scored_positions"] > 0
+        assert quality["model_paths_exported"] is False
+        assert quality["prompt_text_exported"] is False
+    checks.append("Model-level source/candidate logit comparison reports exact fixture parity without exporting prompts")
+
     generation = ["generate", "--cpu", "--model", str(fixture), "--ctx", "64",
                   "--prompt", "hello", "--max-tokens", "4", "--json"]
     generated = document(generation)
