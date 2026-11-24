@@ -20,19 +20,55 @@ pub enum GpuSequence {
 }
 impl GpuModel {
     pub fn load(source: Arc<Gguf>, context: usize, options: DeviceOptions) -> Result<Self> {
+        Self::load_with_progress(source, context, options, &|_, _, _, _, _| {})
+    }
+
+    pub(crate) fn load_with_progress(
+        source: Arc<Gguf>,
+        context: usize,
+        options: DeviceOptions,
+        progress: super::UploadProgress<'_>,
+    ) -> Result<Self> {
+        if source.meta.get("general.architecture").and_then(GgufValue::as_str) == Some("qwen35") {
+            bail!("Qwen3.5/Qwen3.8 dense currently supports the native CPU or Hybrid backend; the resident Vulkan graph is not implemented");
+        }
         if source
             .meta
             .get("general.architecture")
             .and_then(GgufValue::as_str)
             == Some("qwen4exp")
         {
-            Ok(Self::Qwen38(qwen38::QwenGpuModel::load(
-                source, context, options,
+            Ok(Self::Qwen38(qwen38::QwenGpuModel::load_with_progress(
+                source, context, options, progress,
             )?))
         } else {
             Ok(Self::Ordinary(resident::GpuModel::load(
-                source, context, options,
+                source, context, options, progress,
             )?))
+        }
+    }
+    pub fn probe_capacity(&self) -> Result<Value> {
+        match self {
+            Self::Ordinary(model) => model.probe_capacity(),
+            Self::Qwen38(model) => {
+                // This graph eagerly allocates its complete KV/index/recurrent
+                // state. A separate touch proof is not implemented here yet.
+                let sequence = model.new_sequence()?;
+                let report = serde_json::json!({"capacity_proof":"full_state_allocated_eagerly",
+                    "context_tokens":model.context(),"state_touched":false,
+                    "history_tokens_processed":0,"long_context_quality_verified":false,
+                    "memory":model.memory_stats()});
+                drop(sequence);
+                Ok(report)
+            }
+        }
+    }
+    pub(crate) fn fit_memory_report(config: &Config, source: &Gguf, options: &DeviceOptions) -> Result<Value> {
+        if matches!(config.architecture.as_str(), "qwen3" | "qwen3moe") {
+            resident::GpuModel::fit_memory_report(config, source, options)
+        } else {
+            Ok(serde_json::json!({"estimate":"architecture_specific; accepted runtime load validates allocations",
+                "architecture":config.architecture,"configured_context_tokens":config.context_length}))
         }
     }
     pub fn config(&self) -> &Config {

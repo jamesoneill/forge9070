@@ -131,6 +131,9 @@ def main():
             measured=insight['measurements']
             check(insight_code==200 and measured['completed_requests']>=1 and measured['recent_window']>=1,str(insight))
             check(measured['recent_samples'][-1]['generated_tokens']==4,str(insight))
+            sample = measured['recent_samples'][-1]
+            check(sample['decode_seconds'] == response['timings']['decode_seconds'], str(sample))
+            check(sample['prefill_seconds'] == response['timings']['prefill_seconds'], str(sample))
             check('model' not in json.dumps(insight['measurements']) and 'prompt_text' not in json.dumps(insight['measurements']),str(insight))
             passed('Insight exposes measured completed-request tokens without prompt or model text')
             expected_executed=response['usage']['prompt_tokens']+response['usage']['completion_tokens']-1
@@ -144,6 +147,10 @@ def main():
                 check(status==200 and text=='AAAA' and len({c['id'] for c in chunks})==1,raw)
                 check(headers.get('Content-Type','').startswith('text/event-stream') and raw.count('data: [DONE]')==1,raw)
                 check([c['choices'][0]['finish_reason'] for c in chunks if c.get('choices') and c['choices'][0].get('finish_reason')]==['length'],raw)
+                if usage:
+                    final = next(c for c in chunks if 'usage' in c)
+                    check(final['usage']['completion_tokens'] == 4 and final['timings']['decode_seconds'] > 0
+                          and final['timings']['prefill_seconds'] >= 0, raw)
                 check(any('usage' in c for c in chunks)==usage,raw);passed(f'SSE has stable response identity, exact output and requested usage={usage}')
             status,response=json_call(request,'/v1/chat/completions',body('plain.gguf',stop=['AA']));check(status==200 and response['choices'][0]['finish_reason']=='stop' and response['choices'][0]['message']['content']=='',str(response));passed('Stop strings are withheld from the response')
             for changes in [{'model':'tools.gguf'},{'max_tokens':257},{'temperature':-1},{'tool_choice':'required'},{'response_format':{'type':'json_object'}},{'messages':[{'role':'user','content':[{'type':'image_url','image_url':{'url':'https://example.invalid/image'}}]}]}]:

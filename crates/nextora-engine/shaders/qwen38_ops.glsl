@@ -1,7 +1,7 @@
 // Independent Forge Qwen3.8 operations, MIT.
 // Included after checked(), sum_group(), max_group() and flat_group().
 // All dimensions/allocations are validated by the Rust model plan. Float buffer
-// indices are element indices; w[] stores little-endian F32 words for the small
+// indices are element indices; weight_word() stores little-endian F32 words for the small
 // decoded normalization/convolution weights or the previous recurrent matrix.
 // The binding/dimension contract is documented beside each operation.
 
@@ -71,9 +71,9 @@ void qwen_operation() {
         if (element >= p.n0) return;
         float total = 0.0;
         for (uint tap = 0u; tap + 1u < p.n1; ++tap) {
-            total += b[tap * p.n0 + element] * uintBitsToFloat(w[element * p.n1 + tap]);
+            total += b[tap * p.n0 + element] * uintBitsToFloat(weight_word(element * p.n1 + tap));
         }
-        total += a[element] * uintBitsToFloat(w[element * p.n1 + p.n1 - 1u]);
+        total += a[element] * uintBitsToFloat(weight_word(element * p.n1 + p.n1 - 1u));
         c[element] = checked(qwen_silu(total));
         for (uint tap = 0u; tap + 2u < p.n1; ++tap) {
             d[tap * p.n0 + element] = b[(tap + 1u) * p.n0 + element];
@@ -95,8 +95,8 @@ void qwen_operation() {
         // a=beta projection, b=alpha projection, c=[sigmoid beta | exponential decay].
         if (element >= p.n0) return;
         float beta = qwen_sigmoid(a[element]);
-        float exponent = qwen_softplus(b[element] + uintBitsToFloat(w[element]))
-                       * uintBitsToFloat(w[p.n0 + element]);
+        float exponent = qwen_softplus(b[element] + uintBitsToFloat(weight_word(element)))
+                       * uintBitsToFloat(weight_word(p.n0 + element));
         c[element] = checked(beta);
         c[p.n0 + element] = checked(exp(exponent));
 
@@ -116,7 +116,7 @@ void qwen_operation() {
         float decay = b[p.n2 + head];
         float prediction = 0.0;
         for (uint i = lane; i < p.n0; i += 128u) {
-            prediction += uintBitsToFloat(w[state_base + i]) * decay * a[key_base + i];
+            prediction += uintBitsToFloat(weight_word(state_base + i)) * decay * a[key_base + i];
         }
         prediction = sum_group(prediction);
         barrier();
@@ -124,7 +124,7 @@ void qwen_operation() {
         float delta = b[head] * (value - prediction);
         float output_sum = 0.0;
         for (uint i = lane; i < p.n0; i += 128u) {
-            float updated = uintBitsToFloat(w[state_base + i]) * decay + delta * a[key_base + i];
+            float updated = uintBitsToFloat(weight_word(state_base + i)) * decay + delta * a[key_base + i];
             c[state_base + i] = checked(updated);
             output_sum += updated * a[query_base + i];
         }
@@ -140,7 +140,7 @@ void qwen_operation() {
         float inverse = inversesqrt(checked(sum_group(square)) / float(p.n0) + p.f0);
         barrier();
         for (uint i = lane; i < p.n0; i += 128u) {
-            c[base + i] = checked(a[base + i] * inverse * uintBitsToFloat(w[i]) * qwen_sigmoid(b[base + i]));
+            c[base + i] = checked(a[base + i] * inverse * uintBitsToFloat(weight_word(i)) * qwen_sigmoid(b[base + i]));
         }
 
     } else if (p.op == 115u) { // Optional combined BA projection: n0=nv,n1=nk.
@@ -168,9 +168,9 @@ void qwen_operation() {
         // d=in-place residual streams,e=gated streams. b/c may alias. The old
         // taps at ages9,6,3 are read before that channel's forward shift.
         if (element >= p.n0) return;
-        float convolution = uintBitsToFloat(w[element * 4u + 3u]) * a[element];
+        float convolution = uintBitsToFloat(weight_word(element * 4u + 3u)) * a[element];
         for (uint tap = 0u; tap < 3u; ++tap) {
-            convolution += uintBitsToFloat(w[element * 4u + tap]) * b[tap * 3u * p.n0 + element];
+            convolution += uintBitsToFloat(weight_word(element * 4u + tap)) * b[tap * 3u * p.n0 + element];
         }
         d[element] = checked(d[element] + e[element] + qwen_silu(convolution));
         for (uint age = 0u; age < 8u; ++age) c[age * p.n0 + element] = b[(age + 1u) * p.n0 + element];
@@ -189,7 +189,7 @@ void qwen_operation() {
         }
         float inverse = inversesqrt(checked(sum_group(square)) / float(p.n0) + p.f0);
         memoryBarrierBuffer(); barrier();
-        for (uint i = lane; i < p.n0; i += 128u) b[i] = checked(b[i] * inverse * uintBitsToFloat(w[i]));
+        for (uint i = lane; i < p.n0; i += 128u) b[i] = checked(b[i] * inverse * uintBitsToFloat(weight_word(i)));
         memoryBarrierBuffer(); barrier();
         uint half_width = p.n2 / 2u;
         uint base = p.n1 * p.n0;

@@ -40,9 +40,9 @@ see [hardware support](docs/HARDWARE-SUPPORT.md) and
 
 > [!IMPORTANT]
 > **Experimental, with evidence attached.** CPU and software-Vulkan tests are
-> recorded in [VALIDATION.md](VALIDATION.md). Full pretrained-model quality,
-> Windows GPU execution and RX 9070 XT throughput still require validation on
-> the target hardware. No token-rate claim is implied by a passing CI badge.
+> recorded in [VALIDATION.md](VALIDATION.md). For Windows RX 9070 XT results,
+> including the checkpoint, context occupancy and packed-versus-Direct logits
+> comparison, see [AMD measurements](docs/AMD-PERFORMANCE.md).
 
 ## Nextora launch page
 
@@ -59,8 +59,7 @@ coding API and Windows/WSL launch paths, with upstream credits and source refere
 
 The episode covers the project as reviewed on **18 November 2026**. Read the
 [current architecture](docs/ARCHITECTURE.md) and [validation record](VALIDATION.md)
-alongside it: full pretrained-model quality and target RX 9070 XT performance
-remain to be measured. Passing CI does not establish those results.
+for changes since the recording.
 
 ## What makes Nextora different
 
@@ -184,6 +183,82 @@ authentication, context limits and client behavior.
 > **9070**, with `--open-ui`. The old nested `engine` prefix is no longer supported.
 > With `cargo run`, put `--` before `serve`.
 
+You can also search public **Hugging Face models** from the console. Nextora uses
+`curl` to inspect pinned GGUF headers, including all shards, and lists a bounded
+set of results that pass its architecture, tensor, tokenizer and chat-template
+checks. Choose **Download** to save a model to `F:\Models` on Windows or
+`/mnt/f/Models` under WSL. Nextora checks disk space and verifies the published
+SHA-256 hashes and local model layout. Choose **Prepare model** to fit context
+and benchmark the downloaded model in a separate native process. Its profile is
+saved and the previous service is restored. **Use prepared model** then loads
+the selected model and performs normal cache warmup. Manual configuration is
+also available. See [native model setup](docs/NATIVE-MODEL-SETUP.md).
+
+In **Chat**, attach source files and use **Check context** to count the full
+conversation and reserve space for a reply. **Use model maximum** sets the
+context field to the limit declared by the selected checkpoint. Apply the
+settings to use the new window. Each reply reports prompt and generation speed.
+**Compare generation speed** repeats a coding prompt and excludes the first
+warmup reply so you can compare settings on your own machine.
+
+
+Choose **Run tuning** under **Performance tuning** to measure a loaded model in a
+separate process. Serving pauses while the worker compares execution backends
+and CPU worker counts at your selected context and memory limits. The fastest
+validated configuration is loaded and saved. **Cancel tuning** stops the worker
+and restores the previous configuration. Results are saved beside the service
+profile in `.nextora-tuning` and reused for the same checkpoint, machine, context
+and memory limits. **Run tuning again** starts a fresh comparison when wanted.
+The benchmark uses a short coding prompt, with warmup excluded and two measured
+runs per candidate. Preparation can shorten slow candidates and reports the
+actual token counts; legacy fixed-context tuning uses 128-token runs. With Fast GPU math enabled, the study compares GPU
+worker counts within that numerical mode. The panel records prompt and
+generation speed for each case.
+
+**Fast GPU math** is an optional setting for Qwen3 dense and MoE models on the
+Vulkan backend. It is off by default. Enable it in the configuration panel and
+choose **Apply & load**, or pass `--fast-math true` when launching with the CLI.
+Saved service settings take precedence over CLI values. The selected GPU must
+support Vulkan `shaderIntegerDotProduct`; an unsupported device reports an
+error when this setting is requested.
+
+This mode dynamically quantizes supported matrix inputs to Q8 and uses packed
+integer dot products with Q4_K and Q6_K weights. The GGUF weights retain their
+original format; context-cache precision is a separate setting. Other tensor formats use the F32
+activation path. Quantizing activations introduces numerical differences, so
+answers may change; this mode does not promise numerical equivalence or higher
+speed. Use **Compare generation speed** with the same model, context and memory
+limits to measure its effect on your machine.
+
+### Large context windows
+
+Choose **Find 512K models** to search for compatible GGUF files whose headers
+declare at least 524,288 tokens. Model selection, download and loading stay under
+your control. **Use 512K** becomes available after selecting a suitable model;
+it selects compact context storage, one active request and a larger bounded GPU
+allocation cap for review before **Apply & load**. The engine checks the full
+context memory requirement before accepting compact settings. A short-context
+checkpoint cannot gain a longer validated range by changing the context field.
+
+**Context memory → Compact · Q4** stores every key/value token using signed
+4-bit values and a half-precision scale per 64 values. Attention calculations
+remain F32, and no history is dropped. This differs from **Fast GPU math**, which
+quantizes matrix inputs. Either setting can change numerical results. Explicit
+GGUF YaRN metadata is supported for ordinary Qwen3; its embedded scaling factor
+and original context are preserved even when a smaller window is selected.
+Unsupported position-scaling variants still fail validation. Compact or extended
+contexts use CPU-generated position tables shared across all GPU layers to keep
+long-position trigonometry consistent with the reference path. Compact context
+storage currently permits one active request.
+
+For a 48-layer Qwen3 MoE with four KV heads of width 128, compact storage at
+524,288 tokens uses **12.75 GiB for K/V alone**. Weights, bounded attention scratch,
+allocation alignment and a temporary old layer during cache growth need more
+space. Expert GPU caching shrinks as context grows, with all selected experts
+still evaluated. The UI reports the full-context memory estimate. Full-window
+speed and retrieval quality require separate validation with the chosen model;
+short-prompt token/s measurements do not establish full-window performance.
+
 ## Choose a model
 
 The native service validates **GGUF architecture, tensor formats, geometry,
@@ -237,6 +312,14 @@ and verifies vocabulary agreement before warming expert caches. Load reports exp
 per-stage timing so cold-start mapping, tokenizer work and optional warmup can
 be measured separately. See the [model-loading and quality guide](docs/MODEL-LOADING.md)
 for reproducible CPU/Vulkan comparisons, baseline acceptance and tuning trade-offs.
+
+For Qwen3 MoE on Vulkan, ordinary model tensors remain resident on the GPU while
+routed expert weights use a bounded GPU cache. Every selected expert contributes
+to the result; expert batches that cannot fit can execute on the CPU. This path
+allocates a small initial F32 KV cache and grows it as the conversation fills the
+requested context, making room in the expert cache when needed. Selecting a
+large context therefore does not reserve its full KV capacity at load time, but
+long conversations still need the corresponding memory.
 
 ## Engineering principles
 

@@ -91,6 +91,11 @@ def main() -> None:
     assert not fit["model_path_exported"]
     assert fit["native_text_architecture_supported"] is True
     assert fit["status"] == "layout_inspected_execution_unverified"
+    dense_fit = document(["model-fit", "--model", str(fixture.with_name("tiny-qwen35.gguf")),
+                          "--ctx", "524288", "--target-vram-mib", "16384"])
+    assert dense_fit["native_text_architecture_supported"] is True
+    assert dense_fit["requested_context_tokens"] == 524288
+    assert dense_fit["gpu"]["model_gpu_fit_verified"] is False
     denied_fit = run(["model-fit", "--model", str(fixture), "--ctx", "0"], success=False)
     assert "ctx" in denied_fit.stderr.lower()
     checks.append("Model-fit inspects real GGUF geometry, rejects invalid input, and never claims conversion or GPU-fit success")

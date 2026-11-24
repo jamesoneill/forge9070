@@ -10,17 +10,23 @@ mod hybrid;
 mod qwen38;
 mod resident;
 
-pub use context::{DeviceOptions, discover, select_device};
+pub use context::{KvPlacement, KvPrecision, DeviceOptions, discover, inspect_device, select_device};
 pub use facade::{GpuModel, GpuSequence};
 pub use hybrid::GpuMatvecExecutor;
 pub use qwen38::{QwenGpuModel, QwenGpuSequence};
 
+// Label and units distinguish resident weights, layer constants and Hybrid cache preparation.
+pub(crate) type UploadProgress<'a> = &'a dyn Fn(&'static str, &'static str, usize, usize, u64);
+
 pub fn supports_quant(id: u32) -> bool {
     matches!(
         id,
-        0 | 1 | 2 | 8 | 12 | 13 | 14 | 18 | 20 | 21 | 22 | 23 | 30 | 42
+        0 | 1 | 2 | 8 | 11 | 12 | 13 | 14 | 18 | 20 | 21 | 22 | 23 | 30 | 42
     )
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod numerical_probe_tests;

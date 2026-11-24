@@ -8,16 +8,48 @@
     scanning: false, applying: false, refreshing: false, hardwareLoading: false,
     polling: false, insightLoading: false, lastError: '', hardware: [], pendingDevice: null,
   };
+  const chat = createNextoraChat(state, api, requireKey);
+  const library = createNextoraLibrary(state, api, async (job, load) => {
+    state.selection = { id: job.model, root: job.directory, trainingContext: job.context_length, architecture: job.architecture };
+    $('model-directory').value = job.directory;
+    const capabilities = job.native_backends || (job.architecture === 'qwen35' ? ['cpu','hybrid'] : null);
+    if (job.architecture && !['qwen3','qwen3moe'].includes(job.architecture)) {
+      $('fast-math').checked=false; $('direct-experts').value=''; $('kv-precision').value='f32';
+      $('kv-placement').value='gpu'; $('kv-ram-mib').value='';
+    }
+    const incompatible = capabilities && !capabilities.includes($('backend').value) &&
+      ($('backend').value !== 'auto' || !capabilities.includes('vulkan'));
+    if (incompatible) $('backend').value = capabilities.includes('hybrid') && state.hardware.some(hardwareCompatible) ? 'hybrid' : 'cpu';
+    renderSelection(); setDirty();
+    if (incompatible) {
+      $('configuration').scrollIntoView(); $('backend').focus();
+      notice('This model uses CPU / hybrid execution. Prepare it to compare settings, or apply the compatible backend shown below.');
+      return;
+    }
+    if (!load || (job.context_length && Number($('ctx').value) > job.context_length)) {
+      $('configuration').scrollIntoView();
+      $('ctx').focus();
+      notice(`Choose settings for ${job.file}, then apply to load it.${job.context_length ? ` This model supports up to ${job.context_length.toLocaleString()} tokens.` : ''}`);
+      return;
+    }
+    await applyProfile();
+  }, async job => {
+    state.selection = { id: job.model, root: job.directory, trainingContext: job.context_length, architecture: job.architecture };
+    $('model-directory').value = job.directory;
+    renderSelection(); setDirty();
+    await tuning.prepare({ directory: job.directory, model: job.model });
+  });
+  const tuning = createNextoraTuning(state, api, reset => connect(reset));
   const fields = {
-    backend: 'backend', device: 'device', ctx: 'ctx', max_tokens: 'max-tokens',
+    backend: 'backend', device: 'device', threads: 'worker-threads', ctx: 'ctx', max_tokens: 'max-tokens',
     parallel: 'parallel', max_queued: 'max-queued', queue_timeout_secs: 'queue-timeout',
     vram_mib: 'vram-mib', expert_ram_mib: 'expert-ram-mib',
-    ram_margin_mib: 'ram-margin-mib', expert_warmup: 'expert-warmup',
+    ram_margin_mib: 'ram-margin-mib', expert_warmup: 'expert-warmup', fast_math: 'fast-math', direct_experts: 'direct-experts', kv_precision: 'kv-precision', kv_placement:'kv-placement', kv_ram_mib:'kv-ram-mib',
   };
   const defaults = {
-    backend: 'auto', device: null, ctx: 8192, max_tokens: 2048, parallel: 1,
+    backend: 'auto', device: null, threads: null, ctx: 8192, max_tokens: 2048, parallel: 1,
     max_queued: 32, queue_timeout_secs: 120, vram_mib: 0,
-    expert_ram_mib: null, ram_margin_mib: 4096, expert_warmup: true,
+    expert_ram_mib: null, ram_margin_mib: 4096, expert_warmup: true, fast_math: false, direct_experts: null, kv_precision: 'f32', kv_placement:'gpu', kv_ram_mib:null,
   };
 
   class ApiError extends Error {
@@ -120,19 +152,75 @@
       : backend === 'cpu'
         ? 'Explicit CPU execution. GPU adapter and GPU allocation cap are unused.'
         : backend === 'hybrid'
-          ? 'Diagnostic path: CPU state with GPU projections. Use Vulkan for the resident GPU graph.'
-          : 'Native GPU graph with bounded expert placement. Hardware support is checked when loading; this mode does not switch to CPU.';
+          ? 'Uses system RAM for CPU state and model weights, alongside a bounded GPU projection cache. Models larger than VRAM can load when host memory is sufficient. This diagnostic mode can be slow because of transfers and synchronization.'
+          : 'GPU execution keeps activations and attention state on the device. Qwen3 MoE and Qwen3.8 use a bounded expert cache across GPU memory and RAM. Attention memory grows with use up to the selected context. Dense Qwen3 requires its weights to fit the GPU.';
+    $('kv-placement').disabled = ['cpu', 'hybrid'].includes(backend) || state.applying || !state.connected;
+    $('kv-ram-mib').disabled = ['cpu', 'hybrid'].includes(backend) || $('kv-placement').value !== 'ram' || state.applying || !state.connected;
+    $('kv-precision').disabled = ['cpu', 'hybrid'].includes(backend) || state.applying || !state.connected;
+    $('direct-experts').disabled = ['cpu', 'hybrid'].includes(backend) || state.applying || !state.connected;
+    const adapter = $('device').value === '' ? state.hardware.find(hardwareCompatible) : state.hardware.find(item => String(item.index) === $('device').value);
+    $('direct-experts-help').textContent = adapter?.direct_expert_weights_supported === false
+      ? 'Automatic uses Packed. Direct requires a compatible graphics card.'
+      : 'Direct avoids expert-weight copies and uses stable Q6 arithmetic. Validated on this machine’s Qwen3 MoE model; other setups remain experimental. Automatic uses Packed.';
+    $('fast-math').disabled = ['cpu', 'hybrid'].includes(backend) || state.applying || !state.connected;
     $('device').disabled = backend === 'cpu' || state.applying || !state.connected;
     $('vram-mib').disabled = backend === 'cpu' || state.applying || !state.connected;
+    gpuCapHelp();
+  }
+
+  function gpuCapHelp() {
+    const input = $('vram-mib');
+    const amount = Number(input.value);
+    let detail;
+    if ($('backend').value === 'cpu') {
+      detail = 'Unused with CPU execution.';
+    } else if (input.value.trim() === '' || !Number.isSafeInteger(amount) || amount < 0) {
+      detail = 'Enter a whole number of MiB, or 0 for the automatic cap.';
+    } else if (amount > 0) {
+      detail = `Manual cap: ${amount.toLocaleString()} MiB (${(amount / 1024).toFixed(2)} GiB). This is a memory amount, not a percentage. Enter 0 for the automatic cap.`;
+    } else {
+      const compatible = state.hardware.filter(hardwareCompatible);
+      const selected = $('device').value;
+      const adapter = selected === ''
+        ? (compatible.length === 1 ? compatible[0] : null)
+        : state.hardware.find((item) => item.index === Number(selected));
+      const budget = Number(adapter?.allocation_budget_bytes);
+      detail = adapter && Number.isFinite(budget) && budget > 0
+        ? `Automatic cap on ${adapter.name}: ${bytes(budget)} (70% of its largest usable device heap).`
+        : 'Automatic cap: 70% of the selected adapter’s largest usable device heap.';
+      detail += ' This is an allocation limit, not a free-VRAM measurement.';
+    }
+    $('vram-help').textContent = detail;
+  }
+
+  function contextModel() {
+    if (state.selection?.trainingContext) return state.selection;
+    const scanned = state.scan && isSameRoot(state.selection?.root, state.scan.root) && state.scan.models.find(item => item.id === state.selection?.id);
+    if (scanned) return { trainingContext: scanned.training_context, architecture: scanned.architecture };
+    if (state.status?.model && (!state.selection || (state.selection.id === state.status.model && isSameRoot(state.selection.root, state.config?.models_dir)))) {
+      const config = state.status.runtime?.config;
+      return { trainingContext: config?.training_context_length, architecture: config?.architecture };
+    }
+    return {};
   }
 
   function updateControls() {
-    const working = state.scanning || state.applying;
+    library.controls();
+    const { trainingContext: supported, architecture } = contextModel();
+    const supportsPreset = supportsCompact512k(architecture, supported);
+    $('large-context').disabled = !supported || !state.connected || state.applying || state.tuningActive;
+    $('context-512k').disabled = !supportsPreset || !state.connected || state.applying || state.tuningActive;
+    $('find-512k').disabled = !state.connected || state.applying;
+    const compact = $('kv-precision').value === 'q4_64';
+    $('context-memory-advice').textContent = !supportsPreset ? 'The compact 512K preset requires Qwen3 or Qwen3 MoE with a declared context of at least 524,288 tokens.' : compact ? 'Compact context memory retains every token. Full windows use more GPU memory and can generate more slowly; loading checks the required allocation budget.' : 'For 512K, choose Compact context memory or use the 512K preset. Standard context memory may exceed this machine’s memory.';
+    $('context-info').textContent = supported ? `Model maximum: ${supported.toLocaleString()} tokens, shared by project files, conversation, and reply. Larger windows need more memory.` : 'Select a local model to see its supported context.';
+    chat.update();
+    const working = state.scanning || state.applying || state.tuningActive || !!state.status?.admission?.model_changing;
     $('scan-models').disabled = working || !state.connected;
     $('scan-models').textContent = state.scanning ? 'Scanning…' : 'Scan models';
     $('model-directory').disabled = state.applying || !state.connected;
     $('use-f-drive').disabled = working || !state.connected;
-    $('runtime-fields').disabled = state.applying || !state.connected;
+    $('runtime-fields').disabled = state.applying || state.tuningActive || !state.connected;
     $('apply-settings').disabled = working || !state.connected;
     $('apply-settings').textContent = state.applying ? 'Applying…' : state.selection ? 'Apply & load model' : 'Apply settings';
     $('reset-settings').disabled = working || !state.connected || !state.dirty;
@@ -153,6 +241,7 @@
       $('apply-help').textContent = 'Choose a model above, or save runtime settings for later.';
     }
     backendHelp();
+    tuning.update();
   }
 
   function renderSelection() {
@@ -170,7 +259,7 @@
   function applyConfigToForm(config) {
     const settings = { ...defaults, ...config.settings };
     for (const [key, id] of Object.entries(fields)) {
-      if (key === 'expert_warmup') $(id).checked = settings[key];
+      if (key === 'expert_warmup' || key === 'fast_math') $(id).checked = settings[key];
       else if (key === 'device') {
         state.pendingDevice = settings.device;
         renderDeviceOptions();
@@ -185,7 +274,7 @@
 
   function rememberConfig(config, resetForm = false) {
     state.config = config;
-    $('engine-version').textContent = `Forge native ${config.version || ''}`.trim();
+    $('engine-version').textContent = `Nextora ${config.version || ''}`.trim();
     $('platform-label').textContent = config.in_wsl ? 'Running inside WSL' : `Running on ${config.platform || 'this machine'}`;
     const windows = config.platform === 'windows';
     $('use-f-drive').hidden = !(windows || config.in_wsl);
@@ -203,14 +292,14 @@
       const button = node('button', 'folder-shortcut', folder.label || folder.path);
       button.type = 'button'; button.title = folder.path;
       button.addEventListener('click', () => {
-        if (state.applying || state.scanning || !state.connected) return;
+        if (state.applying || state.scanning || state.tuningActive || !state.connected) return;
         $('model-directory').value = folder.path; setDirty(); $('model-directory').focus();
       });
       $('suggested-folders').append(button);
     }
     if (suggested.some((folder) => /f:\\|\/mnt\/f/i.test(folder.path))) $('use-f-drive').hidden = true;
     $('persistence-note').textContent = config.settings_file
-      ? `Successful changes are saved to ${config.settings_file}. Host, port, API key, and CPU worker count still come from startup options.`
+      ? `Successful changes are saved to ${config.settings_file}. Host, port, and API key come from startup options.`
       : 'Changes apply to this running service. Export a settings file to keep them, then start with --settings-file. API keys are not included.';
     $('client-auth-hint').textContent = config.startup?.api_key_required
       ? 'API key required: use the same service key in your coding client.'
@@ -228,10 +317,17 @@
     for (const [key, id] of Object.entries(fields)) {
       const input = $(id);
       if (key === 'backend') out[key] = input.value;
+      else if (key === 'direct_experts') {
+        if (!['cpu', 'hybrid'].includes(out.backend) && input.value !== '') out[key] = input.value === 'true';
+      }
+      else if (key === 'kv_placement') out[key] = ['cpu', 'hybrid'].includes(out.backend) ? 'gpu' : input.value;
+      else if (key === 'kv_ram_mib' && (['cpu', 'hybrid'].includes(out.backend) || $('kv-placement').value !== 'ram')) out[key] = null;
+      else if (key === 'kv_precision') out[key] = ['cpu', 'hybrid'].includes(out.backend) ? 'f32' : input.value;
+      else if (['cpu', 'hybrid'].includes(out.backend) && key === 'fast_math') out[key] = false;
       else if (out.backend === 'cpu' && key === 'device') out[key] = null;
       else if (out.backend === 'cpu' && key === 'vram_mib') out[key] = 0;
-      else if (key === 'expert_warmup') out[key] = input.checked;
-      else if ((key === 'expert_ram_mib' || key === 'device') && input.value.trim() === '') out[key] = null;
+      else if (key === 'expert_warmup' || key === 'fast_math') out[key] = input.checked;
+      else if ((key === 'expert_ram_mib' || key === 'kv_ram_mib' || key === 'device' || key === 'threads') && input.value.trim() === '') out[key] = null;
       else {
         out[key] = Number(input.value);
         if (!Number.isSafeInteger(out[key]) || out[key] < 0) throw new ApiError(`${input.labels?.[0]?.textContent || key} must be a whole, non-negative number.`, 400);
@@ -282,7 +378,10 @@
       body.append(node('div', 'model-option-path', model.path || modelPath(result.root, model.id)));
       const meta = node('div', 'model-option-meta');
       meta.append(node('span', '', bytes(model.bytes)));
+      if (model.training_context) meta.append(node('span', '', `${model.training_context.toLocaleString()} context`));
       if (model.architecture) meta.append(node('span', '', model.architecture));
+      const backends = model.native_backends || (model.architecture === 'qwen35' ? ['cpu','hybrid'] : []);
+      if (backends.length) meta.append(node('span', '', backends.map(name => ({cpu:'CPU',vulkan:'GPU',hybrid:'hybrid'})[name] || name).join(' / ')));
       const shards = Array.isArray(model.shards) ? model.shards.length : Number(model.shards || 1);
       meta.append(node('span', '', `${shards} file${shards === 1 ? '' : 's'}`));
       body.append(meta); option.append(input, body);
@@ -457,13 +556,14 @@
 
   function renderStatus(status) {
     state.status = status;
+    library.loadProgress(status.load_progress);
     const admission = status.admission || {};
     const runtime = status.runtime;
     const changing = !!admission.model_changing || state.applying;
     setServiceState(changing ? 'loading' : status.model ? 'ready' : 'waiting', changing ? 'Loading / applying' : status.model ? 'Service ready' : 'Awaiting model');
     $('loaded-model-name').textContent = status.model || 'No model loaded';
     $('loaded-model-name').title = status.model || '';
-    $('loaded-model-detail').textContent = status.model ? `${runtime?.config?.architecture || 'MoE checkpoint'} · ${bytes(runtime?.mapped_weight_bytes)} on disk` : 'Select a GGUF to get started';
+    $('loaded-model-detail').textContent = status.model ? `${runtime?.config?.architecture || 'GGUF checkpoint'} · ${bytes(runtime?.mapped_weight_bytes)} on disk` : 'Select a GGUF to get started';
     const execution = runtime?.execution || {};
     const selection = runtime?.backend_selection;
     $('execution-name').textContent = execution.backend === 'cpu' ? 'CPU' : execution.backend === 'vulkan' ? 'Vulkan' : execution.backend ? 'Hybrid' : '—';
@@ -498,7 +598,21 @@
       if (memory.cpu_expert_fallbacks !== undefined) addRuntimeRow('CPU expert executions', memory.cpu_expert_fallbacks);
       if (memory.selected_experts_omitted !== undefined) addRuntimeRow('Selected experts omitted', memory.selected_experts_omitted);
       addRuntimeRow('Reusable sequences', status.idle_sequences ?? 0);
-      addRuntimeRow('State precision', runtime.kv_precision);
+      addRuntimeRow('Context memory', runtime.kv_precision);
+      if (memory.kv_placement) addRuntimeRow('Context location', memory.kv_placement === 'ram' ? 'System RAM' : 'Graphics memory');
+      if (memory.full_context_peak_bytes > 0) addRuntimeRow('Full context GPU estimate', bytes(memory.full_context_gpu_peak_bytes || memory.full_context_peak_bytes));
+      else if (memory.full_context_kv_payload_bytes > 0) addRuntimeRow('Full context cache', bytes(memory.full_context_kv_payload_bytes));
+      if (memory.kv_placement === 'ram') {
+        if (memory.full_context_ram_peak_bytes > 0) addRuntimeRow('Full context RAM estimate', bytes(memory.full_context_ram_peak_bytes));
+        if (memory.host_live_allocation_bytes !== undefined) addRuntimeRow('Engine RAM allocations', bytes(memory.host_live_allocation_bytes));
+        if (memory.host_allocation_budget_bytes > 0) addRuntimeRow('Context RAM allocation cap', bytes(memory.host_allocation_budget_bytes));
+      }
+      addRuntimeRow('Activation math', memory.activation_precision || 'F32');
+      if (memory.direct_expert_weights_enabled !== undefined) {
+        const expertAccess = memory.direct_expert_weights_enabled ? 'Direct · batched' : 'Packed copies';
+        addRuntimeRow('Expert weight access', expertAccess);
+      }
+      if (memory.gpu_expert_pack_bytes_avoided > 0) addRuntimeRow('Cumulative expert-copy bytes skipped', bytes(memory.gpu_expert_pack_bytes_avoided));
       $('runtime-json').textContent = JSON.stringify(runtime, null, 2);
     } else $('runtime-json').textContent = '';
     $('last-updated').textContent = `Status updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
@@ -539,7 +653,7 @@
 
   async function scanModels(event) {
     event?.preventDefault();
-    if (state.scanning || state.applying || !state.connected) return;
+    if (state.scanning || state.applying || state.tuningActive || !state.connected) return;
     const directory = $('model-directory').value.trim();
     if (!directory) { $('model-directory').focus(); notice('Enter a model folder or drive to scan.', 'warning'); return; }
     state.scanning = true; updateControls(); notice('');
@@ -559,11 +673,12 @@
 
   async function applyProfile(event) {
     event?.preventDefault();
-    if (state.applying || state.scanning || !state.connected) return;
+    if (state.applying || state.scanning || state.tuningActive || !state.connected) return;
     let profile;
     try { profile = draftProfile(); } catch (error) { showError(error); return; }
     state.applying = true; updateControls(); notice('');
     setServiceState('loading', 'Loading / applying');
+    library.loadProgress({stage: 'validating', message: 'Checking model selection and settings…'});
     try {
       const result = await api('/api/config', { body: profile });
       const config = result.settings ? result : await api('/api/config');
@@ -624,6 +739,23 @@
     try { await connect(!state.config); }
     finally { $('unlock').disabled = false; }
   });
+  $('context-512k').addEventListener('click', () => {
+    const { trainingContext, architecture } = contextModel();
+    if (!supportsCompact512k(architecture, trainingContext)) return;
+    $('ctx').value = '524288'; $('kv-precision').value = 'q4_64'; $('backend').value = 'vulkan'; $('parallel').value = '1';
+    const adapter = state.hardware?.find(a => a.index === Number($('device').value || 0) && a.compatible && !a.software);
+    const heapMiB = adapter?.largest_usable_device_local_heap_bytes / (1024 ** 2);
+    const proposed = Number.isFinite(heapMiB) ? Math.max(0, Math.min(14800, Math.floor(heapMiB) - 1024)) : 14800;
+    if (proposed > Number($('vram-mib').value || 0)) $('vram-mib').value = String(proposed);
+    setDirty();
+    notice('512K selected with compact context memory and one active request. Review the GPU allocation cap, then apply to load. Full-window speed requires a separate measurement.');
+  });
+  $('find-512k').addEventListener('click', () => {
+    $('hub-long-context').checked = true;
+    $('hub-query').value = 'unsloth/Qwen3-Coder-30B-A3B-Instruct-1M-GGUF';
+    $('hub').scrollIntoView({behavior: 'smooth'}); $('hub-query').focus(); $('hub-search-form').requestSubmit();
+  });
+  $('large-context').addEventListener('click', () => { const value = contextModel().trainingContext; if (value) { $('ctx').value = String(Math.min(value, 1048576)); setDirty(); } });
   $('scan-form').addEventListener('submit', scanModels);
   $('settings-form').addEventListener('submit', applyProfile);
   $('unload-model').addEventListener('click', unloadModel);

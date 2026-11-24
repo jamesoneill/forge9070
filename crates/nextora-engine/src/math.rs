@@ -88,9 +88,24 @@ pub fn rope_angles(
     cos: &mut [f32],
     sin: &mut [f32],
 ) -> Result<()> {
+    rope_angles_scaled(position, inverse, 1.0, cos, sin)
+}
+
+/// Static YaRN scales sine and cosine once, before the shared Q/K rotations.
+pub fn rope_angles_scaled(
+    position: usize,
+    inverse: &[f32],
+    attention_factor: f32,
+    cos: &mut [f32],
+    sin: &mut [f32],
+) -> Result<()> {
     ensure!(
         inverse.len() == cos.len() && cos.len() == sin.len(),
         "RoPE angle dimensions differ"
+    );
+    ensure!(
+        attention_factor.is_finite() && attention_factor > 0.0,
+        "RoPE attention factor must be finite and positive"
     );
     // f32 is the reference arithmetic here. Guard positions that could not be
     // represented exactly instead of silently conflating distant positions.
@@ -102,6 +117,10 @@ pub fn rope_angles(
         let angle = position as f32 * frequency;
         ensure!(angle.is_finite(), "RoPE angle overflowed");
         (*s, *c) = angle.sin_cos();
+        if attention_factor != 1.0 {
+            *s *= attention_factor;
+            *c *= attention_factor;
+        }
     }
     Ok(())
 }
@@ -284,6 +303,47 @@ pub fn residual_add(residual: &mut [f32], update: &[f32]) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scaled_rope_angles_apply_magnitude_once_and_keep_unscaled_output_identical() {
+        let frequencies = rope_inverse_frequencies(128, 10000000.0).unwrap();
+        let magnitude = 1.1386294;
+        for position in [0, 262143, 262144, 524287] {
+            let mut cos = vec![0.0; 64];
+            let mut sin = vec![0.0; 64];
+            rope_angles(position, &frequencies, &mut cos, &mut sin).unwrap();
+            let mut identical_cos = vec![0.0; 64];
+            let mut identical_sin = vec![0.0; 64];
+            rope_angles_scaled(
+                position,
+                &frequencies,
+                1.0,
+                &mut identical_cos,
+                &mut identical_sin,
+            )
+            .unwrap();
+            assert_eq!(cos, identical_cos);
+            assert_eq!(sin, identical_sin);
+            rope_angles_scaled(
+                position,
+                &frequencies,
+                magnitude,
+                &mut identical_cos,
+                &mut identical_sin,
+            )
+            .unwrap();
+            for i in 0..64 {
+                assert_eq!(identical_cos[i], cos[i] * magnitude);
+                assert_eq!(identical_sin[i], sin[i] * magnitude);
+            }
+        }
+        for invalid in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            assert!(
+                rope_angles_scaled(0, &frequencies, invalid, &mut [0.0; 64], &mut [0.0; 64])
+                    .is_err()
+            );
+        }
+    }
 
     fn close(a: &[f32], b: &[f32]) {
         assert_eq!(a.len(), b.len());

@@ -8,6 +8,9 @@
   <title>Nextora · Service console</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/ui/style.css">
+  <script src="/ui/chat.js" defer></script>
+  <script src="/ui/library.js" defer></script>
+  <script src="/ui/tuning.js" defer></script>
   <script src="/ui/app.js" defer></script>
 </head>
 <body>
@@ -21,7 +24,8 @@
       <div class="workspace-label">WORKSPACE</div>
       <nav aria-label="Console navigation">
         <a class="nav-link" href="#overview"><span class="nav-glyph" aria-hidden="true">◫</span> Overview</a>
-        <a class="nav-link" href="#models"><span class="nav-glyph" aria-hidden="true">◇</span> Models</a>
+        <a class="nav-link" href="#chat"><span class="nav-glyph" aria-hidden="true">›</span> Chat</a>
+        <a class="nav-link" href="#hub"><span class="nav-glyph" aria-hidden="true">◇</span> Models</a>
         <a class="nav-link" href="#configuration"><span class="nav-glyph" aria-hidden="true">≋</span> Configuration</a>
         <a class="nav-link" href="#insight"><span class="nav-glyph" aria-hidden="true">◈</span> Insight</a>
         <a class="nav-link" href="#connect"><span class="nav-glyph" aria-hidden="true">↗</span> Connect a client</a>
@@ -37,8 +41,8 @@
       <header id="overview" class="page-header">
         <div>
           <div class="eyebrow">SERVICE CONSOLE</div>
-          <h1>Your models. Your machine.</h1>
-          <p class="page-description">Find your model, tune the runtime, and connect your coding tools.</p>
+          <h1>Local inference workspace</h1>
+          <p class="page-description">Chat with a local model, measure its speed, and manage your coding context.</p>
         </div>
         <div class="header-actions">
           <span id="service-state" class="status-pill" data-state="waiting"><span class="dot"></span><span id="service-state-text">Connecting</span></span>
@@ -92,11 +96,59 @@
         <p class="small-note">Hardware upgrades are conditional on sustained measured bottlenecks. GPU heap capacity, model file size and test-run rates do not prove an upgrade benefit.</p>
       </section>
 
+      <div id="load-progress-panel" hidden><h3 id="load-caption">Loading model</h3><progress id="load-bar" aria-label="Model loading progress"></progress><p class="field-help" id="load-detail" role="status"></p></div>
+
       <div class="content-grid">
         <div class="primary-column">
+          <section id="chat" class="card" aria-labelledby="chat-heading">
+            <div class="section-heading"><h2 id="chat-heading">Chat</h2><button id="chat-clear" class="text-button" type="button" disabled>Clear chat</button></div>
+            <p id="chat-model" class="field-help">Load a model to chat</p>
+            <div id="chat-log" role="log" aria-label="Conversation" aria-live="off" tabindex="0"></div>
+            <form id="chat-form">
+              <label for="chat-prompt">Message</label>
+              <textarea id="chat-prompt" rows="3" placeholder="Ask your model a question"></textarea>
+              <div class="chat-options">
+                <label>Output limit <input id="chat-limit" type="number" value="128" min="1" step="1" required> tokens</label>
+                <label for="chat-files" class="chat-attach">Add text files <input id="chat-files" type="file" multiple></label>
+              </div>
+              <div class="chat-actions">
+                <button id="chat-send" class="button button-primary" disabled>Send</button>
+                <button id="chat-stop" type="button" class="button button-secondary" hidden>Stop</button>
+                <button id="chat-count" type="button" class="text-button" disabled>Check context</button>
+              </div>
+            </form>
+            <p id="chat-context" class="field-help" role="status"></p>
+            <p id="chat-status" class="field-help" role="status"></p>
+            <details class="advanced-settings" id="speed-test"><summary>Compare generation speed</summary><div class="advanced-content"><p class="field-help">Run the same coding prompt after changing settings. Each test warms up once, then measures two replies of up to 128 tokens.</p>
+            <button id="speed-run" type="button" class="button button-secondary" disabled>Run speed test</button> <button id="speed-stop" type="button" class="text-button" hidden>Stop test</button>
+            <p id="speed-status" role="status" class="field-help"></p><ol id="speed-results" class="speed-results"></ol></div></details>
+          </section>
+          <section id="tuning" class="card" aria-labelledby="tuning-heading">
+            <div class="section-heading"><h2 id="tuning-heading">Model setup and tuning</h2></div>
+            <p id="tuning-model" class="section-description">Select a downloaded model to prepare it for this machine.</p>
+            <p class="field-help">Setup checks memory fit, compares speed in a separate process, and saves a profile for this model. It uses your saved memory limits and restores the previous model afterward. Normal loading warms the caches again.</p>
+            <div class="form-grid"><div class="field"><label for="tuning-context-goal">Context search</label><select id="tuning-context-goal"><option value="maximum_fit">Largest supported context that fits</option><option value="fixed">Current context setting</option></select></div><div class="field"><label for="tuning-context-ceiling">Context ceiling (optional)</label><input id="tuning-context-ceiling" type="number" min="2" max="1048576" step="1" placeholder="Use model limit"></div></div>
+            <div class="chat-actions"><button id="tuning-prepare" type="button" class="button button-primary" disabled>Prepare selected model</button><button id="tuning-prepare-rerun" type="button" class="button button-secondary" hidden disabled>Prepare again</button><button id="tuning-use" type="button" class="button button-secondary" hidden disabled>Use saved profile</button></div>
+            <div class="chat-actions"><button id="tuning-start" type="button" class="button button-primary" disabled>Run tuning</button><button id="tuning-rerun" type="button" class="button button-secondary" hidden disabled>Run tuning again</button><button id="tuning-cancel" type="button" class="text-button" hidden>Cancel tuning</button></div>
+            <p id="tuning-status" class="field-help" role="status">Run tuning when the service is idle.</p>
+            <progress id="tuning-progress" aria-label="Tuning progress" hidden></progress>
+            <p id="tuning-detail" class="field-help"></p>
+            <p id="tuning-winner" class="tuning-winner" hidden></p>
+            <details id="tuning-results" class="advanced-settings" hidden><summary>Measured configurations</summary><div class="tuning-table-scroll"><table class="tuning-table"><thead><tr><th scope="col">Configuration</th><th scope="col">Generation</th><th scope="col">Prompt</th><th scope="col">Result</th></tr></thead><tbody id="tuning-candidates"></tbody></table></div><p id="tuning-scope" class="field-help"></p></details>
+          </section>
+          <section id="hub" class="card" aria-labelledby="hub-heading">
+            <div class="section-heading"><h2 id="hub-heading">Hugging Face models</h2></div>
+            <form id="hub-search-form"><label for="hub-query">Model name or repository</label>
+              <div class="input-action"><input id="hub-query" maxlength="160" placeholder="e.g. Qwen3-30B-A3B" required><button class="button button-secondary" id="hub-search">Search</button></div>
+            </form>
+            <p id="hub-message" class="field-help" role="status">Search for GGUF files that pass Nextora’s remote compatibility checks.</p>
+            <label class="checkbox-label"><input id="hub-long-context" type="checkbox"><span>512K context models only</span></label><div id="hub-results" class="hub-results"></div>
+            <div id="hub-job" hidden><h3>Download</h3><div id="hub-file" class="path-text"></div><progress id="hub-bar" aria-label="Download progress"></progress><p id="hub-detail" class="field-help" role="status"></p>
+              <div class="apply-buttons"><button type="button" id="hub-cancel" class="button button-quiet" hidden>Cancel download</button><button type="button" id="hub-prepare" class="button button-primary" hidden>Prepare for this machine</button><button type="button" id="hub-configure" class="button button-secondary" hidden>Configure first</button><button type="button" id="hub-load" class="button button-primary" hidden>Load downloaded model</button></div></div>
+          </section>
           <section id="models" class="card" aria-labelledby="models-heading">
             <div class="section-heading"><div><span class="step-label">01 / MODEL LIBRARY</span><h2 id="models-heading">Find your model</h2></div><span id="model-count" class="badge">GGUF</span></div>
-            <p class="section-description">Scan a folder for complete, compatible MoE checkpoints. Select the first shard of a split model.</p>
+            <p class="section-description">Scan a folder for complete, supported GGUF models. Select the first shard of a split model.</p>
             <form id="scan-form">
               <label for="model-directory">Model folder or drive</label>
               <div class="input-action"><input id="model-directory" type="text" spellcheck="false" autocomplete="off" placeholder="F:\Models" aria-describedby="directory-help" required><button id="scan-models" type="submit" class="button button-secondary">Scan models</button></div>
@@ -128,7 +180,8 @@
                   <div class="field"><label for="ctx">Context per request <span class="unit">tokens</span></label><input id="ctx" type="number" min="2" max="1048576" step="1" value="8192" required><p class="field-help">Includes the prompt and generated answer.</p></div>
                   <div class="field"><label for="max-tokens">Output token cap <span class="unit">tokens</span></label><input id="max-tokens" type="number" min="1" max="1048575" step="1" value="2048" required><p class="field-help">Also the default when omitted. Clients can request up to this cap; prompt and output must fit the context.</p></div>
                 </div>
-                <p class="context-advice">Larger context reserves more state per request. Increase it for the work you need, then check the loaded runtime’s memory plan.</p>
+                <div class="context-advice"><span id="context-info">Select a local model to see its supported context.</span> <button type="button" class="text-button" id="large-context" disabled>Use model maximum</button> <button type="button" class="text-button" id="context-512k" disabled>Use 512K</button> <button type="button" class="text-button" id="find-512k">Find 512K models</button></div>
+                <p id="context-memory-advice" class="field-help">512K requires a compatible long-context model. Speed depends on how much of the window is filled.</p>
                 <div class="form-divider"></div>
                 <h3 class="group-title">Concurrent requests &amp; queue</h3>
                 <div class="form-grid form-grid-three">
@@ -141,7 +194,13 @@
                   <summary><span>Memory &amp; expert loading</span><span class="summary-note">Avalon-based loading</span></summary>
                   <div class="advanced-content">
                     <div class="form-grid">
-                      <div class="field"><label for="vram-mib">GPU allocation cap <span class="unit">MiB</span></label><input id="vram-mib" type="number" min="0" max="16777216" step="1" value="0" required><p class="field-help">0 = 70% of the largest device heap. This is not a free-VRAM measurement.</p></div>
+                      <div class="field checkbox-field"><label class="checkbox-label" for="fast-math"><input id="fast-math" type="checkbox"><span>Fast GPU math</span></label><p class="field-help" id="fast-math-help">Uses faster GPU calculations for supported Qwen3 models. Requires a compatible graphics card. Answers may differ slightly.</p></div>
+                      <div class="field"><label for="direct-experts">Expert weight access</label><select id="direct-experts"><option value="">Automatic · Packed</option><option value="true">Direct · fewer GPU copies</option><option value="false">Packed copies</option></select><p id="direct-experts-help" class="field-help">Direct avoids expert-weight copies and uses stable Q6 arithmetic. Validated on this machine’s Qwen3 MoE model; other setups remain experimental. Automatic uses Packed.</p></div>
+                      <div class="field"><label for="kv-precision">Context memory</label><select id="kv-precision"><option value="f32">Standard · F32</option><option value="q4_64">Compact · Q4</option></select><p class="field-help">Compact storage keeps every token and uses less memory. Answers may change slightly. Supported on Qwen3 GPU execution.</p></div>
+                      <div class="field"><label for="kv-placement">Context location</label><select id="kv-placement"><option value="gpu">Graphics memory</option><option value="ram">System RAM</option></select><p class="field-help">System RAM keeps the full history and frees graphics memory for weights. It can reduce speed. Supported on Qwen3 GPU execution.</p></div>
+                      <div class="field"><label for="kv-ram-mib">Context RAM cap <span class="unit">MiB</span></label><input id="kv-ram-mib" type="number" min="1" max="16777216" step="1" placeholder="Auto"><p class="field-help">Blank reserves room automatically before sizing the expert RAM cache.</p></div>
+                      <div class="field"><label for="worker-threads">CPU workers</label><input id="worker-threads" type="number" min="1" max="1024" step="1" placeholder="Auto"><p class="field-help">Blank uses the startup worker setting. Tuning can save a worker count for this model.</p></div>
+                      <div class="field"><label for="vram-mib">GPU allocation cap <span class="unit">MiB</span></label><input id="vram-mib" type="number" min="0" max="16777216" step="1" value="0" aria-describedby="vram-help" required><p id="vram-help" class="field-help" aria-live="polite">Enter an amount in MiB, not a percentage. 0 chooses an automatic cap of 70% of the largest usable device heap.</p></div>
                       <div class="field"><label for="expert-ram-mib">Expert RAM cache <span class="unit">MiB</span></label><input id="expert-ram-mib" type="number" min="0" max="16777216" step="1" placeholder="Auto"><p class="field-help">Blank = automatic after reserves. 0 disables the owned RAM cache.</p></div>
                       <div class="field"><label for="ram-margin-mib">RAM reserve for other work <span class="unit">MiB</span></label><input id="ram-margin-mib" type="number" min="0" max="16777216" step="1" value="4096" required><p class="field-help">Leaves headroom in the automatic cache plan.</p></div>
                       <div class="field checkbox-field"><label class="checkbox-label" for="expert-warmup"><input id="expert-warmup" type="checkbox" checked><span>Warm the bounded expert cache</span></label><p class="field-help">Loads a limited expert working set before generation. Large PLE tables stay lazy.</p></div>
@@ -189,7 +248,7 @@
             <h2 id="profile-heading">Keep your setup</h2><p>Export the selected model and runtime settings. API keys are never included.</p>
             <button id="export-settings" class="button button-secondary button-full" type="button">Export settings</button>
             <p class="small-note">Start the service with your saved profile:</p><code class="launch-command">nextora serve --settings-file nextora-service.json --open-ui</code>
-            <p class="small-note">Host, port, API key, and CPU worker count are startup options.</p>
+            <p class="small-note">Host, port, and API key are startup options.</p>
           </section>
         </aside>
       </div>

@@ -159,7 +159,7 @@ fn target_gpu_budget(gpu_mib: Option<u64>, headroom_percent:u8) -> Result<Value>
 }
 
 pub fn evaluate(args: &ModelFitArgs) -> Result<Value> {
-    ensure!((128..=131072).contains(&args.ctx), "ctx must be 128..=131072");
+    ensure!((128..=1048576).contains(&args.ctx), "ctx must be 128..=1048576");
     ensure!((1..=4).contains(&args.requests), "requests must be 1..=4");
     ensure!((5..=50).contains(&args.gpu_headroom_percent), "GPU headroom percentage must be in 5..=50");
     ensure!(args.target_vram_mib.is_none_or(|x| x>0), "target VRAM must be positive");
@@ -170,7 +170,7 @@ pub fn evaluate(args: &ModelFitArgs) -> Result<Value> {
     let mapped=u64::try_from(model.mapped_bytes())?;
     let desired=args.target_file_mib.map(|n|n.checked_mul(MIB).context("target file size overflow")).transpose()?;
     let arch=model.meta.get("general.architecture").and_then(|v|v.as_str()).unwrap_or("unknown");
-    let native_arch=matches!(arch, "qwen3"|"qwen3moe"|"qwen4exp");
+    let native_arch=matches!(arch, "qwen3"|"qwen3moe"|"qwen35"|"qwen4exp");
     let theoretical=estimate_candidates(&model.tensors,mapped,payload,model.alignment,desired)?;
     let hardware=crate::runtime::hardware_report();
     let eligible=hardware["adapters"].as_array().into_iter().flatten()

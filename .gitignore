@@ -50,3 +50,6 @@ Thumbs.db
 /vendor/rusting-strata/tools/prompts.json
 /vendor/rusting-strata/docs/parity/cuda-sm70.json
 /vendor/rusting-strata/docs/parity/vk-sm70.json
+
+# Machine-specific performance measurements.
+.nextora-tuning/

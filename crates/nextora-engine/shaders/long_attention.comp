@@ -1,0 +1,59 @@
+// Ordinary F32 attention for a 128-component head. Each invocation owns
+// one output component and folds values in increasing context position.
+#version 450
+layout(local_size_x=128) in;
+layout(set=0,binding=1,std430) readonly buffer Scores { float scores[]; };
+layout(set=0,binding=2,std430) readonly buffer Values { float values[]; };
+layout(set=0,binding=3,std430) writeonly buffer Output { float output_values[]; };
+layout(set=0,binding=6,std430) buffer Status { uint status[]; };
+layout(push_constant) uniform Parameters {
+    uint op; uint tokens; uint heads; uint kv_heads;
+    uint width; uint score_stride; uint unused0; uint unused1;
+    float unused2; float unused3; uint unused4; uint unused5;
+    uint unused6; uint unused7; uint groups_x; uint flags;
+} p;
+
+shared float scratch[128];
+
+void main() {
+    uint lane = gl_LocalInvocationID.x;
+    uint head = gl_WorkGroupID.x + gl_WorkGroupID.y * p.groups_x;
+    uint score_base = head * p.score_stride;
+    float maximum = -3.402823466e38;
+    for (uint t = lane; t < p.tokens; t += 128u)
+        maximum = max(maximum, scores[score_base + t]);
+    scratch[lane] = maximum;
+    barrier();
+    for (uint stride = 64u; stride != 0u; stride >>= 1u) {
+        if (lane < stride) scratch[lane] = max(scratch[lane], scratch[lane + stride]);
+        barrier();
+    }
+    maximum = scratch[0];
+    barrier();
+    float partial = 0.0;
+    for (uint t = lane; t < p.tokens; t += 128u)
+        partial += exp(scores[score_base + t] - maximum);
+    scratch[lane] = partial;
+    barrier();
+    for (uint stride = 64u; stride != 0u; stride >>= 1u) {
+        if (lane < stride) scratch[lane] += scratch[lane + stride];
+        barrier();
+    }
+    float denominator = scratch[0];
+    barrier();
+    uint kv_head = head / (p.heads / p.kv_heads);
+    float sum = 0.0;
+    for (uint base = 0u; base < p.tokens; base += 128u) {
+        uint count = min(128u, p.tokens - base);
+        if (lane < count)
+            scratch[lane] = exp(scores[score_base + base + lane] - maximum);
+        barrier();
+        for (uint j = 0u; j < count; ++j) {
+            uint token = base + j;
+            sum = fma((scratch[j] * values[(token * p.kv_heads + kv_head) * p.width + lane]), (1.0 / denominator), sum);
+        }
+        barrier();
+    }
+    if (isnan(sum) || isinf(sum)) atomicOr(status[0], 1u);
+    output_values[head * p.width + lane] = sum;
+}

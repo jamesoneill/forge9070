@@ -5,16 +5,13 @@ GPU selection checks capabilities rather than a vendor or card-model name. This
 lets eligible AMD, NVIDIA and Intel devices use the same execution path while
 retaining explicit backend and adapter overrides.
 
-This guide applies to `nextora-engine` and `nextora-cli`. The retained
-`nextora-cli serve` and `nextora-cli doctor` commands use the RX 9070 XT compatibility
-profile; their options and device indices are not interchangeable with native
-commands.
+Both `nextora` and `nextora-cli` use this native engine.
 
 ## Platform and evidence matrix
 
 | Environment | Native execution path | Validation boundary |
 | --- | --- | --- |
-| Windows / Linux, eligible AMD GPU | Vulkan | Physical GPU execution and target-card performance need hardware validation. |
+| Windows / Linux, eligible AMD GPU | Vulkan | See the [Windows RX 9070 XT measurements](AMD-PERFORMANCE.md) for tested model and driver settings. Other configurations require their own benchmarks. |
 | Windows / Linux, eligible NVIDIA GPU | Vulkan | No CUDA dependency; physical GPU execution and performance need hardware validation. |
 | Windows / Linux, eligible Intel discrete or integrated GPU | Vulkan | Device limits and model fit still apply; physical GPU execution and performance need hardware validation. |
 | Windows / Linux without eligible Vulkan hardware | CPU, explicitly or through `auto` | CPU/service tests are distinct from full pretrained-model acceptance. |
@@ -31,11 +28,11 @@ See the [validation record](../VALIDATION.md) for completed checks.
 ## Select an execution policy
 
 ```sh
-nextora-engine doctor
-nextora-engine serve --open-ui --backend auto --models-dir /path/to/models
+nextora doctor
+nextora serve --open-ui --backend auto --models-dir /path/to/models
 ```
 
-On Windows use `nextora-engine.exe` and Windows model paths. The equivalent
+On Windows use `nextora.exe` and Windows model paths. The equivalent
 frontend command is `nextora-cli doctor` or `nextora-cli serve ...`.
 
 | Policy | Behaviour |

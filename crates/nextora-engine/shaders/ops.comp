@@ -2,8 +2,20 @@
 // Quant layouts follow the published GGML F32/F16/BF16/Q4_0/Q8_0 encodings.
 #version 450
 #extension GL_GOOGLE_include_directive : require
+#ifdef NEXTORA_FAST_DOT
+#extension GL_EXT_spirv_intrinsics : require
+#endif
+#ifdef NEXTORA_EXPERT_WORDS
+#define EXPERT_LANES 64u
+layout(local_size_x=64) in;
+#else
 layout(local_size_x=128, local_size_y=1, local_size_z=1) in;
+#endif
+#ifdef NEXTORA_DIRECT_EXPERTS
+layout(set=0,binding=0,std430) readonly buffer Weights { uint words[]; } weight_slots[8];
+#else
 layout(set=0,binding=0,std430) readonly buffer Weights { uint w[]; };
+#endif
 layout(set=0,binding=1,std430) buffer First { float a[]; };
 layout(set=0,binding=2,std430) buffer Second { float b[]; };
 layout(set=0,binding=3,std430) buffer Output { float c[]; };
@@ -17,18 +29,28 @@ layout(push_constant) uniform Parameters {
     uint off2; uint off3; uint groups_x; uint flags;
 } p;
 shared float reduction[128];
+#ifdef NEXTORA_DIRECT_EXPERTS
+uint weight_word(uint index) {
+    // WorkGroupID is dynamically uniform within its compute invocation group.
+    uint slot=p.op==0u&&(p.flags&512u)!=0u?gl_WorkGroupID.z:0u;
+    return weight_slots[slot].words[index];
+}
+#else
+#define weight_word(index) w[index]
+#endif
+
 
 float checked(float value) {
     if (isnan(value) || isinf(value)) atomicOr(status[0],1u);
     return value;
 }
 float invalid_value() { atomicOr(status[0],1u); return uintBitsToFloat(0x7fc00000u); }
-uint byte_at(uint byte_offset) { return (w[byte_offset >> 2] >> ((byte_offset & 3u)*8u)) & 255u; }
+uint byte_at(uint byte_offset) { return (weight_word(byte_offset >> 2) >> ((byte_offset & 3u)*8u)) & 255u; }
 uint half_word(uint byte_offset) { return byte_at(byte_offset) | (byte_at(byte_offset+1u)<<8); }
 float half_at(uint byte_offset) { return unpackHalf2x16(half_word(byte_offset)).x; }
 #include "quant.glsl"
 float value_at(uint base, uint index, uint ty) {
-    if (ty==0u) return uintBitsToFloat(w[(base>>2)+index]);
+    if (ty==0u) return uintBitsToFloat(weight_word((base>>2)+index));
     if (ty==1u) return half_at(base+index*2u);
     if (ty==30u) return uintBitsToFloat(half_word(base+index*2u)<<16);
     if (ty==2u) {
@@ -67,11 +89,23 @@ float max_group(float value) {
     return reduction[0];
 }
 uint flat_group() { return gl_WorkGroupID.x+gl_WorkGroupID.y*p.groups_x; }
+#ifdef NEXTORA_FAST_DOT
+#include "fast_dot.glsl"
+#endif
+#include "compact_kv.glsl"
 #include "qwen38_ops.glsl"
+#ifdef NEXTORA_EXPERT_WORDS
+#include "expert_words.glsl"
+#else
 void main() {
     if(p.op>=100u){qwen_operation();return;}
     uint lane=gl_LocalInvocationID.x;
     uint element=flat_group()*128u+lane;
+    if(p.op==17u){compact_attention_partial();return;}
+    if(p.op==18u){compact_attention_merge();return;}
+#ifdef NEXTORA_FAST_DOT
+    if(p.op==16u) { quantize_activation_group(); return; }
+#endif
     if(p.op==0u) { // Direct quantized GEMV, optionally selected experts.
         uint row=flat_group();
         if(row>=p.n1) return;
@@ -86,9 +120,21 @@ void main() {
             expert=uint(chosen);
         }
         uint base=p.off0+(expert*p.n1+row)*p.n3;
+#ifdef NEXTORA_DIRECT_EXPERTS
+        if((p.flags&512u)!=0u)base=p.off0+row*p.n3;
+#endif
         uint input_offset=p.off1+(((p.flags&2u)!=0u)?slot*p.n0:0u);
         float partial=0.0;
-        for(uint col=lane;col<p.n0;col+=128u) partial+=value_at(base,col,p.n2)*a[input_offset+col];
+#ifdef NEXTORA_FAST_DOT
+        if((p.flags&32u)!=0u && input_offset%32u==0u && p.n0%256u==0u && (p.n2==12u||p.n2==14u)) {
+            partial=p.n2==12u?fast_q4_k_partial(base,p.n0,input_offset,lane):fast_q6_k_partial(base,p.n0,input_offset,lane);
+        } else
+#endif
+        if(p.n2==12u && p.n0%256u==0u) {
+            partial=q4_k_partial(base,p.n0,input_offset,lane);
+        } else {
+            for(uint col=lane;col<p.n0;col+=128u) partial+=value_at(base,col,p.n2)*a[input_offset+col];
+        }
         float total=sum_group(partial);
         if(lane==0u)c[p.off2+slot*p.n1+row]=checked(total);
     } else if(p.op==1u) { // Learned RMS norm, one workgroup per head.
@@ -100,19 +146,28 @@ void main() {
         float inverse=checked(inversesqrt(checked(sum_group(partial))/float(p.n0)+p.f0));
         // All reads contributing to the norm are finished before in-place writes.
         barrier();
-        for(uint i=lane;i<p.n0;i+=128u)c[start+i]=checked(a[start+i]*inverse*uintBitsToFloat(w[((p.flags&1u)!=0u)?start+i:i]));
+        for(uint i=lane;i<p.n0;i+=128u)c[start+i]=checked(a[start+i]*inverse*uintBitsToFloat(weight_word(((p.flags&1u)!=0u)?start+i:i)));
     } else if(p.op==2u) { // NeoX rotary pairs; in-place is safe per pair.
         uint half_dim=(p.n3>0u?p.n3:p.n0)/2u;
         if(element>=p.n1*half_dim)return;
         uint head=element/half_dim;
         uint index=element%half_dim;
-        float angle=float(p.n2)*pow(p.f0,-float(index)/float(half_dim));
-        float cosine=cos(angle), sine=sin(angle);
         uint start=head*p.n0;
         float lower=a[start+index], upper=a[start+index+half_dim];
-        c[start+index]=checked(lower*cosine-upper*sine);
-        c[start+index+half_dim]=checked(lower*sine+upper*cosine);
+        if((p.flags&256u)!=0u) {
+            float cosine=b[p.off0+index],sine=b[p.off0+half_dim+index];
+            c[start+index]=checked(lower*cosine-upper*sine);
+            c[start+index+half_dim]=checked(lower*sine+upper*cosine);
+        } else {
+            float inverse=(p.flags&128u)!=0u?b[index]:pow(p.f0,-float(index)/float(half_dim));
+            float angle=float(p.n2)*inverse;
+            float cosine=cos(angle),sine=sin(angle);
+            float magnitude=(p.flags&128u)!=0u?p.f1:1.0;
+            c[start+index]=checked((lower*cosine-upper*sine)*magnitude);
+            c[start+index+half_dim]=checked((lower*sine+upper*cosine)*magnitude);
+        }
     } else if(p.op==3u) { // Append one initialized key/value row.
+        if((p.flags&64u)!=0u){compact_kv_store();return;}
         if(element>=p.n0)return;
         c[p.n1*p.n0+element]=checked(a[element]);
         d[p.n1*p.n0+element]=checked(b[element]);
@@ -191,3 +246,4 @@ void main() {
         c[p.off2+element]=checked(a[p.off0+element]);
     }
 }
+#endif

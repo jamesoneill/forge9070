@@ -2,9 +2,10 @@
 
 The standalone `nextora-engine` package runs our Rust model implementation and
 Vulkan shaders without a RustingStrata execution dependency. It supports checked
-`qwen3`, `qwen3moe` and Qwen3.8 `qwen4exp` text paths. The native HTTP catalogue
-admits validated MoE checkpoints only. The ordinary dense Qwen3 path remains
-available to the CLI and numerical tests.
+`qwen3`, `qwen3moe`, Qwen3.5/Qwen3.8 dense `qwen35` and Qwen3.8 `qwen4exp`
+text paths. The HTTP catalogue admits validated dense and MoE checkpoints.
+The `qwen35` adapter initially supports CPU and hybrid execution; resident
+Vulkan execution remains specific to the other implemented families.
 
 Use the `nextora` executable for the native engine. The auxiliary `nextora-cli` wrapper invokes the same native implementation. The earlier Strata compatibility server was retired. Its old model provider settings and port 8080 do not carry over automatically. The native runtime keeps the existing MIT and GGML attribution notices.
 
@@ -13,7 +14,7 @@ Use the `nextora` executable for the native engine. The auxiliary `nextora-cli` 
 | Component | Native implementation |
 |---|---|
 | Storage | Complete standard GGUF shard sets, including metadata-only first shards; checked tensor ranges and geometry |
-| Quantization | F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS |
+| Quantization | F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q3_K, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS |
 | Qwen3.8 | Hyper-connections, gated attention, DeltaNet recurrent state, QSA pooling/selection, lazy PLE histories, routed and shared experts |
 | CPU | Direct quantized rows, existing AVX2/FMA/F16C selection where implemented, reusable per-sequence working memory |
 | Vulkan | Capability-selected adapters, packed-weight kernels, device-owned model state, reusable command resources, independent sequences |
@@ -21,7 +22,7 @@ Use the `nextora` executable for the native engine. The auxiliary `nextora-cli` 
 | Configuration UI | Embedded browser panel, startup without a model, bounded folder scan, idle-only settings/load/unload and optional saved JSON profile |
 | Admission | One to four active requests, FIFO bounded wait queue, aggregate queued-prompt token budget, disconnect cancellation and deadlines |
 | Reuse | Exact executed-token prefix retains sequence state; optional request-level cache salt isolates agent namespaces; unrelated histories reset state |
-| Numerical state | F32 KV and recurrent state; checkpoint quantization is retained |
+| Numerical state | F32 recurrent state; ordinary Qwen3 supports F32 or Q4_64 KV with GPU or RAM placement; checkpoint quantization is retained |
 
 Generation and benchmarking require an explicit policy: `--backend auto`,
 `--backend cpu`, `--backend vulkan`, or `--backend hybrid`. `--cpu` is an alias
@@ -191,6 +192,9 @@ queued or preparing, the request returns 409 and your form remains available.
 The previous model is released before a replacement loads; failures attempt
 to restore the previous configuration and model.
 
+See [native model setup](NATIVE-MODEL-SETUP.md) for the separate Prepare/Use
+workflow, memory-fit context search, RAM cache placement and benchmark scope.
+
 ### What the panel controls
 
 - **Model and execution:** folder, selected GGUF checkpoint, backend and Vulkan
@@ -226,7 +230,8 @@ path or settings there; the saved file stays unchanged until a successful
 apply. An explicit invalid `--model` supplied directly on the command line
 continues to report a startup error.
 
-Only the explicit JSON file is written. The API key is neither stored there
+Service settings are written to the selected JSON file; requested tuning also
+writes reusable reports beside it in `.nextora-tuning`. The API key is neither stored there
 nor returned in configuration responses. Without `--settings-file`, settings
 live for the current process; **Export settings** downloads a profile you can
 pass on the next launch. The UI's API-key input is held in page memory and is
@@ -298,8 +303,13 @@ loader implements that distinction directly, independently of the old runtime.
    Windows queries available physical memory. Installed RAM is not assumed free.
 3. **Read cache misses by file offset.** Linux attempts `O_DIRECT`; Windows
    attempts `FILE_FLAG_NO_BUFFERING`. Alignment scratch is bounded. Unsupported
-   or failed direct reads use an explicitly counted buffered fallback. This is
-   pageable owned memory, not Avalon's registered host arena.
+   or failed direct reads use an explicitly counted buffered fallback. The
+   aligned scratch allocation is the smaller of the requested aligned span and
+   1 MiB. `NEXTORA_EXPERT_READ_KIB=64` restores the previous 64 KiB read window
+   for controlled comparisons; `1024` selects the default 1 MiB window. Values
+   are read once per shard when the model opens, must be 4..1024 KiB in 4 KiB
+   multiples, and the effective bound is reported as `io_scratch_max_bytes`.
+   This is pageable owned memory, not a registered or pinned host arena.
 4. **Protect active expert leases.** Immutable leases keep bytes valid during
    CPU computation and GPU upload. Capacity includes pinned payloads. If no
    reclaimable slot fits, execution bypasses admission instead of allocating an

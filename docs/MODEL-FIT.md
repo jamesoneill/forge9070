@@ -42,7 +42,7 @@ The layout size estimates are **not** calibrated quality/performance predictions
 
 ## Other model architectures
 
-Nextora currently implements `qwen3`, `qwen3moe` and `qwen4exp` text paths. **Inkling 2 Mini's looped architecture is not supported**, even if its GGUF metadata is readable. Repeated layer execution requires independent loop scheduling, attention/recurrent-state correctness, expert-caching validation and CPU/Vulkan parity. Do not relabel an Inkling GGUF to bypass model compatibility checks.
+Nextora currently implements `qwen3`, `qwen3moe`, `qwen35` and `qwen4exp` text paths. **Inkling 2 Mini's looped architecture is not supported**, even if its GGUF metadata is readable. Repeated layer execution requires independent loop scheduling, attention/recurrent-state correctness, expert-caching validation and CPU/Vulkan parity. Do not relabel an Inkling GGUF to bypass model compatibility checks.
 
 ## Next implementation work
 

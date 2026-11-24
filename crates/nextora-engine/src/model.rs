@@ -15,6 +15,7 @@
 use crate::gguf::{Gguf, Tensor, Value};
 use crate::math;
 use crate::qwen38::{Qwen38, Qwen38State};
+use crate::qwen35::{Qwen35, Qwen35State};
 use anyhow::{Context, Result, bail, ensure};
 use serde::Serialize;
 use std::collections::BTreeSet;
@@ -25,6 +26,43 @@ use std::sync::Arc;
 pub trait MatvecExecutor: Send + Sync + std::fmt::Debug {
     fn matvec(&self, tensor: &Tensor<'_>, input: &[f32], output: &mut [f32]) -> Result<()>;
     fn name(&self) -> &'static str;
+
+    /// Execute every routed expert and merge in selection order. An accelerator
+    /// can batch these dependent projections without changing model semantics.
+    fn routed_moe(
+        &self,
+        experts: &[RoutedExpert<'_>],
+        input: &[f32],
+        scratch: &mut MoeScratch<'_>,
+        _admit: bool,
+    ) -> Result<()> {
+        scratch.output.fill(0.0);
+        for expert in experts {
+            self.matvec(&expert.gate, input, scratch.gate)?;
+            self.matvec(&expert.up, input, scratch.up)?;
+            math::swiglu(scratch.gate, scratch.up)?;
+            self.matvec(&expert.down, scratch.gate, scratch.expert_output)?;
+            for (sum, value) in scratch.output.iter_mut().zip(scratch.expert_output.iter()) {
+                *sum += expert.weight * value;
+            }
+        }
+        math::finite(scratch.output, "routed expert mixture")
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct RoutedExpert<'a> {
+    pub gate: Tensor<'a>,
+    pub up: Tensor<'a>,
+    pub down: Tensor<'a>,
+    pub weight: f32,
+}
+
+pub struct MoeScratch<'a> {
+    pub gate: &'a mut [f32],
+    pub up: &'a mut [f32],
+    pub expert_output: &'a mut [f32],
+    pub output: &'a mut [f32],
 }
 
 #[derive(Debug, Default)]
@@ -48,6 +86,8 @@ pub struct Config {
     pub head_dim: usize,
     pub rope_dimension_count: usize,
     pub rope_base: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rope_scaling: Option<crate::rope::YarnScaling>,
     pub rms_epsilon: f32,
     pub vocab_size: usize,
     pub context_length: usize,
@@ -58,6 +98,19 @@ pub struct Config {
     pub expert_feed_forward_length: usize,
     pub normalize_expert_weights: bool,
     pub expert_weights_scale: f32,
+}
+
+impl Config {
+    pub fn rope_frequencies(&self) -> Result<Vec<f32>> {
+        match &self.rope_scaling {
+            Some(scaling) => scaling.inverse_frequencies(self.rope_dimension_count, self.rope_base),
+            None => math::rope_inverse_frequencies(self.rope_dimension_count, self.rope_base),
+        }
+    }
+
+    pub fn rope_attention_factor(&self) -> f32 {
+        self.rope_scaling.as_ref().map_or(1.0, |scaling| scaling.attention_factor)
+    }
 }
 
 #[derive(Debug)]
@@ -95,6 +148,7 @@ pub struct Model {
     source: Arc<Gguf>,
     executor: Arc<dyn MatvecExecutor>,
     qwen38: Option<Qwen38>,
+    qwen35: Option<Qwen35>,
     config: Config,
     layers: Vec<Layer>,
     output_norm: Vec<f32>,
@@ -167,6 +221,7 @@ pub struct Sequence {
     layers: Vec<Kv>,
     scratch: Scratch,
     qwen38: Option<Qwen38State>,
+    qwen35: Option<Qwen35State>,
 }
 
 impl Sequence {
@@ -176,6 +231,7 @@ impl Sequence {
 
     pub fn reset(&mut self) {
         self.rewind(0);
+        if let Some(state) = &mut self.qwen35 { state.reset(); }
         if let Some(state) = &mut self.qwen38 {
             state.reset();
         }
@@ -183,6 +239,7 @@ impl Sequence {
 
     /// The initialized cache prefix: token-major, then KV head, then coordinate.
     pub fn kv(&self, layer: usize) -> Option<(&[f32], &[f32])> {
+        if let Some(state) = &self.qwen35 { return state.kv(layer); }
         if let Some(state) = &self.qwen38 {
             return state.kv(layer);
         }
@@ -193,6 +250,7 @@ impl Sequence {
 
     /// Recurrent convolution and matrix state, when this layer is DeltaNet.
     pub fn recurrent(&self, layer: usize) -> Option<(&[f32], &[f32])> {
+        if let Some(state) = &self.qwen35 { return state.recurrent(layer); }
         self.qwen38.as_ref()?.recurrent(layer)
     }
 
@@ -276,17 +334,51 @@ fn checked_width(a: usize, b: usize, name: &str) -> Result<usize> {
         .with_context(|| format!("{name}: geometry exceeds the CPU reference limit"))
 }
 
+// Header-only catalogues use the validated GGUF descriptors. Mapped models
+// still request the tensor view here to recheck its byte range and type.
+pub(crate) fn tensor_dimensions<'a>(g: &'a Gguf, name: &str) -> Result<&'a [u64]> {
+    if g.headers_only() {
+        Ok(&g
+            .tensors
+            .get(name)
+            .with_context(|| format!("missing tensor {name}"))?
+            .dims)
+    } else {
+        Ok(g.tensor(name)?.dimensions())
+    }
+}
+
+/// Run the catalogue and tokenizer checks on all shard headers. Weight values
+/// and device memory are checked when the downloaded checkpoint is opened.
+pub(crate) fn validate_hub_header(source: Arc<Gguf>) -> Result<(String, usize)> {
+    ensure!(
+        source.headers_only(),
+        "Hub verification expects header descriptors"
+    );
+    let model = Model::prepare(Arc::clone(&source), 1, Arc::new(CpuMatvec))?;
+    let tokenizer = crate::tokenizer::Tokenizer::from_gguf(&source)?;
+    ensure!(
+        tokenizer.vocab_size() == model.config.vocab_size,
+        "tokenizer/model vocabulary differs"
+    );
+    crate::protocol::ChatTemplate::new(&source)?;
+    Ok((
+        model.config.architecture,
+        model.config.training_context_length,
+    ))
+}
+
 fn check_shape(
     g: &Gguf,
     used: &mut BTreeSet<String>,
     name: String,
     dims: &[usize],
 ) -> Result<String> {
-    let t = g.tensor(&name)?;
+    let actual = tensor_dimensions(g, &name)?;
     ensure!(
-        t.dims.len() == dims.len() && t.dims.iter().zip(dims).all(|(a, b)| *a == *b as u64),
+        actual.len() == dims.len() && actual.iter().zip(dims).all(|(a, b)| *a == *b as u64),
         "{name}: dimensions {:?}, expected {:?}",
-        t.dims,
+        actual,
         dims
     );
     used.insert(name.clone());
@@ -295,6 +387,9 @@ fn check_shape(
 
 fn norm_vector(g: &Gguf, used: &mut BTreeSet<String>, name: String, n: usize) -> Result<Vec<f32>> {
     check_shape(g, used, name.clone(), &[n])?;
+    if g.headers_only() {
+        return Ok(Vec::new());
+    }
     let vector = g.tensor(&name)?.row(0)?;
     math::finite(&vector, &name)?;
     Ok(vector)
@@ -341,23 +436,6 @@ fn reject_unsupported_features(g: &Gguf, arch: &str) -> Result<()> {
         ensure!(
             !g.meta.contains_key(&key),
             "independent Forge CPU engine does not support {key}"
-        );
-    }
-    let scaling_key = format!("{arch}.rope.scaling.type");
-    if let Some(value) = g.meta.get(&scaling_key) {
-        ensure!(
-            value.as_str() == Some("none"),
-            "independent Forge CPU engine supports ordinary unscaled RoPE only ({scaling_key})"
-        );
-    }
-    for suffix in [
-        "rope.scaling.factor",
-        "rope.freq_scale",
-        "rope.scale_linear",
-    ] {
-        ensure!(
-            optional_float(g, &format!("{arch}.{suffix}"), 1.0)? == 1.0,
-            "independent Forge CPU engine does not support scaled RoPE ({suffix})"
         );
     }
     for suffix in [
@@ -412,17 +490,34 @@ impl Model {
         context: usize,
         executor: Arc<dyn MatvecExecutor>,
     ) -> Result<Self> {
+        ensure!(
+            !source.headers_only(),
+            "model execution requires downloaded tensor data"
+        );
+        Self::prepare(source, context, executor)
+    }
+
+    fn prepare(
+        source: Arc<Gguf>,
+        context: usize,
+        executor: Arc<dyn MatvecExecutor>,
+    ) -> Result<Self> {
         let architecture = source
             .meta
             .get("general.architecture")
             .and_then(Value::as_str)
             .context("general.architecture must be a string")?
             .to_owned();
+        if architecture == "qwen35" {
+            let qwen35 = Qwen35::prepare(Arc::clone(&source), context, Arc::clone(&executor))?;
+            return Ok(Self { config:qwen35.common_config().clone(), qwen35:Some(qwen35), qwen38:None, source, executor, layers:Vec::new(), output_norm:Vec::new(), output_tensor:String::new(), rope_inverse:Vec::new(), owner:Arc::new(()) });
+        }
         if architecture == "qwen4exp" {
-            let qwen38 = Qwen38::load(Arc::clone(&source), context, Arc::clone(&executor))?;
+            let qwen38 = Qwen38::prepare(Arc::clone(&source), context, Arc::clone(&executor))?;
             return Ok(Self {
                 config: qwen38.common_config().clone(),
                 qwen38: Some(qwen38),
+                qwen35: None,
                 source,
                 executor,
                 layers: Vec::new(),
@@ -434,7 +529,7 @@ impl Model {
         }
         ensure!(
             matches!(architecture.as_str(), "qwen3" | "qwen3moe"),
-            "independent Forge model does not support architecture {architecture:?}; supported: qwen3, qwen3moe, qwen4exp"
+            "independent Forge model does not support architecture {architecture:?}; supported: qwen3, qwen3moe, qwen35, qwen4exp"
         );
         reject_unsupported_features(&source, &architecture)?;
         let key = |suffix: &str| format!("{architecture}.{suffix}");
@@ -484,16 +579,20 @@ impl Model {
         let rms_epsilon =
             required_positive_float(&source, &key("attention.layer_norm_rms_epsilon"))?;
         let training_context_length = integer(&source, &key("context_length"))?;
+        let rope_scaling = crate::rope::from_gguf_metadata(&source.meta, &architecture, training_context_length)?;
+        if rope_scaling.is_some() {
+            ensure!(rope_base > 1.0, "YaRN RoPE base must be greater than one");
+        }
         ensure!(
             context > 0 && context <= training_context_length && context <= 1_048_576,
-            "requested context {context} must be positive, within model context {training_context_length}, and at most 1048576; RoPE extrapolation is unsupported"
+            "requested context {context} must be positive, within declared model context {training_context_length}, and at most 1048576; undeclared RoPE extrapolation is unsupported"
         );
-        let embeddings = source.tensor("token_embd.weight")?;
+        let embeddings = tensor_dimensions(&source, "token_embd.weight")?;
         ensure!(
-            embeddings.dims.len() == 2 && embeddings.dims[0] == embedding_length as u64,
+            embeddings.len() == 2 && embeddings[0] == embedding_length as u64,
             "token_embd.weight must have [embedding_length, vocabulary] dimensions"
         );
-        let vocab_size = usize::try_from(embeddings.dims[1]).context("vocabulary size overflow")?;
+        let vocab_size = usize::try_from(embeddings[1]).context("vocabulary size overflow")?;
         ensure!(
             (1..=2_000_000).contains(&vocab_size),
             "vocabulary outside CPU reference limit"
@@ -552,6 +651,7 @@ impl Model {
             head_dim,
             rope_dimension_count,
             rope_base,
+            rope_scaling,
             rms_epsilon,
             vocab_size,
             context_length: context,
@@ -563,7 +663,11 @@ impl Model {
             normalize_expert_weights,
             expert_weights_scale,
         };
-        let rope_inverse = math::rope_inverse_frequencies(rope_dimension_count, rope_base)?;
+        let rope_inverse = if source.headers_only() {
+            Vec::new()
+        } else {
+            config.rope_frequencies()?
+        };
         let mut used = BTreeSet::new();
         check_shape(
             &source,
@@ -690,6 +794,7 @@ impl Model {
             source,
             executor,
             qwen38: None,
+            qwen35: None,
             config,
             layers,
             output_norm,
@@ -725,6 +830,7 @@ impl Model {
                 .collect(),
             scratch: Scratch::new(&self.config),
             qwen38: self.qwen38.as_ref().map(Qwen38::new_state),
+            qwen35: self.qwen35.as_ref().map(Qwen35::new_state),
         }
     }
 
@@ -766,6 +872,10 @@ impl Model {
     /// restores the initialized KV prefix and position to their pre-call values.
     pub fn step_into(&self, sequence: &mut Sequence, token: u32, out: &mut Step) -> Result<()> {
         self.validate_tokens(sequence, &[token])?;
+        if let Some(model) = &self.qwen35 {
+            let state = sequence.qwen35.as_mut().context("missing Qwen3.5 state")?;
+            model.step(state, token, true, out)?; sequence.position = state.position(); return Ok(());
+        }
         if let Some(model) = &self.qwen38 {
             let state = sequence.qwen38.as_mut().context("missing Qwen3.8 state")?;
             model.step(state, token, true, true, out)?;
@@ -797,6 +907,10 @@ impl Model {
         out: &mut Step,
     ) -> Result<()> {
         self.validate_tokens(sequence, tokens)?;
+        if let Some(model) = &self.qwen35 {
+            let state = sequence.qwen35.as_mut().context("missing Qwen3.5 state")?;
+            model.prefill(state, tokens, out)?; sequence.position = state.position(); return Ok(());
+        }
         if let Some(model) = &self.qwen38 {
             let state = sequence.qwen38.as_mut().context("missing Qwen3.8 state")?;
             let checkpoint = state.checkpoint();
@@ -861,9 +975,10 @@ impl Model {
         self.source
             .tensor("token_embd.weight")?
             .read_row(token as usize, &mut s.residual)?;
-        math::rope_angles(
+        math::rope_angles_scaled(
             sequence.position,
             &self.rope_inverse,
+            c.rope_attention_factor(),
             &mut s.rope_cos,
             &mut s.rope_sin,
         )?;
@@ -945,40 +1060,24 @@ impl Model {
                         &mut s.router_probabilities,
                     )?;
 
-                    s.projected.fill(0.0);
+                    // Retain every host lease through the batched upload/submission.
+                    let mut leases = Vec::with_capacity(s.selected.len());
                     for &(expert, weight) in &s.selected {
-                        let gate_lease = if admit_experts {
-                            self.source.expert_cached(gate, expert)?
-                        } else {
-                            self.source.expert_cached_for_prefill(gate, expert)?
+                        let lease = |name: &str| {
+                            if admit_experts { self.source.expert_cached(name, expert) }
+                            else { self.source.expert_cached_for_prefill(name, expert) }
                         };
-                        self.executor
-                            .matvec(&gate_lease.tensor(), &s.normalized, &mut s.gate)?;
-                        drop(gate_lease);
-                        let up_lease = if admit_experts {
-                            self.source.expert_cached(up, expert)?
-                        } else {
-                            self.source.expert_cached_for_prefill(up, expert)?
-                        };
-                        self.executor
-                            .matvec(&up_lease.tensor(), &s.normalized, &mut s.up)?;
-                        drop(up_lease);
-                        math::swiglu(&mut s.gate, &s.up)?;
-                        let down_lease = if admit_experts {
-                            self.source.expert_cached(down, expert)?
-                        } else {
-                            self.source.expert_cached_for_prefill(down, expert)?
-                        };
-                        self.executor.matvec(
-                            &down_lease.tensor(),
-                            &s.gate,
-                            &mut s.expert_output,
-                        )?;
-                        drop(down_lease);
-                        for (sum, contribution) in s.projected.iter_mut().zip(&s.expert_output) {
-                            *sum += weight * contribution;
-                        }
+                        leases.push((lease(gate)?, lease(up)?, lease(down)?, weight));
                     }
+                    let experts: Vec<_> = leases.iter().map(|(gate, up, down, weight)| RoutedExpert {
+                        gate: gate.tensor(), up: up.tensor(), down: down.tensor(), weight: *weight,
+                    }).collect();
+                    self.executor.routed_moe(&experts, &s.normalized, &mut MoeScratch {
+                        gate: &mut s.gate,
+                        up: &mut s.up,
+                        expert_output: &mut s.expert_output,
+                        output: &mut s.projected,
+                    }, admit_experts)?;
                 }
             }
             math::residual_add(&mut s.residual, &s.projected)?;
@@ -1005,6 +1104,155 @@ mod tests {
                 .join(name),
         )
         .unwrap()
+    }
+
+    fn remote_fixture(name: &str) -> Gguf {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures")
+            .join(name);
+        let data = std::fs::read(&path).unwrap();
+        let end = Gguf::open(path).unwrap().data_offset;
+        let header =
+            crate::gguf::RemoteHeader::parse(name, &data[..end], data.len() as u64).unwrap();
+        Gguf::from_remote_headers(vec![header]).unwrap()
+    }
+
+    fn yarn_metadata(g: &mut Gguf, architecture: &str, original: u32, maximum: u32) {
+        for (suffix, value) in [
+            ("context_length", Value::U32(maximum)),
+            ("rope.scaling.type", Value::String("yarn".into())),
+            ("rope.scaling.factor", Value::F32(4.0)),
+            ("rope.scaling.original_context_length", Value::U32(original)),
+        ] {
+            g.meta.insert(format!("{architecture}.{suffix}"), value);
+        }
+    }
+
+    #[test]
+    #[ignore = "explicit cached public GGUF header validation; no model weights or GPU"]
+    fn cached_real_coder_yarn_header_passes_native_hub_validation() {
+        let manifest = std::env::var("NEXTORA_HEADER_MANIFEST").expect("NEXTORA_HEADER_MANIFEST must identify a cached bounded header");
+        let manifest: serde_json::Value = serde_json::from_slice(&std::fs::read(manifest).unwrap()).unwrap();
+        let bytes = std::fs::read(manifest["header_path"].as_str().unwrap()).unwrap();
+        let header = crate::gguf::RemoteHeader::parse(manifest["filename"].as_str().unwrap(), &bytes, manifest["file_bytes"].as_u64().unwrap()).unwrap();
+        let source = Arc::new(Gguf::from_remote_headers(vec![header]).unwrap());
+        assert_eq!(validate_hub_header(Arc::clone(&source)).unwrap(), ("qwen3moe".into(), 1048576));
+        let model = Model::prepare(source, 524288, Arc::new(CpuMatvec)).unwrap();
+        assert_eq!(model.config.rope_dimension_count, 128);
+        assert_eq!(model.config.rope_scaling.as_ref().unwrap().factor, 4.0);
+        assert_eq!(model.config.rope_scaling.as_ref().unwrap().original_context_length, 262144);
+        assert!(model.rope_inverse.is_empty());
+        println!("{}", serde_json::to_string(&model.config).unwrap());
+    }
+
+    #[test]
+    fn yarn_header_discovery_retains_declared_limit_without_reading_weights() {
+        let mut header = remote_fixture("tiny-qwen3moe.gguf");
+        yarn_metadata(&mut header, "qwen3moe", 262144, 1048576);
+        let header = Arc::new(header);
+        assert_eq!(validate_hub_header(Arc::clone(&header)).unwrap(), ("qwen3moe".into(), 1048576));
+        let checked = Model::prepare(Arc::clone(&header), 524288, Arc::new(CpuMatvec)).unwrap();
+        assert_eq!(checked.config.context_length, 524288);
+        assert_eq!(checked.config.training_context_length, 1048576);
+        let scaling = checked.config.rope_scaling.as_ref().unwrap();
+        assert_eq!(scaling.original_context_length, 262144);
+        assert_eq!(scaling.factor, 4.0);
+        let report = serde_json::to_value(&checked.config).unwrap();
+        assert_eq!(report["rope_scaling"]["original_context_length"], 262144);
+        assert_eq!(report["rope_scaling"]["factor"], 4.0);
+        assert!(checked.rope_inverse.is_empty());
+        assert!(Model::prepare(header, 1048577, Arc::new(CpuMatvec)).unwrap_err().to_string().contains("declared model context"));
+        let mut invalid = remote_fixture("tiny-qwen3moe.gguf");
+        yarn_metadata(&mut invalid, "qwen3moe", 262144, 1048576);
+        invalid.meta.insert("qwen3moe.rope.scaling.yarn_ext_factor".into(), Value::F32(1.0));
+        assert!(validate_hub_header(Arc::new(invalid)).unwrap_err().to_string().contains("yarn_ext_factor"));
+        // An ordinary checkpoint's declared limit still applies unchanged.
+        let ordinary = Arc::new(remote_fixture("tiny-qwen3moe.gguf"));
+        let maximum = integer(&ordinary, "qwen3moe.context_length").unwrap();
+        assert!(Model::prepare(ordinary, maximum + 1, Arc::new(CpuMatvec)).is_err());
+    }
+
+    #[test]
+    fn cpu_yarn_scales_keys_once_and_preserves_values_at_position_zero() {
+        for moe in [false, true] {
+            let ordinary = Model::load(Arc::new(source(moe)), 16).unwrap();
+            assert!(ordinary.config.rope_scaling.is_none());
+            assert_eq!(ordinary.config.rope_attention_factor(), 1.0);
+            assert_eq!(ordinary.config.rope_frequencies().unwrap(), math::rope_inverse_frequencies(ordinary.config.rope_dimension_count, ordinary.config.rope_base).unwrap());
+            let mut scaled = source(moe);
+            yarn_metadata(&mut scaled, if moe { "qwen3moe" } else { "qwen3" }, 4, 16);
+            let scaled = Model::load(Arc::new(scaled), 16).unwrap();
+            let mut unscaled_state = ordinary.new_sequence();
+            let mut scaled_state = scaled.new_sequence();
+            ordinary.step(&mut unscaled_state, 3).unwrap();
+            scaled.step(&mut scaled_state, 3).unwrap();
+            let (unscaled_keys, unscaled_values) = unscaled_state.kv(0).unwrap();
+            let (scaled_keys, scaled_values) = scaled_state.kv(0).unwrap();
+            let magnitude = scaled.config.rope_attention_factor();
+            assert!(unscaled_keys.iter().any(|value| value.abs() > 1e-3));
+            for (unscaled, scaled) in unscaled_keys.iter().zip(scaled_keys) {
+                assert!((scaled - unscaled * magnitude).abs() < 2e-6, "YaRN key magnitude applied incorrectly");
+            }
+            assert_eq!(unscaled_values, scaled_values);
+        }
+    }
+
+    #[test]
+    fn hub_headers_validate_supported_layouts_without_weights() {
+        for (name, architecture) in [
+            ("tiny-qwen3moe.gguf", "qwen3moe"),
+            ("tiny-qwen38.gguf", "qwen4exp"),
+            ("tiny-qwen35-mtp.gguf", "qwen35"),
+        ] {
+            let header = Arc::new(remote_fixture(name));
+            let training = integer(&header, &format!("{architecture}.context_length")).unwrap();
+            assert_eq!(
+                validate_hub_header(Arc::clone(&header)).unwrap(),
+                (architecture.to_owned(), training)
+            );
+            assert!(
+                Model::load(header, 1)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("downloaded tensor data")
+            );
+        }
+        assert_eq!(validate_hub_header(Arc::new(remote_fixture("tiny-qwen3.gguf"))).unwrap().0, "qwen3");
+    }
+
+    #[test]
+    fn hub_headers_reject_tensor_geometry_and_tokenizer_mismatches() {
+        let mut ordinary = remote_fixture("tiny-qwen3moe.gguf");
+        ordinary
+            .tensors
+            .get_mut("blk.0.attn_q.weight")
+            .unwrap()
+            .dims[0] += 1;
+        assert!(
+            validate_hub_header(Arc::new(ordinary))
+                .unwrap_err()
+                .to_string()
+                .contains("blk.0.attn_q.weight")
+        );
+        let mut extended = remote_fixture("tiny-qwen38.gguf");
+        extended.tensors.remove("output_hc_up.weight");
+        assert!(
+            validate_hub_header(Arc::new(extended))
+                .unwrap_err()
+                .to_string()
+                .contains("output_hc_up.weight")
+        );
+        let mut tokenizer = remote_fixture("tiny-qwen3moe.gguf");
+        tokenizer.meta.insert(
+            "tokenizer.ggml.pre".into(),
+            Value::String("unsupported".into()),
+        );
+        assert!(
+            validate_hub_header(Arc::new(tokenizer))
+                .unwrap_err()
+                .to_string()
+                .contains("pre-tokenizer")
+        );
     }
 
     fn loaded(moe: bool, context: usize) -> Model {
@@ -1102,7 +1350,7 @@ mod tests {
             Model::load(Arc::new(g), 16)
                 .unwrap_err()
                 .to_string()
-                .contains("unscaled RoPE")
+                .contains("rope.scaling.factor")
         );
         let mut g = source(false);
         g.meta
