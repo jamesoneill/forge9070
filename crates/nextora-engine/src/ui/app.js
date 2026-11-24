@@ -420,6 +420,14 @@
     $('insight-sample-note').textContent = samples.length
       ? (m.completed_requests || 0) + ' successful requests · ' + (m.interrupted_or_failed_requests || 0) + ' interrupted/failed · last ' + samples.length + ' shown · ' + (result.admission?.queued || 0) + ' waiting'
       : 'No successful completed requests. Rates only appear after real inference.';
+    const cacheHits = memory.host_expert_cache_hits_cumulative;
+    const cacheMisses = memory.host_expert_cache_misses_cumulative;
+    const cacheEvictions = memory.host_expert_cache_evictions_cumulative;
+    const cacheBytes = memory.host_expert_payload_read_bytes_cumulative;
+    $('insight-expert-cache').textContent = cacheHits === null || cacheHits === undefined
+      ? 'Expert-cache counters are unavailable until a compatible model is loaded.'
+      : 'Expert cache since load: ' + cacheHits + ' hits · ' + (cacheMisses ?? 0) +
+        ' misses · ' + (cacheEvictions ?? 0) + ' evictions · ' + bytes(cacheBytes) + ' read';
     const rec = $('insight-recommendations');
     rec.replaceChildren();
     const recommendations = Array.isArray(result.recommendations) ? result.recommendations : [];

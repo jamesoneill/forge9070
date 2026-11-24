@@ -275,6 +275,47 @@ impl Gguf {
         &self.paths
     }
 
+    /// Return the original, byte-for-byte GGUF metadata section, changing only
+    /// the optional general.file_type scalar when requested. This retains the
+    /// original element types of empty and nested arrays; a Value round-trip
+    /// could not reproduce those types safely. Only used by the offline
+    /// single-file quantizer, never by the inference loader.
+    pub(crate) fn preserved_metadata(&self, new_file_type: Option<u32>) -> Result<(u64, Vec<u8>)> {
+        ensure!(self.paths.len() == 1, "metadata copying requires a single-shard GGUF");
+        let bytes = &self.mappings[0];
+        let mut reader = Reader { bytes, cursor: 0, allocated: 0 };
+        ensure!(reader.take(4)? == b"GGUF", "invalid original GGUF header");
+        ensure!(reader.u32()? == self.version, "metadata source version changed");
+        let count = reader.u64()?;
+        ensure!(count == self.tensors.len() as u64, "metadata source tensor count changed");
+        let entries = reader.u64()?;
+        ensure!(entries == self.meta.len() as u64, "metadata source entry count changed");
+        let mut patch: Option<(usize, u32)> = None;
+        for _ in 0..entries {
+            let key = reader.string(65_535)?;
+            let ty = reader.u32()?;
+            let position = reader.cursor;
+            reader.value(ty, 0)?;
+            if key == "general.file_type" {
+                // GGUF file_type is a uint32 scalar, not the per-tensor type
+                // tag. An unknown width is left unchanged rather than
+                // rewriting metadata with a guessed representation.
+                if ty == 4 && new_file_type.is_some() {
+                    patch = Some((position, new_file_type.unwrap()));
+                }
+            }
+        }
+        let mut blob = bytes.get(24..reader.cursor).context("GGUF metadata extends beyond source")?.to_vec();
+        if let Some((absolute, value)) = patch {
+            let offset = absolute.checked_sub(24).context("invalid metadata patch position")?;
+            blob.get_mut(offset..offset + 4)
+                .context("general.file_type patch extends beyond metadata")?
+                .copy_from_slice(&value.to_le_bytes());
+        }
+        Ok((entries, blob))
+    }
+
+
     pub fn expert_cache_stats(&self) -> Result<ExpertCacheStats> {
         self.cache.stats()
     }

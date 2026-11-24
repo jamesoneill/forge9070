@@ -47,6 +47,8 @@ jobs:
           python scripts/validate-native-api.py --help
           python scripts/validate-native-ui.py --help
           python scripts/validate-native-gpu-api.py --help
+          python scripts/benchmark-concurrency.py --help
+          python scripts/test-benchmark-concurrency.py
       - name: Check release gates and portable archive integrity
         run: python .github/scripts/test-release.py
       - name: Install shader validation tools

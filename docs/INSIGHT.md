@@ -97,3 +97,7 @@ Insight rejects differences in recorded request count, prompt-token count, decod
 ## Future hardware upgrade simulator
 
 A purchase calculator requires verified measurements from both candidate and current hardware, applicable compatibility checks, actual component pricing, power/cooling constraints, and common workload/model fingerprints. No live hardware prices or hypothetical performance predictions are implemented in this release. The upgrade recommendation remains **insufficient evidence for purchase** until those data exist.
+
+## Host expert cache observations
+
+The live endpoint now includes cumulative host expert-cache hits, misses, evictions, mapped bypasses, prefill hits/misses, direct/buffered reads, read errors and encoded payload bytes read. The console shows selected counters. These come from the engine's existing bounded expert-cache statistics; counters reset on model replacement and are not normalised by request. A high miss count is a profiling prompt, **not** evidence that a more expensive GPU or RAM kit will improve performance. Expert read errors are diagnostic. This release does not time transfers, profile PCIe utilisation, measure GPU compute occupancy, or tune expert placement automatically.
