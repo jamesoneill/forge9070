@@ -6,7 +6,7 @@
 //! The public format IDs, IEEE encodings and Q4_0/Q8_0 block layouts are used
 //! here. This module contains no RustingStrata code or execution dependency.
 
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{bail, ensure, Context, Result};
 use half::f16;
 use serde::Serialize;
 
@@ -22,6 +22,7 @@ pub enum QuantType {
     Q4_0,
     Q8_0,
     Q2_0,
+    Q3_K,
     Q4_K,
     Q5_K,
     Q6_K,
@@ -43,6 +44,7 @@ impl TryFrom<u32> for QuantType {
             8 => Self::Q8_0,
             30 => Self::BF16,
             42 => Self::Q2_0,
+            11 => Self::Q3_K,
             12 => Self::Q4_K,
             13 => Self::Q5_K,
             14 => Self::Q6_K,
@@ -52,7 +54,7 @@ impl TryFrom<u32> for QuantType {
             20 => Self::IQ4_NL,
             23 => Self::IQ4_XS,
             other => bail!(
-                "GGML tensor type {other} is unsupported by the independent Forge engine; supported: F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS"
+                "GGML tensor type {other} is unsupported by the independent Forge engine; supported: F32, F16, BF16, Q4_0, Q8_0, Q2_0, Q3_K, Q4_K, Q5_K, Q6_K, IQ2_S, IQ3_XXS, IQ3_S, IQ4_NL, IQ4_XS"
             ),
         })
     }
@@ -67,6 +69,7 @@ impl QuantType {
             Self::Q8_0 => 8,
             Self::BF16 => 30,
             Self::Q2_0 => 42,
+            Self::Q3_K => 11,
             Self::Q4_K => 12,
             Self::Q5_K => 13,
             Self::Q6_K => 14,
@@ -86,6 +89,7 @@ impl QuantType {
             Self::Q4_0 => "Q4_0",
             Self::Q8_0 => "Q8_0",
             Self::Q2_0 => "Q2_0",
+            Self::Q3_K => "Q3_K",
             Self::Q4_K => "Q4_K",
             Self::Q5_K => "Q5_K",
             Self::Q6_K => "Q6_K",
@@ -101,7 +105,8 @@ impl QuantType {
         match self {
             Self::Q4_0 | Self::Q8_0 | Self::IQ4_NL => 32,
             Self::Q2_0 => 64,
-            Self::Q4_K
+            Self::Q3_K
+            | Self::Q4_K
             | Self::Q5_K
             | Self::Q6_K
             | Self::IQ2_S
@@ -119,6 +124,7 @@ impl QuantType {
             Self::Q4_0 => 18,
             Self::Q8_0 => 34,
             Self::Q2_0 | Self::IQ4_NL => 18,
+            Self::Q3_K => 110,
             Self::Q4_K => 144,
             Self::Q5_K => 176,
             Self::Q6_K => 210,
@@ -231,6 +237,16 @@ pub fn dot_scalar(ty: QuantType, bytes: &[u8], input: &[f32]) -> Result<f32> {
 /// remain scalar; vector F16 conversion additionally requires F16C.
 pub fn dot_kernel(ty: QuantType, width: usize) -> &'static str {
     #[cfg(target_arch = "x86_64")]
+    if width >= 256
+        && matches!(ty, QuantType::Q4_K | QuantType::Q6_K)
+        && std::arch::is_x86_feature_detected!("avx512f")
+        && std::arch::is_x86_feature_detected!("avx512bw")
+        && std::arch::is_x86_feature_detected!("avx512dq")
+        && std::arch::is_x86_feature_detected!("fma")
+    {
+        return "avx512f_bw_dq_fma_k_quant";
+    }
+    #[cfg(target_arch = "x86_64")]
     if width >= 128
         && std::arch::is_x86_feature_detected!("avx2")
         && std::arch::is_x86_feature_detected!("fma")
@@ -264,7 +280,9 @@ pub(crate) fn dot_finite_input(ty: QuantType, bytes: &[u8], input: &[f32]) -> Re
             // function, including F16C for half conversion. Exact byte length
             // and block geometry were checked above; loads stay within slices.
             let value = unsafe {
-                if kernel == "avx2_fma_f16c" {
+                if kernel == "avx512f_bw_dq_fma_k_quant" {
+                    dot_k_avx512(ty, bytes, input)
+                } else if kernel == "avx2_fma_f16c" {
                     dot_f16_avx2_fma_f16c(bytes, input)
                 } else {
                     dot_avx2_fma(ty, bytes, input)
@@ -279,6 +297,152 @@ pub(crate) fn dot_finite_input(ty: QuantType, bytes: &[u8], input: &[f32]) -> Re
         }
     }
     dot_scalar_finite(ty, bytes, input)
+}
+
+/// The previous checked AVX2 path, retained for paired CPU-kernel measurements.
+/// Unsupported hosts use the same portable scalar reference.
+pub(crate) fn dot_avx2_baseline(ty: QuantType, bytes: &[u8], input: &[f32]) -> Result<f32> {
+    ensure!(
+        input.iter().all(|v| v.is_finite()),
+        "non-finite matvec input"
+    );
+    ensure!(
+        bytes.len() == ty.row_bytes(input.len())?,
+        "dot-product row byte length mismatch"
+    );
+    #[cfg(target_arch = "x86_64")]
+    if input.len() >= 128
+        && std::arch::is_x86_feature_detected!("avx2")
+        && std::arch::is_x86_feature_detected!("fma")
+        && (ty != QuantType::F16 || std::arch::is_x86_feature_detected!("f16c"))
+    {
+        // SAFETY: all features, exact row size and block geometry are checked.
+        let value = unsafe {
+            if ty == QuantType::F16 {
+                dot_f16_avx2_fma_f16c(bytes, input)
+            } else {
+                dot_avx2_fma(ty, bytes, input)
+            }
+        };
+        ensure!(
+            value.is_finite(),
+            "non-finite {} dot-product result",
+            ty.name()
+        );
+        return Ok(value);
+    }
+    dot_scalar_finite(ty, bytes, input)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f,avx512bw,avx512dq,fma")]
+unsafe fn dot_k_avx512(ty: QuantType, bytes: &[u8], input: &[f32]) -> f32 {
+    use std::arch::x86_64::*;
+    // SAFETY: callers check all ISA features and complete 256-value blocks.
+    // Each unaligned integer load reads exactly sixteen bytes from that block;
+    // each activation load reads sixteen values from its corresponding group.
+    unsafe {
+        let mut first = _mm512_setzero_ps();
+        let mut second = _mm512_setzero_ps();
+        let nibble = _mm_set1_epi8(15);
+        match ty {
+            QuantType::Q4_K => {
+                for (block, values) in bytes.chunks_exact(144).zip(input.chunks_exact(256)) {
+                    let d = little_half(block);
+                    let minimum = little_half(&block[2..]);
+                    let scales = &block[4..16];
+                    for group in 0..8 {
+                        let (scale, min) = if group < 4 {
+                            (scales[group] & 63, scales[group + 4] & 63)
+                        } else {
+                            (
+                                (scales[group + 4] & 15) | ((scales[group - 4] >> 6) << 4),
+                                (scales[group + 4] >> 4) | ((scales[group] >> 6) << 4),
+                            )
+                        };
+                        let scale = _mm512_set1_ps(d * f32::from(scale));
+                        let min = _mm512_set1_ps(minimum * f32::from(min));
+                        let packed = block.as_ptr().add(16 + (group / 2) * 32);
+                        for half in 0..2 {
+                            let bits = _mm_loadu_si128(packed.add(half * 16).cast());
+                            let bits = if group % 2 == 0 {
+                                bits
+                            } else {
+                                _mm_srli_epi16::<4>(bits)
+                            };
+                            let codes = _mm512_cvtepu8_epi32(_mm_and_si128(bits, nibble));
+                            // Keep format reconstruction separate from the FMA;
+                            // scale*code-min uses the scalar decoder's rounding.
+                            let weights =
+                                _mm512_sub_ps(_mm512_mul_ps(scale, _mm512_cvtepi32_ps(codes)), min);
+                            let x = _mm512_loadu_ps(values.as_ptr().add(group * 32 + half * 16));
+                            if half == 0 {
+                                first = _mm512_fmadd_ps(weights, x, first);
+                            } else {
+                                second = _mm512_fmadd_ps(weights, x, second);
+                            }
+                        }
+                    }
+                }
+            }
+            QuantType::Q6_K => {
+                let two_bits = _mm_set1_epi8(3);
+                for (block, values) in bytes.chunks_exact(210).zip(input.chunks_exact(256)) {
+                    let d = little_half(&block[208..]);
+                    for half in 0..2 {
+                        for quadrant in 0..4 {
+                            for part in 0..2 {
+                                let lane = part * 16;
+                                let lower = _mm_loadu_si128(
+                                    block
+                                        .as_ptr()
+                                        .add(half * 64 + (quadrant % 2) * 32 + lane)
+                                        .cast(),
+                                );
+                                let lower = if quadrant < 2 {
+                                    lower
+                                } else {
+                                    _mm_srli_epi16::<4>(lower)
+                                };
+                                let higher = _mm_loadu_si128(
+                                    block.as_ptr().add(128 + half * 32 + lane).cast(),
+                                );
+                                let higher = match quadrant {
+                                    0 => higher,
+                                    1 => _mm_srli_epi16::<2>(higher),
+                                    2 => _mm_srli_epi16::<4>(higher),
+                                    _ => _mm_srli_epi16::<6>(higher),
+                                };
+                                let codes = _mm_or_si128(
+                                    _mm_and_si128(lower, nibble),
+                                    _mm_slli_epi16::<4>(_mm_and_si128(higher, two_bits)),
+                                );
+                                let codes = _mm512_sub_epi32(
+                                    _mm512_cvtepu8_epi32(codes),
+                                    _mm512_set1_epi32(32),
+                                );
+                                let scale = d * f32::from(
+                                    block[192 + half * 8 + quadrant * 2 + part] as i8,
+                                );
+                                let weights =
+                                    _mm512_mul_ps(_mm512_set1_ps(scale), _mm512_cvtepi32_ps(codes));
+                                let x = _mm512_loadu_ps(
+                                    values.as_ptr().add(half * 128 + quadrant * 32 + lane),
+                                );
+                                if part == 0 {
+                                    first = _mm512_fmadd_ps(weights, x, first);
+                                } else {
+                                    second = _mm512_fmadd_ps(weights, x, second);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            _ => unreachable!("AVX512 K-quant dispatch only accepts Q4_K/Q6_K"),
+        }
+        _mm512_reduce_add_ps(_mm512_add_ps(first, second))
+    }
 }
 
 fn dot_scalar_finite(ty: QuantType, bytes: &[u8], input: &[f32]) -> Result<f32> {
@@ -494,6 +658,20 @@ fn decode_extended_block(ty: QuantType, b: &[u8], out: &mut [f32]) {
                 *value = d * KVALUES_IQ4NL[code as usize] as f32;
             }
         }
+        QuantType::Q3_K => {
+            let d = little_half(&b[108..]);
+            for (i, value) in out.iter_mut().enumerate() {
+                let group = i / 16;
+                let low = (b[96 + group % 8] >> (4 * (group / 8))) & 15;
+                let high = (b[104 + group % 4] >> (2 * (group / 4))) & 3;
+                let scale = (low | (high << 4)) as i32 - 32;
+                let packed = b[32 + (i / 128) * 32 + i % 32];
+                let lower = (packed >> (2 * ((i % 128) / 32))) & 3;
+                let negative = (b[i % 32] >> (i / 32)) & 1 == 0;
+                let code = lower as i32 - if negative { 4 } else { 0 };
+                *value = (d * scale as f32) * code as f32;
+            }
+        }
         QuantType::Q4_K | QuantType::Q5_K => {
             let d = little_half(b);
             let minimum = little_half(&b[2..]);
@@ -609,6 +787,44 @@ fn decode_extended_block(ty: QuantType, b: &[u8], out: &mut [f32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn q3_k_signed_subscales_and_all_high_mask_planes_decode_and_dot() {
+        let scales = [
+            -32i32, -31, -17, -16, -1, 0, 1, 15, 16, 17, 23, 24, 28, 29, 30, 31,
+        ];
+        let mut block = [0u8; 110];
+        block[108..].copy_from_slice(&half::f16::from_f32(-0.125).to_bits().to_le_bytes());
+        for (group, &scale) in scales.iter().enumerate() {
+            let code = (scale + 32) as u8;
+            block[96 + group % 8] |= (code & 15) << (4 * (group / 8));
+            block[104 + group % 4] |= (code >> 4) << (2 * (group / 4));
+        }
+        let mut expected = [0.0f32; 256];
+        for (i, out) in expected.iter_mut().enumerate() {
+            let q = ((i * 5 + i / 7) % 8) as i32 - 4;
+            let stored = (q & 3) as u8;
+            block[32 + (i / 128) * 32 + i % 32] |= stored << (2 * ((i % 128) / 32));
+            if q >= 0 {
+                block[i % 32] |= 1 << (i / 32);
+            }
+            *out = -0.125 * scales[i / 16] as f32 * q as f32;
+        }
+        let mut decoded = [0.0; 256];
+        decode_row(QuantType::Q3_K, &block, &mut decoded).unwrap();
+        assert_eq!(decoded, expected);
+        let input: Vec<f32> = (0..256).map(|i| (i % 19) as f32 - 9.0).collect();
+        let expected: f32 = input.iter().zip(expected).map(|(x, w)| x * w).sum();
+        assert_eq!(
+            dot_scalar(QuantType::Q3_K, &block, &input).unwrap(),
+            expected
+        );
+        assert!((dot(QuantType::Q3_K, &block, &input).unwrap() - expected).abs() < 1e-4);
+        assert_eq!(QuantType::try_from(11).unwrap(), QuantType::Q3_K);
+        assert_eq!(QuantType::Q3_K.row_bytes(512).unwrap(), 220);
+        assert!(QuantType::Q3_K.row_bytes(640).is_err());
+        assert!(decode_row(QuantType::Q3_K, &block[..109], &mut decoded).is_err());
+    }
 
     #[test]
     fn q4_known_nibbles_keep_two_halves_and_negative_scale() {
@@ -766,6 +982,156 @@ mod tests {
                 bad[start..start + 2].copy_from_slice(&poison.to_bits().to_le_bytes());
                 assert!(dot(QuantType::F16, &bad[1..], &vec![0.0; width]).is_err());
                 assert!(dot_scalar(QuantType::F16, &bad[1..], &vec![0.0; width]).is_err());
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod avx512_k_tests {
+    use super::*;
+
+    fn encoded(ty: QuantType, width: usize, seed: usize, d: f16, min: f16) -> Vec<u8> {
+        let mut bytes = vec![0x79]; // Exercise unaligned source rows.
+        for block in 0..width / 256 {
+            let start = bytes.len();
+            bytes.extend(
+                (0..ty.block_bytes()).map(|i| (seed * 79 + block * 131 + i * 37 + i / 3) as u8),
+            );
+            if ty == QuantType::Q4_K {
+                bytes[start..start + 2].copy_from_slice(&d.to_le_bytes());
+                bytes[start + 2..start + 4].copy_from_slice(&min.to_le_bytes());
+            } else {
+                bytes[start + 208..start + 210].copy_from_slice(&d.to_le_bytes());
+            }
+        }
+        bytes
+    }
+
+    #[test]
+    fn q4_q6_full_rows_match_scalar_with_signed_extreme_scales_and_unaligned_loads() {
+        for ty in [QuantType::Q4_K, QuantType::Q6_K] {
+            for width in [256, 512, 2048, 5120] {
+                for seed in 0..12 {
+                    for (d, min) in [
+                        (0.0, 0.0),
+                        (-0.0, -0.0),
+                        (0.00390625, 0.015625),
+                        (-0.125, -0.03125),
+                        (65504.0, -65504.0),
+                        (f32::from_bits(0x33800000), 0.0),
+                    ] {
+                        let bytes = encoded(ty, width, seed, f16::from_f32(d), f16::from_f32(min));
+                        let input: Vec<f32> = (0..width)
+                            .map(|i| ((i * 73 + seed * 23) % 257) as f32 / 127.0 - 1.0)
+                            .collect();
+                        let scalar = dot_scalar(ty, &bytes[1..], &input).unwrap();
+                        let actual = dot(ty, &bytes[1..], &input).unwrap();
+                        let previous = dot_avx2_baseline(ty, &bytes[1..], &input).unwrap();
+                        let mut decoded = vec![0.0; width];
+                        decode_row(ty, &bytes[1..], &mut decoded).unwrap();
+                        let absolute_sum: f64 = decoded
+                            .iter()
+                            .zip(&input)
+                            .map(|(w, x)| (f64::from(*w) * f64::from(*x)).abs())
+                            .sum();
+                        // Bound error against the absolute product sum, including
+                        // cancellations, rather than hiding them behind a ratio.
+                        let bound = (absolute_sum * 3e-6).max(2e-6);
+                        assert!(
+                            f64::from((actual - scalar).abs()) <= bound,
+                            "{ty:?}/{width}/{seed}: {actual} vs {scalar}, bound {bound}"
+                        );
+                        assert!(
+                            f64::from((previous - scalar).abs()) <= bound,
+                            "previous {ty:?}/{width}/{seed}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn q4_k_all_group_scale_bits_and_nibbles_have_independent_expected_values() {
+        let mut block = vec![255u8; 144];
+        block[..2].copy_from_slice(&f16::from_f32(0.125).to_le_bytes());
+        block[2..4].copy_from_slice(&f16::from_f32(0.25).to_le_bytes());
+        block[16..].fill(0xf0);
+        // Every packed group reconstructs scale=63,min=63. Alternating
+        // 32-value groups carry code0/code15 independently of SIMD unpacking.
+        for group in 0..8 {
+            let mut input = vec![0.0; 256];
+            input[group * 32..(group + 1) * 32].fill(1.0);
+            let code = if group % 2 == 0 { 0.0 } else { 15.0 };
+            let expected = (0.125 * 63.0 * code - 0.25 * 63.0) * 32.0;
+            assert_eq!(dot(QuantType::Q4_K, &block, &input).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn q6_k_signed_scale_extremes_and_high_planes_have_independent_expected_values() {
+        let mut block = vec![0u8; 210];
+        block[208..].copy_from_slice(&f16::from_f32(0.25).to_le_bytes());
+        block[..128].fill(0xf0);
+        block[128..192].fill(0xe4); // high planes0,1,2,3 in quadrant order.
+        for (i, s) in block[192..208].iter_mut().enumerate() {
+            *s = if i % 2 == 0 { 128 } else { 127 };
+        }
+        for group in 0..16 {
+            let quadrant = (group % 8) / 2;
+            let low = if quadrant < 2 { 0 } else { 15 };
+            let signed_code = low + (quadrant as i32) * 16 - 32;
+            let scale = if group % 2 == 0 { -128 } else { 127 };
+            let mut input = vec![0.0; 256];
+            input[group * 16..group * 16 + 16].fill(1.0);
+            let expected = 0.25 * (scale as f32) * (signed_code as f32) * 16.0;
+            assert_eq!(
+                dot(QuantType::Q6_K, &block, &input).unwrap(),
+                expected,
+                "group {group}"
+            );
+        }
+    }
+
+    #[test]
+    fn k_quant_dispatch_rejects_malformed_rows_and_nonfinite_metadata_or_input() {
+        for ty in [QuantType::Q4_K, QuantType::Q6_K] {
+            let bytes = encoded(ty, 512, 7, f16::from_f32(0.125), f16::from_f32(0.25));
+            let input = vec![0.0; 512];
+            assert!(dot(ty, &bytes[2..], &input).is_err());
+            assert!(dot(ty, &bytes[1..bytes.len() - 1], &input).is_err());
+            for invalid_width in [0, 1, 128, 255, 257, 511, 513] {
+                assert!(dot(ty, &bytes[1..], &vec![0.0; invalid_width]).is_err());
+            }
+            for poison in [f16::NAN, f16::INFINITY, f16::NEG_INFINITY] {
+                let offsets = if ty == QuantType::Q4_K {
+                    vec![0, 2, 144, 146]
+                } else {
+                    vec![208, 418]
+                };
+                for offset in offsets {
+                    let mut invalid = bytes.clone();
+                    invalid[1 + offset..3 + offset].copy_from_slice(&poison.to_le_bytes());
+                    assert!(dot(ty, &invalid[1..], &input).is_err());
+                    assert!(dot_scalar(ty, &invalid[1..], &input).is_err());
+                }
+            }
+            for poison in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+                let mut invalid = input.clone();
+                invalid[511] = poison;
+                assert!(dot(ty, &bytes[1..], &invalid).is_err());
+            }
+            let overflow = vec![f32::MAX; 512];
+            assert!(dot(ty, &bytes[1..], &overflow).is_err());
+            assert!(dot_scalar(ty, &bytes[1..], &overflow).is_err());
+            #[cfg(target_arch = "x86_64")]
+            if std::arch::is_x86_feature_detected!("avx512f")
+                && std::arch::is_x86_feature_detected!("avx512bw")
+                && std::arch::is_x86_feature_detected!("avx512dq")
+                && std::arch::is_x86_feature_detected!("fma")
+            {
+                assert_eq!(dot_kernel(ty, 512), "avx512f_bw_dq_fma_k_quant");
             }
         }
     }

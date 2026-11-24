@@ -1,6 +1,10 @@
 //! Independent local HTTP API, reusable sequence pool and bounded FIFO admission.
 mod control;
+mod hub;
 mod insight;
+mod progress;
+mod tuning;
+use crate::runtime::LoadStep;
 use crate::{
     model::Step,
     protocol::{ChatRequest, ChatTemplate, Sampler, parse_output},
@@ -8,6 +12,7 @@ use crate::{
 };
 use anyhow::{Context, Result, bail, ensure};
 use clap::Args;
+use progress::LoadProgress;
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -59,7 +64,7 @@ pub struct ServeArgs {
     #[arg(long)]
     pub open_ui: bool,
     /// Optional JSON profile. An existing profile overrides model/runtime CLI settings;
-    /// successful UI changes atomically replace it. Host, port, key and threads remain CLI-only.
+    /// successful UI changes atomically replace it. Host, port and key remain CLI-only.
     #[arg(long)]
     pub settings_file: Option<PathBuf>,
 }
@@ -196,12 +201,14 @@ struct ServedModel {
     idle: Mutex<Vec<CachedSequence>>,
 }
 impl ServedModel {
-    fn load(id: String, path: &Path, args: &ServeArgs) -> Result<Arc<Self>> {
-        let model = RuntimeModel::load(path, args.ctx, &args.backend)?;
-        ensure!(
-            model.config().expert_count > 0,
-            "native coding server accepts supported sparse MoE models"
-        );
+    fn load(
+        id: String,
+        path: &Path,
+        args: &ServeArgs,
+        progress: impl Fn(LoadStep),
+    ) -> Result<Arc<Self>> {
+        let model = RuntimeModel::load_with_progress(path, args.ctx, &args.backend, &progress)?;
+        progress(LoadStep::Stage("template", "Preparing the chat template"));
         let template = ChatTemplate::new(&model.source)?;
         Ok(Arc::new(Self {
             id,
@@ -301,15 +308,24 @@ struct Server {
     threads: Option<usize>,
     administration: Mutex<()>,
     scanning: Mutex<()>,
+    hub: hub::Hub,
+    tuning: tuning::Tuning,
+    load_progress: Mutex<LoadProgress>,
     startup_error: RwLock<Option<String>>,
     desired_model: RwLock<Option<String>>,
     loaded: RwLock<Option<Arc<ServedModel>>>,
     catalogue: RwLock<BTreeMap<String, PathBuf>>,
     admission: Arc<Admission>,
-    pool: rayon::ThreadPool,
+    pool: RwLock<Arc<rayon::ThreadPool>>,
     connections: AtomicUsize,
     ids: AtomicU64,
     insight: insight::LiveTelemetry,
+}
+
+fn worker_pool(threads: Option<usize>) -> Result<Arc<rayon::ThreadPool>> {
+    let mut builder = rayon::ThreadPoolBuilder::new();
+    if let Some(threads) = threads { builder = builder.num_threads(threads); }
+    Ok(Arc::new(builder.build()?))
 }
 
 pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
@@ -319,6 +335,7 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
     );
     if let Some(n) = threads {
         ensure!((1..=1024).contains(&n), "invalid CPU worker count");
+    }
     ensure!(
         (1..=4096).contains(&args.prefill_chunk_tokens),
         "prefill_chunk_tokens must be in 1..=4096"
@@ -327,13 +344,18 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         args.max_queued_prompt_tokens <= 16_777_216,
         "max_queued_prompt_tokens must be at most 16777216 (0 means automatic)"
     );
-    }
+    let mut progress = LoadProgress::default();
+    progress.begin();
     let (profile, catalogue, loaded, startup_error, desired_model) = control::startup(&mut args)?;
-    let pool = if let Some(n) = threads {
-        rayon::ThreadPoolBuilder::new().num_threads(n).build()?
-    } else {
-        rayon::ThreadPoolBuilder::new().build()?
-    };
+    let pending_restore = desired_model.clone().filter(|_| startup_error.is_none());
+    if let Some(error) = &startup_error {
+        progress.finish("failed", error.clone());
+    } else if loaded.is_some() {
+        progress.finish("ready", "Model ready");
+    } else if pending_restore.is_none() {
+        progress = LoadProgress::default();
+    }
+    let pool = worker_pool(profile.settings.threads.or(threads))?;
     let listener = TcpListener::bind((args.host, args.port))?;
     // Record the actual port, including an OS-assigned port requested with --port 0.
     args.port = listener.local_addr()?.port();
@@ -374,15 +396,21 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
         threads,
         administration: Mutex::new(()),
         scanning: Mutex::new(()),
+        hub: hub::Hub::default(),
+        tuning: tuning::Tuning::new(),
+        load_progress: Mutex::new(progress),
         startup_error: RwLock::new(startup_error),
         desired_model: RwLock::new(desired_model),
         loaded: RwLock::new(loaded),
         catalogue: RwLock::new(catalogue),
-        pool,
+        pool: RwLock::new(pool),
         connections: AtomicUsize::new(0),
         ids: AtomicU64::new(1),
         insight: insight::LiveTelemetry::new(),
     });
+    if let Some(id) = pending_restore {
+        control::restore_in_background(&state, id)?;
+    }
     // Monitor memory even when no browser or inference client is connected.
     // The controller owns no model; each sample looks up the current one.
     let weak = Arc::downgrade(&state);
@@ -402,15 +430,19 @@ pub fn serve(mut args: ServeArgs, threads: Option<usize>) -> Result<()> {
             let source = &model.model.source;
             let Ok(stats) = source.expert_cache_stats() else { continue };
             let Ok(available) = crate::memory::available_memory() else { continue };
-            let initial_ceiling = model.model.report()["host_memory_plan"]
+            let report = model.model.report();
+            let initial_ceiling = report["host_memory_plan"]
                 ["expert_cache_capacity_bytes"].as_u64().unwrap_or(0);
-            let margin = model.model.report()["host_memory_plan"]
+            let future_context = report["future_ram_reserve_bytes"].as_u64().unwrap_or(0);
+            let margin = report["host_memory_plan"]
                 ["os_margin_bytes"].as_u64().unwrap_or(0)
                 .max(512 * 1024 * 1024);
             // MemAvailable already includes current cached payload effects.
-            // Add that payload back before subtracting the reserve.
+            // Add that payload back before subtracting the OS margin and
+            // RAM context capacity promised to future sequence growth.
             let sustainable = available.saturating_add(stats.resident_bytes as u64)
                 .saturating_sub(margin)
+                .saturating_sub(future_context)
                 .min(initial_ceiling);
             let current = stats.capacity_bytes as u64;
             let target = if sustainable < current {
@@ -681,11 +713,20 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
         }
         ("GET", "/v1/status") => {
             let admission = server.admission.snapshot();
+            let progress = server.load_progress.lock().unwrap().snapshot();
             let m = server.loaded.read().unwrap();
             json_response(
                 stream,
                 200,
-                &json!({"model":m.as_ref().map(|m|&m.id),"runtime":m.as_ref().map(|m|m.model.report()),"admission":admission,"idle_sequences":m.as_ref().map(|m|m.idle.lock().unwrap().len()).unwrap_or(0),"prefill_chunk_tokens":server.args.prefill_chunk_tokens,"connections":server.connections.load(Ordering::Relaxed)}),
+                &json!({
+                    "load_progress": progress,
+                    "model": m.as_ref().map(|m| &m.id),
+                    "runtime": m.as_ref().map(|m| m.model.report()),
+                    "admission": admission,
+                    "idle_sequences": m.as_ref().map(|m| m.idle.lock().unwrap().len()).unwrap_or(0),
+                    "prefill_chunk_tokens": server.args.prefill_chunk_tokens,
+                    "connections": server.connections.load(Ordering::Relaxed),
+                }),
             )
         }
         ("POST", "/v1/chat/completions") | ("POST", "/api/context") => {
@@ -816,9 +857,8 @@ fn handle(server: &Arc<Server>, stream: &mut TcpStream) -> Result<()> {
                     );
                 }
             };
-            server
-                .pool
-                .install(|| generate(server, stream, &loaded, lease, &parsed, &prompt))
+            let pool = Arc::clone(&server.pool.read().unwrap());
+            pool.install(|| generate(server, stream, &loaded, lease, &parsed, &prompt))
         }
         _ => json_response(stream, 404, &error_value("unknown native API route")),
     }
@@ -867,8 +907,8 @@ fn generate(
             }
         }
     }
-    let prefill_seconds = start.elapsed().as_secs_f64();
-    insight_trace.prefill_finished(start.elapsed());
+    let prefill = start.elapsed();
+    insight_trace.prefill_finished(prefill);
     if request.stream {
         write!(
             stream,
@@ -978,6 +1018,8 @@ fn generate(
         }
         return json_response(stream, 503, &error_value(&e.to_string()));
     }
+    let decode_seconds = start.elapsed().as_secs_f64();
+    let timings = json!({"prefill_seconds":prefill.as_secs_f64(),"cached_prompt_tokens":cached_prompt_tokens,"decode_seconds":decode_seconds});
     if disconnected(stream) {
         return Ok(());
     }
@@ -995,7 +1037,7 @@ fn generate(
     if message.get("tool_calls").is_some() {
         finish = "tool_calls";
     }
-    insight_trace.complete(tokens.len(), start.elapsed().as_secs_f64());
+    insight_trace.complete(tokens.len(), decode_seconds);
     let usage = json!({"prompt_tokens":prompt.len(),"completion_tokens":tokens.len(),"total_tokens":prompt.len()+tokens.len(),"prompt_tokens_details":{"cached_tokens":cached_prompt_tokens}});
     if request.stream {
         if let Some(reasoning) = message.get("reasoning_content") {
@@ -1044,7 +1086,7 @@ fn generate(
         if request.include_usage {
             sse(
                 stream,
-                &json!({"id":id,"object":"chat.completion.chunk","created":created,"model":loaded.id,"choices":[],"usage":usage}),
+                &json!({"id":id,"object":"chat.completion.chunk","created":created,"model":loaded.id,"choices":[],"usage":usage,"timings":timings}),
             )?;
         }
         write!(stream, "data: [DONE]\n\n")?;
@@ -1054,7 +1096,7 @@ fn generate(
         json_response(
             stream,
             200,
-            &json!({"id":id,"object":"chat.completion","created":created,"model":loaded.id,"choices":[{"index":0,"message":message,"finish_reason":finish}],"usage":usage,"timings":{"prefill_seconds":prefill_seconds,"cached_prompt_tokens":cached_prompt_tokens,"decode_seconds":start.elapsed().as_secs_f64()}}),
+            &json!({"id":id,"object":"chat.completion","created":created,"model":loaded.id,"choices":[{"index":0,"message":message,"finish_reason":finish}],"usage":usage,"timings":timings}),
         )
     }
 }

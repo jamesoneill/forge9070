@@ -204,11 +204,11 @@ def main() -> None:
                 status, scan = json_request('/api/models/scan', {'directory': str(models)})
                 found = {model['id']: model for model in scan.get('models', [])}
                 rejected = {Path(model['path']).name: model['reason'] for model in scan.get('rejected', [])}
-                check('scan-validates-complete-supported-moe-files', status == 200
-                      and set(found) == {'fixture.gguf', suspicious_name}
-                      and all(model['bytes'] > 0 and model['architecture'] == 'qwen3moe' for model in found.values()), scan)
-                check('scan-explains-dense-corrupt-and-missing-shards', all(name in rejected for name in
-                      ['dense.gguf', 'invalid.gguf', 'partial-00001-of-00002.gguf'])
+                check('scan-validates-complete-supported-dense-and-moe-files', status == 200
+                      and set(found) == {'fixture.gguf', 'dense.gguf', suspicious_name}
+                      and all(model['bytes'] > 0 and model['architecture'] in ('qwen3', 'qwen3moe') for model in found.values()), scan)
+                check('scan-explains-corrupt-and-missing-shards', all(name in rejected for name in
+                      ['invalid.gguf', 'partial-00001-of-00002.gguf'])
                       and bool(rejected['partial-00001-of-00002.gguf']), rejected)
                 check('scan-reports-non-gguf-weights', scan.get('safetensors_files') == 1
                       and scan.get('truncated') is False, scan.get('safetensors_files'))
@@ -398,11 +398,31 @@ def browser_checks(origin, request, json_request, models, suspicious_name, args,
             check('browser-exposes-automatic-backend-with-gpu-controls',
                   'Automatically' in page.locator('#backend-help').inner_text()
                   and page.locator('#device').is_enabled() and page.locator('#vram-mib').is_enabled())
+            page.locator('#memory-settings > summary').click()
+            page.locator('#vram-mib').fill('70')
+            check('browser-explains-manual-gpu-cap-as-mib-not-percent',
+                  page.locator('#vram-mib').input_value() == '70'
+                  and '70 MiB (0.07 GiB)' in page.locator('#vram-help').inner_text()
+                  and 'not a percentage' in page.locator('#vram-help').inner_text())
+            page.locator('#vram-mib').fill('0')
+            check('browser-explains-zero-gpu-cap-as-automatic',
+                  'Automatic cap' in page.locator('#vram-help').inner_text()
+                  and '70%' in page.locator('#vram-help').inner_text())
+            page.locator('#backend').select_option('hybrid')
+            check('browser-explains-hybrid-model-memory-and-performance',
+                  'Models larger than VRAM' in page.locator('#backend-help').inner_text()
+                  and 'diagnostic mode can be slow' in page.locator('#backend-help').inner_text())
+            page.locator('#backend').select_option('vulkan')
+            check('browser-explains-qwen3-resident-weight-requirement',
+                  'Qwen3 MoE and Qwen3.8 use a bounded expert cache' in page.locator('#backend-help').inner_text()
+                  and 'Attention memory grows with use' in page.locator('#backend-help').inner_text())
+            page.locator('#backend').select_option('auto')
             # UI presentation checks use explicitly synthetic reports. They do
             # not imply that these adapters or automatic GPU execution ran.
             hardware = {'cpu_available': True, 'adapters': [
                 {'index': 0, 'name': 'Synthetic compatible GPU', 'software': False,
-                 'compatible': True, 'rejection_reasons': [], 'compute_queue': 0},
+                 'compatible': True, 'rejection_reasons': [], 'compute_queue': 0,
+                 'allocation_budget_bytes': 12025908428},
                 {'index': 1, 'name': 'Synthetic incompatible GPU', 'software': False,
                  'compatible': False, 'rejection_reasons': ['Requires seven storage buffers'],
                  'compute_queue': 0},
@@ -420,6 +440,9 @@ def browser_checks(origin, request, json_request, models, suspicious_name, args,
                       and page.locator('#device option[value="2"]').is_disabled()
                       and 'Requires seven storage buffers' in page.locator('#hardware-list').inner_text()
                       and '1 hardware adapter meets' in page.locator('#hardware-status').inner_text())
+                check('browser-shows-synthetic-adapter-automatic-gpu-cap',
+                      page.locator('#vram-mib').input_value() == '0'
+                      and 'Automatic cap on Synthetic compatible GPU: 11.20 GiB' in page.locator('#vram-help').inner_text())
             finally:
                 page.unroute(hardware_url)
             status_url = origin + '/v1/status'

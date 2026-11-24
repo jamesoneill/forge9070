@@ -1,5 +1,5 @@
 //! Conservative host-cache planning from actual tensor geometry and available RAM.
-use crate::gguf::Gguf;
+use crate::{gguf::Gguf, vulkan::{KvPlacement, KvPrecision}};
 use anyhow::{Context, Result, ensure};
 use serde::Serialize;
 
@@ -10,42 +10,37 @@ pub struct HostMemoryPlan {
     pub dense_page_allowance_bytes: u64,
     pub state_reserve_bytes: u64,
     pub state_slots: usize,
+    pub ram_context_payload_bytes: u64,
+    pub ram_context_peak_bytes: u64,
+    pub vulkan_host_budget_bytes: u64,
     pub routed_expert_payload_bytes: u64,
     pub lazy_embedding_payload_bytes: u64,
     pub expert_cache_capacity_bytes: usize,
     pub policy: &'static str,
 }
 
-pub fn plan(
-    source: &Gguf,
-    context: usize,
-    slots: usize,
-    host_state: bool,
-    explicit_mib: Option<usize>,
-    margin_mib: usize,
-) -> Result<HostMemoryPlan> {
-    plan_available(
-        source,
-        context,
-        slots,
-        host_state,
-        explicit_mib,
-        margin_mib,
-        available_memory()?,
-    )
+pub fn plan(source: &Gguf, context: usize, slots: usize, host_state: bool, explicit_mib: Option<usize>, margin_mib: usize) -> Result<HostMemoryPlan> {
+    plan_with_kv(source, context, slots, host_state, explicit_mib, margin_mib,
+        KvPrecision::F32, KvPlacement::Gpu, None)
 }
 
-// Keep discovery separate from arithmetic so budget boundaries are reproducible
-// without allocating model weights or depending on the test machine's free RAM.
-fn plan_available(
-    source: &Gguf,
-    context: usize,
-    slots: usize,
-    host_state: bool,
-    explicit_mib: Option<usize>,
-    margin_mib: usize,
-    available: u64,
-) -> Result<HostMemoryPlan> {
+pub fn plan_with_kv(source: &Gguf, context: usize, slots: usize, host_state: bool,
+    explicit_mib: Option<usize>, margin_mib: usize, precision: KvPrecision,
+    placement: KvPlacement, ram_cap_mib: Option<usize>) -> Result<HostMemoryPlan> {
+    plan_available_kv(source, context, slots, host_state, explicit_mib, margin_mib,
+        available_memory()?, precision, placement, ram_cap_mib)
+}
+
+// Existing CPU geometry remains independently testable without hardware/RAM allocation.
+#[cfg(test)]
+fn plan_available(source: &Gguf, context: usize, slots: usize, host_state: bool,
+    explicit_mib: Option<usize>, margin_mib: usize, available: u64) -> Result<HostMemoryPlan> {
+    plan_available_kv(source, context, slots, host_state, explicit_mib, margin_mib,
+        available, KvPrecision::F32, KvPlacement::Gpu, None)
+}
+fn plan_available_kv(source: &Gguf, context: usize, slots: usize, host_state: bool,
+    explicit_mib: Option<usize>, margin_mib: usize, available: u64,
+    precision: KvPrecision, placement: KvPlacement, ram_cap_mib: Option<usize>) -> Result<HostMemoryPlan> {
     ensure!(
         (1..=4).contains(&slots),
         "memory plan requires 1..=4 sequence slots"
@@ -70,6 +65,14 @@ fn plan_available(
     let mut kv_per_token = 0u64;
     let mut index_per_token = 0u64;
     let mut recurrent_layers = 0u64;
+    let mut ram_kv_per_token = 0u64;
+    let mut ram_layer_rows = std::collections::BTreeMap::<u64, u64>::new();
+    let main_layers = if arch == "qwen35" {
+        let total = source.meta.get("qwen35.block_count").and_then(|v| v.as_u64());
+        let mtp = source.meta.get("qwen35.nextn_predict_layers").and_then(|v| v.as_u64()).unwrap_or(0);
+        total.map(|total| total.checked_sub(mtp).context("Qwen3.5 MTP layers exceed block count")).transpose()?
+    } else { None };
+    ensure!(placement.is_gpu() || !host_state, "RAM Vulkan context placement cannot be applied to a CPU-state backend");
     for (name, t) in &source.tensors {
         let bytes = u64::try_from(t.byte_len).context("tensor payload exceeds address range")?;
         let kind = layer_tensor(name);
@@ -89,11 +92,20 @@ fn plan_available(
         } else {
             dense = dense.checked_add(bytes).context("dense payload overflow")?;
         }
+        let layer_number = name.strip_prefix("blk.").and_then(|n| n.split_once('.')).and_then(|(n,_)| n.parse::<u64>().ok());
+        // MTP prediction blocks are not executed by native text generation.
+        if main_layers.zip(layer_number).is_some_and(|(main, layer)| layer >= main) { continue; }
         if matches!(kind, Some("attn_k.weight" | "attn_v.weight")) {
             ensure!(
                 t.dims.len() == 2 && t.dims[1] > 0,
                 "{name}: invalid KV projection dimensions"
             );
+            if placement == KvPlacement::Ram {
+                let bytes = precision.row_bytes(usize::try_from(t.dims[1]).context("KV width exceeds address range")?)? as u64;
+                ram_kv_per_token = ram_kv_per_token.checked_add(bytes).context("RAM KV width overflow")?;
+                let per_layer = ram_layer_rows.entry(layer_number.context("KV tensor missing layer number")?).or_default();
+                *per_layer = per_layer.checked_add(bytes).context("RAM KV layer overflow")?;
+            }
             kv_per_token = kv_per_token
                 .checked_add(t.dims[1].checked_mul(4).context("KV width overflow")?)
                 .context("KV total overflow")?;
@@ -146,6 +158,13 @@ fn plan_available(
     } else {
         0
     };
+    let ram_payload = ram_kv_per_token.checked_mul(context as u64).context("RAM context payload overflow")?;
+    let mut capacity = context.min(256);
+    let mut old_capacity = 0;
+    while capacity < context { old_capacity = capacity; capacity = capacity.saturating_mul(2).min(context); }
+    let ram_overlap = ram_layer_rows.values().copied().max().unwrap_or(0)
+        .checked_mul(old_capacity as u64).context("RAM context growth overflow")?;
+    let ram_peak = ram_payload.checked_add(ram_overlap).context("RAM context peak overflow")?;
     let per_sequence = if host_state {
         let attention = (kv_per_token as u128)
             .checked_add(index_per_token as u128)
@@ -155,10 +174,17 @@ fn plan_available(
             .and_then(|n| n.checked_add(64 * 1024 * 1024))
             .context("sequence memory reserve overflow")?
     } else {
-        16 * 1024 * 1024
+        // Host-visible staging is now charged to its actual RAM heap. Reserve
+        // the maximum64MiB expert staging window, transfers, and small CPU scratch.
+        (ram_peak as u128).checked_add(96 * 1024 * 1024).context("Vulkan host-state overflow")?
     };
     let state = u64::try_from(product(&[per_sequence, slots as u128])?)
         .context("host sequence reserve overflow")?;
+    if let Some(mib) = ram_cap_mib {
+        ensure!(placement == KvPlacement::Ram, "a context RAM cap requires RAM context placement");
+        let cap = (mib as u64).checked_mul(1024 * 1024).context("context RAM budget overflow")?;
+        ensure!(state <= cap, "RAM context and working buffers require {state} bytes; context RAM cap is {cap} bytes");
+    }
     let reserve = margin
         .checked_add(dense)
         .and_then(|n| n.checked_add(state))
@@ -167,6 +193,8 @@ fn plan_available(
         dense.saturating_add(state) <= available,
         "dense-page and sequence-state allowance exceeds available RAM; reduce context or concurrent slots"
     );
+    ensure!(placement.is_gpu() || reserve <= available,
+        "RAM context requires {reserve} bytes including model pages and OS reserve; only {available} bytes are available");
     let safe = available.saturating_sub(reserve).min(experts);
     let cap = match explicit_mib {
         None => usize::try_from(safe).context("expert cache exceeds address range")?,
@@ -192,6 +220,9 @@ fn plan_available(
         dense_page_allowance_bytes: dense,
         state_reserve_bytes: state,
         state_slots: slots,
+        ram_context_payload_bytes: ram_payload.checked_mul(slots as u64).context("RAM context slot overflow")?,
+        ram_context_peak_bytes: ram_peak.checked_mul(slots as u64).context("RAM context slot overflow")?,
+        vulkan_host_budget_bytes: if host_state { 0 } else { state },
         routed_expert_payload_bytes: experts,
         lazy_embedding_payload_bytes: lazy,
         expert_cache_capacity_bytes: cap,
@@ -442,9 +473,12 @@ mod tests {
         assert_eq!(short.state_reserve_bytes, 890_109_952);
         // Full-context host caches for four slots do not fit this machine.
         assert!(plan_available(&g, 262144, 4, true, None, 4096, 62 * GIB).is_err());
-        // GPU-owned KV/recurrent state is not charged again as host state.
+        // GPU-owned KV/recurrent state is not charged again; independent RAM
+        // staging/working allocations retain a bounded96MiB allowance per slot.
         let device = plan_available(&g, 262144, 4, false, None, 4096, 62 * GIB).unwrap();
-        assert_eq!(device.state_reserve_bytes, 64 * MIB);
+        assert_eq!(device.state_reserve_bytes, 96 * MIB * 4);
+        assert_eq!(device.vulkan_host_budget_bytes, device.state_reserve_bytes);
+        assert_eq!(device.ram_context_payload_bytes, 0);
     }
 
     #[test]
@@ -544,4 +578,50 @@ mod tests {
             assert!(plan_available(&budget_source(), context, slots, true, None, 0, GIB).is_err());
         }
     }
+    #[test]
+    fn ram_context_reserves_full_quantized_history_before_expert_cache() {
+        let mut g = budget_source();
+        for layer in 0..48 {
+            for kind in ["k", "v"] {
+                tensor(&mut g, &format!("blk.{layer}.attn_{kind}.weight"), &[2048, 512], QuantType::Q4_K);
+            }
+        }
+        let context = 524288;
+        let preliminary = plan_available_kv(&g, context, 1, false, None, 1024, 64*GIB,
+            KvPrecision::Q4_64, KvPlacement::Ram, None).unwrap();
+        assert_eq!(preliminary.ram_context_payload_bytes, 13_690_208_256);
+        assert_eq!(preliminary.ram_context_peak_bytes, 13_832_814_592);
+        assert_eq!(preliminary.vulkan_host_budget_bytes, preliminary.ram_context_peak_bytes + 96*MIB);
+        assert_eq!(preliminary.state_reserve_bytes, preliminary.vulkan_host_budget_bytes);
+        let available = preliminary.os_margin_bytes + preliminary.dense_page_allowance_bytes
+            + preliminary.state_reserve_bytes + preliminary.routed_expert_payload_bytes/2;
+        let planned = plan_available_kv(&g, context, 1, false, None, 1024, available,
+            KvPrecision::Q4_64, KvPlacement::Ram, None).unwrap();
+        assert_eq!(planned.expert_cache_capacity_bytes as u64, planned.routed_expert_payload_bytes/2);
+        assert!(plan_available_kv(&g, context, 1, false, None, 1024, 64*GIB,
+            KvPrecision::Q4_64, KvPlacement::Ram, Some(1024)).unwrap_err().to_string().contains("RAM cap"));
+        assert!(plan_available_kv(&g, context, 1, false, None, 1024, 64*GIB,
+            KvPrecision::F32, KvPlacement::Ram, None).is_err());
+    }
+
+    #[test]
+    fn qwen35_mtp_blocks_do_not_inflate_cpu_or_hybrid_context_state() {
+        let mut g = source("qwen35");
+        g.meta.insert("qwen35.block_count".into(), Value::U32(3));
+        g.meta.insert("qwen35.nextn_predict_layers".into(), Value::U32(1));
+        for (key, value) in [("inner_size", 64), ("state_size", 16), ("group_count", 2), ("conv_kernel", 4)] {
+            g.meta.insert(format!("qwen35.ssm.{key}"), Value::U32(value));
+        }
+        tensor(&mut g, "blk.0.attn_k.weight", &[32,64], QuantType::F32);
+        tensor(&mut g, "blk.0.attn_v.weight", &[32,64], QuantType::F32);
+        tensor(&mut g, "blk.1.attn_qkv.weight", &[32,128], QuantType::F32);
+        let reference = plan_available(&g, 32768, 2, true, None, 0, 8*GIB).unwrap();
+        tensor(&mut g, "blk.2.attn_k.weight", &[32,65536], QuantType::F32);
+        tensor(&mut g, "blk.2.attn_v.weight", &[32,65536], QuantType::F32);
+        tensor(&mut g, "blk.2.attn_qkv.weight", &[32,128], QuantType::F32);
+        let with_mtp = plan_available(&g, 32768, 2, true, None, 0, 8*GIB).unwrap();
+        assert_eq!(reference.state_reserve_bytes, with_mtp.state_reserve_bytes);
+        assert!(with_mtp.dense_page_allowance_bytes > reference.dense_page_allowance_bytes);
+    }
+
 }

@@ -1,13 +1,25 @@
 //! Offset reads for the owned expert cache. A successful aligned direct read
 //! avoids populating the file mapping's OS page cache. Unsupported direct I/O
 //! falls back to a reported buffered offset read; it is never described as
-//! direct. The only temporary I/O buffer is a bounded 64 KiB aligned allocation.
+//! direct. Temporary aligned scratch is at most 1 MiB per active read, and only
+//! the aligned span needed for that request is allocated.
 use anyhow::{Context, Result, ensure};
 use std::fs::{File, OpenOptions};
 use std::path::Path;
 
 const ALIGNMENT: usize = 4096;
-const SCRATCH_BYTES: usize = 64 * 1024;
+pub(super) const DEFAULT_SCRATCH_BYTES: usize = 1024 * 1024;
+const SCRATCH_ENV: &str = "NEXTORA_EXPERT_READ_KIB";
+
+fn configured_scratch_bytes(value: Option<&std::ffi::OsStr>) -> Result<usize> {
+    let Some(value) = value else { return Ok(DEFAULT_SCRATCH_BYTES) };
+    let kib: usize = value.to_str().context("NEXTORA_EXPERT_READ_KIB must be a UTF-8 integer")?
+        .parse().context("NEXTORA_EXPERT_READ_KIB must be an integer number of KiB")?;
+    ensure!((ALIGNMENT / 1024..=DEFAULT_SCRATCH_BYTES / 1024).contains(&kib)
+        && kib % (ALIGNMENT / 1024) == 0,
+        "NEXTORA_EXPERT_READ_KIB must be 4..1024 KiB in 4 KiB multiples");
+    kib.checked_mul(1024).context("expert read scratch size overflow")
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ReadMethod {
@@ -28,10 +40,12 @@ pub(super) struct Source {
     buffered: File,
     direct: Option<File>,
     len: u64,
+    scratch_bytes: usize,
 }
 
 impl Source {
-    pub(super) fn new(path: &Path, buffered: File, len: u64) -> Self {
+    pub(super) fn new(path: &Path, buffered: File, len: u64) -> Result<Self> {
+        let scratch_bytes = configured_scratch_bytes(std::env::var_os(SCRATCH_ENV).as_deref())?;
         let direct = open_direct(path).filter(|direct| {
             let a = buffered
                 .try_clone()
@@ -43,12 +57,15 @@ impl Source {
                 .and_then(|f| same_file::Handle::from_file(f).ok());
             matches!((a, b), (Some(a), Some(b)) if a == b)
         });
-        Self {
+        Ok(Self {
             buffered,
             direct,
             len,
-        }
+            scratch_bytes,
+        })
     }
+
+    pub(super) fn scratch_max_bytes(&self) -> usize { self.scratch_bytes }
 
     pub(super) fn read(&self, offset: u64, len: usize) -> Result<LoadedBytes> {
         let end = offset
@@ -61,7 +78,7 @@ impl Source {
             .context("allocate bounded owned expert bytes")?;
         bytes.resize(len, 0);
         if let Some(file) = self.direct.as_ref() {
-            if read_direct(file, offset, &mut bytes).is_ok() {
+            if read_direct(file, offset, &mut bytes, self.scratch_bytes).is_ok() {
                 return Ok(LoadedBytes {
                     bytes,
                     method: ReadMethod::Direct,
@@ -154,8 +171,10 @@ struct Aligned {
     layout: std::alloc::Layout,
 }
 impl Aligned {
-    fn new() -> Result<Self> {
-        let layout = std::alloc::Layout::from_size_align(SCRATCH_BYTES, ALIGNMENT)?;
+    fn new(bytes: usize) -> Result<Self> {
+        ensure!(bytes > 0 && bytes <= DEFAULT_SCRATCH_BYTES && bytes % ALIGNMENT == 0,
+            "aligned expert scratch is outside its configured bounds");
+        let layout = std::alloc::Layout::from_size_align(bytes, ALIGNMENT)?;
         // SAFETY: valid nonzero layout, checked returned pointer, exact layout
         // retained for Drop. Zero initialization makes every exposed byte valid.
         let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc_zeroed(layout) })
@@ -163,9 +182,9 @@ impl Aligned {
         Ok(Self { pointer, layout })
     }
     fn bytes(&mut self) -> &mut [u8] {
-        // SAFETY: pointer owns a live SCRATCH_BYTES allocation with no aliases;
+        // SAFETY: pointer owns a live layout-sized allocation with no aliases;
         // the slice's borrow is tied to this exclusive borrow of the owner.
-        unsafe { std::slice::from_raw_parts_mut(self.pointer.as_ptr(), SCRATCH_BYTES) }
+        unsafe { std::slice::from_raw_parts_mut(self.pointer.as_ptr(), self.layout.size()) }
     }
 }
 impl Drop for Aligned {
@@ -176,7 +195,14 @@ impl Drop for Aligned {
     }
 }
 
-fn read_direct(file: &File, start: u64, output: &mut [u8]) -> Result<()> {
+fn read_direct(file: &File, start: u64, output: &mut [u8], scratch_limit: usize) -> Result<()> {
+    read_direct_with(start, output, scratch_limit, |offset, bytes| read_offset(file, offset, bytes))
+}
+
+fn read_direct_with(start: u64, output: &mut [u8], scratch_limit: usize,
+    mut read: impl FnMut(u64, &mut [u8]) -> std::io::Result<usize>) -> Result<()> {
+    ensure!(scratch_limit > 0 && scratch_limit <= DEFAULT_SCRATCH_BYTES && scratch_limit % ALIGNMENT == 0,
+        "direct expert scratch limit must be bounded and alignment-sized");
     if output.is_empty() {
         return Ok(());
     }
@@ -189,11 +215,13 @@ fn read_direct(file: &File, start: u64, output: &mut [u8]) -> Result<()> {
         / ALIGNMENT as u64
         * ALIGNMENT as u64;
     let mut cursor = start / ALIGNMENT as u64 * ALIGNMENT as u64;
-    let mut scratch = Aligned::new()?;
+    let aligned_span = aligned_end - cursor;
+    let scratch_bytes = usize::try_from(aligned_span.min(scratch_limit as u64))?;
+    let mut scratch = Aligned::new(scratch_bytes)?;
     while cursor < end {
-        let requested = (aligned_end - cursor).min(SCRATCH_BYTES as u64) as usize;
+        let requested = (aligned_end - cursor).min(scratch_bytes as u64) as usize;
         let count = loop {
-            match read_offset(file, cursor, &mut scratch.bytes()[..requested]) {
+            match read(cursor, &mut scratch.bytes()[..requested]) {
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
                 value => break value?,
             }
@@ -229,7 +257,7 @@ mod tests {
             std::env::temp_dir().join(format!("forge-expert-io-{}-{id}", std::process::id()));
         let bytes: Vec<u8> = (0..150_003usize).map(|i| (i * 37 + 11) as u8).collect();
         std::fs::write(&path, &bytes).unwrap();
-        let source = Source::new(&path, File::open(&path).unwrap(), bytes.len() as u64);
+        let source = Source::new(&path, File::open(&path).unwrap(), bytes.len() as u64).unwrap();
         for (start, len) in [
             (0, 1),
             (31, 4),
@@ -250,6 +278,7 @@ mod tests {
             buffered: File::open(&path).unwrap(),
             direct: None,
             len: bytes.len() as u64,
+            scratch_bytes: DEFAULT_SCRATCH_BYTES,
         };
         let loaded = buffered.read(17, 123).unwrap();
         assert_eq!(loaded.method, ReadMethod::Buffered);
@@ -261,6 +290,7 @@ mod tests {
             buffered: File::open(&path).unwrap(),
             direct: Some(File::open(&empty_path).unwrap()),
             len: bytes.len() as u64,
+            scratch_bytes: DEFAULT_SCRATCH_BYTES,
         };
         let loaded = fallback.read(31, 1000).unwrap();
         assert_eq!(loaded.method, ReadMethod::Buffered);
@@ -272,4 +302,72 @@ mod tests {
         drop(source);
         std::fs::remove_file(path).unwrap();
     }
+    #[test]
+    fn configured_scratch_is_bounded_aligned_and_supports_controlled_ab_sizes() {
+        use std::ffi::OsStr;
+        assert_eq!(configured_scratch_bytes(None).unwrap(), 1024*1024);
+        for kib in [4usize,64,128,1024] {
+            assert_eq!(configured_scratch_bytes(Some(OsStr::new(&kib.to_string()))).unwrap(),kib*1024);
+        }
+        for invalid in ["", "0", "1", "3", "5", "1025", "2048", "-1", "1MiB", "184467440737095516150"] {
+            assert!(configured_scratch_bytes(Some(OsStr::new(invalid))).is_err(),"accepted {invalid}");
+        }
+    }
+
+    #[test]
+    fn direct_reads_copy_exact_bytes_across_scratch_boundaries_with_bounded_allocations() {
+        let input:Vec<u8>=(0..2*DEFAULT_SCRATCH_BYTES+123).map(|i|(i*37+11)as u8).collect();
+        for limit in [64*1024,DEFAULT_SCRATCH_BYTES] {
+            for (start,len) in [(0,1),(4095,2),(17,100000),(DEFAULT_SCRATCH_BYTES-19,8251),
+                (17,2*DEFAULT_SCRATCH_BYTES+100),(input.len()-7,7),(0,input.len())] {
+                let mut output=vec![0;len];let mut largest=0;let mut calls=0;
+                read_direct_with(start as u64,&mut output,limit,|offset,bytes| {
+                    calls+=1;largest=largest.max(bytes.len());
+                    assert_eq!(offset%ALIGNMENT as u64,0);
+                    assert_eq!(bytes.len()%ALIGNMENT,0);
+                    assert_eq!(bytes.as_ptr()as usize%ALIGNMENT,0);
+                    let offset=offset as usize;
+                    let count=bytes.len().min(input.len().saturating_sub(offset));
+                    bytes[..count].copy_from_slice(&input[offset..offset+count]);Ok(count)
+                }).unwrap();
+                assert_eq!(output,input[start..start+len]);
+                let span=(start+len).next_multiple_of(ALIGNMENT)-start/ALIGNMENT*ALIGNMENT;
+                assert_eq!(largest,span.min(limit));
+                assert_eq!(calls,span.div_ceil(limit));
+            }
+        }
+    }
+
+    #[test]
+    fn one_mib_batches_an_expert_read_without_changing_bytes() {
+        let input:Vec<u8>=(0..DEFAULT_SCRATCH_BYTES).map(|i|(i*13+7)as u8).collect();
+        let mut counts=Vec::new();
+        for limit in [64*1024,DEFAULT_SCRATCH_BYTES] {
+            let mut output=vec![0;884736];let mut calls=0;
+            read_direct_with(31,&mut output,limit,|offset,bytes| {
+                calls+=1;let offset=offset as usize;
+                bytes.copy_from_slice(&input[offset..offset+bytes.len()]);Ok(bytes.len())
+            }).unwrap();
+            assert_eq!(output,input[31..31+884736]);counts.push(calls);
+        }
+        assert_eq!(counts,[14,1]);
+    }
+
+    #[test]
+    fn interrupted_empty_partial_and_overflow_reads_are_handled() {
+        let mut output=vec![0;8192];let mut calls=0;
+        read_direct_with(0,&mut output,DEFAULT_SCRATCH_BYTES,|_,bytes| {
+            calls+=1;
+            if calls==1 {return Err(std::io::ErrorKind::Interrupted.into())}
+            bytes.fill(17);Ok(bytes.len())
+        }).unwrap();
+        assert_eq!(calls,2);assert!(output.iter().all(|byte|*byte==17));
+        read_direct_with(0,&mut [],DEFAULT_SCRATCH_BYTES,|_,_|panic!("empty read performed I/O")).unwrap();
+        assert!(read_direct_with(0,&mut output,DEFAULT_SCRATCH_BYTES,|_,bytes|Ok(bytes.len()/2)).is_err());
+        assert!(read_direct_with(0,&mut output,DEFAULT_SCRATCH_BYTES,|_,_|Ok(0)).is_err());
+        assert!(read_direct_with(u64::MAX,&mut output,DEFAULT_SCRATCH_BYTES,|_,_|panic!()).is_err());
+        assert!(read_direct_with(0,&mut output,0,|_,_|panic!()).is_err());
+        assert!(read_direct_with(0,&mut output,DEFAULT_SCRATCH_BYTES+ALIGNMENT,|_,_|panic!()).is_err());
+    }
+
 }

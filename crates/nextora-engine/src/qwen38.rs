@@ -10,7 +10,7 @@
 use crate::{
     gguf::{Gguf, Value},
     math,
-    model::{Config, MatvecExecutor, Step},
+    model::{Config, MatvecExecutor, Step, tensor_dimensions},
 };
 use anyhow::{Context, Result, bail, ensure};
 use serde::Serialize;
@@ -390,23 +390,18 @@ fn product(a: usize, b: usize, label: &str) -> Result<usize> {
         .with_context(|| format!("{label}: invalid or excessive geometry"))
 }
 fn shape(g: &Gguf, used: &mut BTreeSet<String>, name: String, dims: &[usize]) -> Result<String> {
-    let t = g.tensor(&name)?;
+    let actual = tensor_dimensions(g, &name)?;
     ensure!(
-        t.dimensions().len() == dims.len()
-            && t.dimensions()
-                .iter()
-                .zip(dims)
-                .all(|(a, b)| *a == *b as u64),
-        "{name}: shape {:?}, expected {dims:?}",
-        t.dimensions()
+        actual.len() == dims.len() && actual.iter().zip(dims).all(|(a, b)| *a == *b as u64),
+        "{name}: shape {actual:?}, expected {dims:?}"
     );
     used.insert(name.clone());
     Ok(name)
 }
 fn single_row(g: &Gguf, used: &mut BTreeSet<String>, name: String, width: usize) -> Result<String> {
-    let t = g.tensor(&name)?;
+    let dims = tensor_dimensions(g, &name)?;
     ensure!(
-        t.width() == width && t.rows() == 1 && t.dimensions().len() <= 2,
+        dims == [width as u64] || dims == [width as u64, 1],
         "{name}: expected a vector or single-row matrix"
     );
     used.insert(name.clone());
@@ -418,12 +413,20 @@ fn vector(
     name: String,
     elements: usize,
 ) -> Result<Vec<f32>> {
-    let t = g.tensor(&name)?;
+    let dims = tensor_dimensions(g, &name)?;
+    let count = dims
+        .iter()
+        .try_fold(1u64, |n, &d| n.checked_mul(d))
+        .context("vector dimensions overflow")?;
     ensure!(
-        t.elements() == elements,
-        "{name}: expected {elements} elements, got {}",
-        t.elements()
+        count == elements as u64,
+        "{name}: expected {elements} elements, got {count}"
     );
+    if g.headers_only() {
+        used.insert(name);
+        return Ok(Vec::new());
+    }
+    let t = g.tensor(&name)?;
     let mut values = vec![0.; elements];
     for (row, out) in values.chunks_exact_mut(t.width()).enumerate() {
         t.read_row(row, out)?;
@@ -489,6 +492,18 @@ fn grouped_norm(
 
 impl Qwen38 {
     pub fn load(
+        source: Arc<Gguf>,
+        context: usize,
+        executor: Arc<dyn MatvecExecutor>,
+    ) -> Result<Self> {
+        ensure!(
+            !source.headers_only(),
+            "model execution requires downloaded tensor data"
+        );
+        Self::prepare(source, context, executor)
+    }
+
+    pub(crate) fn prepare(
         source: Arc<Gguf>,
         context: usize,
         executor: Arc<dyn MatvecExecutor>,
@@ -626,12 +641,12 @@ impl Qwen38 {
                 "invalid text M-RoPE sections"
             );
         }
-        let embeddings = g.tensor("token_embd.weight")?;
+        let embeddings = tensor_dimensions(g, "token_embd.weight")?;
         ensure!(
-            embeddings.dimensions().len() == 2 && embeddings.width() == n,
+            embeddings.len() == 2 && embeddings[0] == n as u64,
             "invalid token embeddings"
         );
-        let vocabulary = embeddings.rows();
+        let vocabulary = usize::try_from(embeddings[1]).context("Qwen3.8 vocabulary overflow")?;
         ensure!(
             (1..=2_000_000).contains(&vocabulary),
             "invalid Qwen3.8 vocabulary size"
@@ -750,6 +765,7 @@ impl Qwen38 {
             head_dim: hd,
             rope_dimension_count: rot,
             rope_base: base,
+            rope_scaling: None,
             rms_epsilon: eps,
             vocab_size: vocabulary,
             context_length: context,
@@ -790,17 +806,14 @@ impl Qwen38 {
                 arr("ple.head_offsets", HASH_HEADS)?.try_into().unwrap();
             let vocab: [u64; HASH_HEADS] =
                 arr("ple.head_vocab_sizes", HASH_HEADS)?.try_into().unwrap();
-            let table = g.tensor("per_layer_token_embd.weight")?;
+            let table = tensor_dimensions(g, "per_layer_token_embd.weight")?;
             ensure!(
-                table.dimensions().len() == 2 && table.width() == ple_width,
+                table.len() == 2 && table[0] == ple_width as u64,
                 "invalid PLE table dimensions"
             );
             for (&off, &len) in offsets.iter().zip(&vocab) {
                 ensure!(
-                    len > 0
-                        && off
-                            .checked_add(len)
-                            .is_some_and(|end| end <= table.rows() as u64),
+                    len > 0 && off.checked_add(len).is_some_and(|end| end <= table[1]),
                     "PLE hash range outside table"
                 );
             }
@@ -927,6 +940,11 @@ impl Qwen38 {
         if let Some(name) = g.tensors.keys().find(|name| !used.contains(*name)) {
             bail!("unsupported Qwen3.8 extra tensor {name:?}; no tensor may be silently ignored");
         }
+        let frequencies = if g.headers_only() {
+            Vec::new()
+        } else {
+            math::rope_inverse_frequencies(rot, base)?
+        };
         Ok(Self {
             source,
             executor,
@@ -935,7 +953,7 @@ impl Qwen38 {
             layers,
             output,
             hash,
-            frequencies: math::rope_inverse_frequencies(rot, base)?,
+            frequencies,
         })
     }
     pub fn common_config(&self) -> &Config {

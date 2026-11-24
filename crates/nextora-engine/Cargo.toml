@@ -9,6 +9,7 @@ license = "MIT"
 publish = false
 
 [dependencies]
+sha2 = "0.10"
 anyhow = "1"
 ash = "0.38"
 clap = { version = "4", features = ["derive"] }
@@ -26,3 +27,6 @@ tokenizers = { version = "0.23", default-features = false, features = ["onig"] }
 [[bin]]
 name = "nextora"
 path = "src/main.rs"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           python -m compileall -q .github/scripts scripts tests
-          node --check crates/nextora-engine/src/ui/app.js
+          for script in crates/nextora-engine/src/ui/*.js; do node --check "$script"; done
           for script in scripts/*.sh; do bash -n "$script"; done
       - name: Check native validation scripts can load their helpers
         shell: bash
@@ -63,7 +63,13 @@ jobs:
             -Icrates/nextora-engine/shaders crates/nextora-engine/shaders/ops.comp \
             -o artifacts/nextora-ops.spv
           spirv-val --target-env vulkan1.1 artifacts/nextora-ops.spv
-          spirv-val --target-env vulkan1.1 crates/nextora-engine/src/vulkan/ops.spv
+          glslangValidator -V --target-env vulkan1.1 -DNEXTORA_FAST_DOT=1 \
+            -Icrates/nextora-engine/shaders crates/nextora-engine/shaders/ops.comp \
+            -o artifacts/nextora-ops-fast.spv
+          spirv-val --target-env vulkan1.1 artifacts/nextora-ops-fast.spv
+          for module in crates/nextora-engine/src/vulkan/*.spv; do
+            spirv-val --target-env vulkan1.1 "$module"
+          done
           # Compiler versions can produce different valid bytecode. This checks
           # both representations; it makes no GPU execution/performance claim.
 
@@ -108,6 +114,15 @@ jobs:
         run: python scripts/validate-nextora.py --binary target/release/${{ matrix.executable }} --frontend target/release/${{ matrix.frontend }} --output artifacts/ci-cli.json
       - name: Check HTTP, streaming, queues and cancellation
         run: python scripts/validate-native-api.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-api.json
+      - name: Check per-model tuning worker and saved-result lifecycle
+        run: python scripts/validate-native-tuning.py --binary target/release/${{ matrix.executable }}
+      - name: Check model preparation, restoration and dense-model chat
+        run: |
+          python scripts/validate-native-setup.py --binary target/release/${{ matrix.executable }}
+          python scripts/validate-native-dense-serving.py --binary target/release/${{ matrix.executable }}
+      - name: Check verified Hub search, downloads and loading with local fixtures
+        if: runner.os == 'Linux'
+        run: python scripts/validate-native-hub.py --binary target/release/nextora
       - name: Check configuration UI API and persisted settings
         if: runner.os == 'Windows'
         run: python scripts/validate-native-ui.py --binary target/release/${{ matrix.executable }} --output artifacts/ci-ui.json
@@ -123,6 +138,9 @@ jobs:
           python scripts/validate-native-ui.py --binary target/release/${{ matrix.executable }} \
             --browser --chromium "$NEXTORA_CHROMIUM" --screenshots artifacts/ui \
             --output artifacts/ci-ui.json
+          python scripts/validate-native-setup-ui.py --binary target/release/${{ matrix.executable }} --chromium "$NEXTORA_CHROMIUM"
+          python scripts/validate-native-long-context.py --binary target/release/${{ matrix.executable }} \
+            --chromium "$NEXTORA_CHROMIUM" --output artifacts/ci-long-context-ui.json
       - name: Install the software Vulkan correctness runtime
         if: runner.os == 'Linux'
         run: |
@@ -133,7 +151,9 @@ jobs:
         if: runner.os == 'Linux'
         env:
           NEXTORA_VULKAN_TEST: '1'
-        run: cargo test --locked -p nextora-engine --lib software_vulkan -- --ignored --test-threads=1
+        run: |
+          cargo test --locked -p nextora-engine --lib software_vulkan -- --ignored --test-threads=1
+          cargo test --locked -p nextora-engine --lib compact_kv_ -- --include-ignored --test-threads=1
       - name: Check Vulkan HTTP concurrency correctness
         if: runner.os == 'Linux'
         env:

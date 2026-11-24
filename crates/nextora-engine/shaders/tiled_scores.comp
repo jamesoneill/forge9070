@@ -1,0 +1,44 @@
+// Ordinary 128-component attention scores. A workgroup evaluates four
+// adjacent positions, using the same reduction tree as four legacy groups.
+#version 450
+layout(local_size_x=128) in;
+layout(set=0,binding=1,std430) readonly buffer Query { float query[]; };
+layout(set=0,binding=2,std430) readonly buffer Keys { float keys[]; };
+layout(set=0,binding=3,std430) writeonly buffer Scores { float scores[]; };
+layout(set=0,binding=6,std430) buffer Status { uint status[]; };
+layout(push_constant) uniform Parameters {
+    uint op; uint tokens; uint heads; uint kv_heads;
+    uint width; uint score_stride; uint unused0; uint unused1;
+    float unused2; float unused3; uint unused4; uint unused5;
+    uint unused6; uint unused7; uint groups_x; uint flags;
+} p;
+shared float partial[128];
+
+void main() {
+    uint local = gl_LocalInvocationID.x;
+    uint token = 4u * gl_WorkGroupID.x + local / 32u;
+    uint lane = local % 32u;
+    uint head = gl_WorkGroupID.y;
+    uint q = head * 128u + lane;
+    uint kv_head = head / (p.heads / p.kv_heads);
+    uint k = (token * p.kv_heads + kv_head) * 128u + lane;
+    precise float sum = 0.0;
+    if (token < p.tokens) {
+        precise float a = query[q] * keys[k];
+        precise float b = query[q+64u] * keys[k+64u];
+        precise float c = query[q+32u] * keys[k+32u];
+        precise float d = query[q+96u] * keys[k+96u];
+        sum = (a + b) + (c + d);
+    }
+    partial[local] = sum;
+    barrier();
+    for (uint stride = 16u; stride != 0u; stride >>= 1u) {
+        if (lane < stride) partial[local] += partial[local + stride];
+        barrier();
+    }
+    if (lane == 0u && token < p.tokens) {
+        float score = partial[local] * inversesqrt(float(p.width));
+        if (isnan(score) || isinf(score)) atomicOr(status[0],1u);
+        scores[head * p.score_stride + token] = score;
+    }
+}

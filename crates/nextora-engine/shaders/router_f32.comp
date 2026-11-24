@@ -1,0 +1,28 @@
+// F32 expert router, one workgroup per row. The accumulator assignment and
+// reduction tree follow the original 128-lane GEMV for identical routing.
+#version 450
+layout(local_size_x = 128) in;
+layout(set=0,binding=0,std430) readonly buffer Weights { float weights[]; };
+layout(set=0,binding=1,std430) readonly buffer Activations { float input_values[]; };
+layout(set=0,binding=3,std430) writeonly buffer Output { float scores[]; };
+layout(set=0,binding=6,std430) buffer Status { uint status; };
+shared float sums[128];
+void main() {
+    uint row = gl_WorkGroupID.x;
+    uint lane = gl_LocalInvocationIndex;
+    float value = 0.0;
+    for (uint i = lane; i < 2048u; i += 128u) {
+        value = fma(weights[row * 2048u + i], input_values[i], value);
+    }
+    sums[lane] = value;
+    barrier();
+    for (uint stride = 64u; stride > 0u; stride >>= 1u) {
+        if (lane < stride) sums[lane] += sums[lane + stride];
+        barrier();
+    }
+    if (lane == 0u) {
+        float score = sums[0];
+        if (isnan(score) || isinf(score)) atomicOr(status, 1u);
+        scores[row] = score;
+    }
+}

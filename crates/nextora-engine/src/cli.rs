@@ -54,6 +54,18 @@ pub enum EngineCommand {
         #[arg(long)]
         json_out: Option<PathBuf>,
     },
+    /// Run an isolated model performance study requested by the local service.
+    #[command(hide = true)]
+    TuneWorker {
+        #[arg(long)]
+        request: PathBuf,
+        #[arg(long)]
+        progress: PathBuf,
+        #[arg(long)]
+        result: PathBuf,
+        #[arg(long)]
+        watch_parent_stdin: bool,
+    },
     /// Compare runtime-selected CPU dot kernels with their scalar numerical reference.
     KernelBench {
         #[arg(long, default_value_t = 2048)]
@@ -229,6 +241,9 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             }
             print_json(&report)
         }
+        EngineCommand::TuneWorker { request, progress, result, watch_parent_stdin } => {
+            crate::autotune::run_worker(&request, &progress, &result, watch_parent_stdin)
+        },
         EngineCommand::KernelBench {
             width,
             rows,
@@ -411,16 +426,17 @@ fn generate(input: Input, max_tokens: usize, json: bool) -> Result<()> {
     let decode_seconds = decode_start.elapsed().as_secs_f64();
     let text = loaded.model.tokenizer.decode(&ids)?;
     if json {
+        let runtime = model.report();
         print_json(&serde_json::json!({
             "engine": crate::ENGINE_ID, "engine_version": crate::ENGINE_VERSION,
-            "runtime": model.report(), "model": input.model,
+            "runtime": runtime, "model": input.model,
             "text": text, "token_ids": ids, "finish_reason": finish,
             "prompt_tokens": loaded.prompt.len(), "generated_tokens": ids.len(),
             "load_seconds": loaded.load_seconds, "tokenize_seconds": loaded.tokenize_seconds,
             "prefill_seconds": prefill_seconds, "decode_seconds": decode_seconds,
             "decode_steps": steps,
             "decode_steps_per_second": rate(steps, decode_seconds),
-            "kv_precision": "F32", "gpu_performance_verified": false
+            "kv_precision": runtime["kv_precision"], "gpu_performance_verified": false
         }))
     } else {
         println!("{text}");
@@ -439,17 +455,21 @@ fn generate(input: Input, max_tokens: usize, json: bool) -> Result<()> {
 }
 
 #[derive(Serialize)]
-struct Measurement {
+pub(crate) struct Measurement {
     prefill_seconds: f64,
     decode_seconds: f64,
     aggregate_prefill_tokens_per_second: f64,
     aggregate_decode_steps_per_second: f64,
     request_prefill_seconds: Vec<f64>,
     request_decode_completion_seconds: Vec<f64>,
-    greedy_checksum: Vec<u64>,
+    pub(crate) greedy_checksum: Vec<u64>,
+    /// Optional cumulative-counter snapshots, sampled outside timed regions.
+    /// Compare phase boundaries to exclude cold warmup from steady measurements.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    phase_counters: Option<serde_json::Value>,
 }
 
-fn measure(
+pub(crate) fn measure(
     model: &RuntimeModel,
     prompt: &[u32],
     steps: usize,
@@ -458,6 +478,12 @@ fn measure(
     let mut states: Vec<_> = (0..requests)
         .map(|_| Ok((model.new_sequence()?, Step::default())))
         .collect::<Result<_>>()?;
+    let profile = std::env::var_os("NEXTORA_PROFILE_SPARSE").is_some_and(|v| v != "0");
+    let snapshot = || {
+        let report = model.report();
+        serde_json::json!({"gpu":report["execution"]["memory"],"host_experts":report["expert_cache"]})
+    };
+    let before_prefill = profile.then(&snapshot);
     let start = Instant::now();
     let prefill: Result<Vec<f64>> = states
         .par_iter_mut()
@@ -468,6 +494,7 @@ fn measure(
         .collect();
     let request_prefill_seconds = prefill?;
     let prefill_seconds = start.elapsed().as_secs_f64();
+    let after_prefill = profile.then(&snapshot);
     let start = Instant::now();
     let runs: Result<Vec<(f64, u64)>> = states
         .par_iter_mut()
@@ -483,6 +510,7 @@ fn measure(
         .collect();
     let runs = runs?;
     let decode_seconds = start.elapsed().as_secs_f64();
+    let after_decode = profile.then(&snapshot);
     Ok(Measurement {
         prefill_seconds,
         decode_seconds,
@@ -491,6 +519,10 @@ fn measure(
         request_prefill_seconds,
         request_decode_completion_seconds: runs.iter().map(|r| r.0).collect(),
         greedy_checksum: runs.iter().map(|r| r.1).collect(),
+        phase_counters: profile.then(|| serde_json::json!({
+            "before_prefill":before_prefill,"after_prefill":after_prefill,"after_decode":after_decode,
+            "timing":"cumulative snapshots outside timed regions; subtract adjacent boundaries for per-phase counters"
+        })),
     })
 }
 
@@ -530,7 +562,7 @@ fn check_report_destination(model: &Path, report: &Path) -> Result<()> {
     Ok(())
 }
 
-fn write_report(path: &Path, report: &serde_json::Value, model: Option<&Path>) -> Result<()> {
+pub(crate) fn write_report(path: &Path, report: &serde_json::Value, model: Option<&Path>) -> Result<()> {
     if let Some(model) = model {
         check_report_destination(model, path)?;
     }

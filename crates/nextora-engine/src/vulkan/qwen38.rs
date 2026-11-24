@@ -335,7 +335,16 @@ fn record(commands: &Commands, graph: &Graph, position: usize) {
 
 impl QwenGpuModel {
     pub fn load(source: Arc<Gguf>, context: usize, options: DeviceOptions) -> Result<Self> {
-        let plan = Qwen38::load(Arc::clone(&source), context, Arc::new(CpuMatvec))?;
+        Self::load_with_progress(source, context, options, &|_, _, _, _, _| {})
+    }
+
+    pub(crate) fn load_with_progress(
+        source: Arc<Gguf>,
+        context: usize,
+        options: DeviceOptions,
+        progress: super::UploadProgress<'_>,
+    ) -> Result<Self> {
+        let plan = Qwen38::load(source, context, Arc::new(CpuMatvec))?;
         let cache = GpuMatvecExecutor::new(options)?;
         let device = cache.device();
         let max_x = device.properties.limits.max_compute_work_group_count[0] as usize;
@@ -412,6 +421,14 @@ impl QwenGpuModel {
         }
         let mut dense = BTreeMap::new();
         let mut fixed_bytes = 0usize;
+        let matrix_count = names.len();
+        progress(
+            "Uploading fixed GPU projections",
+            "tensors",
+            0,
+            matrix_count,
+            0,
+        );
         for name in names {
             let tensor = plan.source.tensor(&name)?;
             ensure!(
@@ -453,7 +470,21 @@ impl QwenGpuModel {
                     parts,
                 },
             );
+            progress(
+                "Uploading fixed GPU projections",
+                "tensors",
+                dense.len(),
+                matrix_count,
+                device.uploads.load(Ordering::Relaxed),
+            );
         }
+        progress(
+            "Uploading GPU layer constants",
+            "layers",
+            0,
+            plan.layers.len(),
+            device.uploads.load(Ordering::Relaxed),
+        );
         let mut extra = BTreeMap::new();
         let mut upload = |name: String, values: &[f32]| -> Result<()> {
             let buffer = device.upload(bytes_of_f32(values))?;
@@ -490,6 +521,13 @@ impl QwenGpuModel {
                 upload(format!("{i}/pcn"), &ple.convolution_norm)?;
                 upload(format!("{i}/pc"), &ple.convolution)?;
             }
+            progress(
+                "Uploading GPU layer constants",
+                "layers",
+                i + 1,
+                plan.layers.len(),
+                device.uploads.load(Ordering::Relaxed),
+            );
         }
         let prefetch = Prefetcher::new(
             Arc::clone(&plan.source),
@@ -2352,6 +2390,11 @@ mod tests {
             DeviceOptions {
                 device_index: None,
                 allow_software: true,
+                fast_math: false,
+                direct_experts: None,
+        kv_precision: crate::vulkan::KvPrecision::F32,
+        kv_placement: crate::vulkan::KvPlacement::Gpu,
+        host_memory_budget_bytes: 0,
                 memory_budget_bytes: 8 * 1024 * 1024,
             },
         )
@@ -2466,6 +2509,11 @@ mod tests {
             DeviceOptions {
                 device_index: None,
                 allow_software: true,
+                fast_math: false,
+                direct_experts: None,
+        kv_precision: crate::vulkan::KvPrecision::F32,
+        kv_placement: crate::vulkan::KvPlacement::Gpu,
+        host_memory_budget_bytes: 0,
                 memory_budget_bytes: 512 * 1024 * 1024,
             },
         )

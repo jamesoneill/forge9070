@@ -181,21 +181,58 @@ impl Gguf {
         let count = split_integer(&parsed.meta, "split.count", 1)?;
         let selected = split_integer(&parsed.meta, "split.no", 0)?;
         let paths = shard_paths(path, count, selected)?;
+        let mut initial = Some((mapping, parsed, source));
+        Self::assemble(paths, capacity_bytes, |index, shard_path| {
+            let (map, part, source) = if index == selected {
+                initial.take().expect("selected shard consumed once")
+            } else {
+                map_file(shard_path)?
+            };
+            Ok((part, map.len(), Some((map, source))))
+        })
+    }
+
+    /// A Hub search reads only pinned header ranges. These descriptors cannot
+    /// produce tensor views until the complete model has been installed.
+    pub(crate) fn from_remote_headers(headers: Vec<RemoteHeader>) -> Result<Self> {
+        let first = headers.first().context("missing GGUF shard headers")?;
+        let count = split_integer(&first.parsed.meta, "split.count", 1)?;
+        ensure!(count == headers.len(), "incomplete GGUF shard set");
+        let paths = shard_paths(&first.name, count, 0)?;
+        let mut headers = headers.into_iter();
+        Self::assemble(paths, 0, |_, expected| {
+            let header = headers.next().context("missing GGUF shard header")?;
+            ensure!(
+                expected == header.name,
+                "unexpected shard filename or order"
+            );
+            Ok((header.parsed, header.size, None))
+        })
+    }
+
+    pub(crate) fn headers_only(&self) -> bool {
+        self.mappings.is_empty()
+    }
+
+    fn assemble(
+        paths: Vec<PathBuf>,
+        capacity_bytes: usize,
+        mut read: impl FnMut(
+            usize,
+            &Path,
+        ) -> Result<(Parsed, usize, Option<(Arc<Mmap>, expert_io::Source)>)>,
+    ) -> Result<Self> {
+        let count = paths.len();
         let identity = MODEL_ID
             .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
             .map_err(|_| anyhow::anyhow!("model identity counter exhausted"))?;
-        let mut initial = Some((mapping, parsed, source));
         let mut sources = Vec::with_capacity(count);
         let mut mappings = Vec::with_capacity(count);
         let mut tensors = BTreeMap::new();
         let mut first: Option<Parsed> = None;
         let mut total_mapped = 0usize;
         for (index, shard_path) in paths.iter().enumerate() {
-            let (map, mut part, source) = if index == selected {
-                initial.take().expect("selected shard consumed once")
-            } else {
-                map_file(shard_path)?
-            };
+            let (mut part, shard_size, backing) = read(index, shard_path)?;
             ensure!(
                 split_integer(&part.meta, "split.count", 1)? == count,
                 "shard count disagrees: {}",
@@ -207,7 +244,7 @@ impl Gguf {
                 shard_path.display()
             );
             total_mapped = total_mapped
-                .checked_add(map.len())
+                .checked_add(shard_size)
                 .context("combined model mapping size overflow")?;
             ensure!(
                 total_mapped <= isize::MAX as usize,
@@ -243,8 +280,10 @@ impl Gguf {
             if first.is_none() {
                 first = Some(part);
             }
-            mappings.push(map);
-            sources.push(source);
+            if let Some((map, source)) = backing {
+                mappings.push(map);
+                sources.push(source);
+            }
         }
         let first = first.expect("nonempty checked shard count");
         if let Some(declared) = first.meta.get("split.tensors.count") {
@@ -317,7 +356,9 @@ impl Gguf {
 
 
     pub fn expert_cache_stats(&self) -> Result<ExpertCacheStats> {
-        self.cache.stats()
+        let mut stats = self.cache.stats()?;
+        stats.io_scratch_max_bytes = self.sources.iter().map(expert_io::Source::scratch_max_bytes).max().unwrap_or(0);
+        Ok(stats)
     }
 
     /// Retune expert RAM without replacing the model or invalidating active leases.
@@ -339,6 +380,13 @@ impl Gguf {
     /// weights remain mapped; no whole-model prefault or conversion occurs.
     /// A partial budget is spread across layers, then successive expert IDs.
     pub fn warm_expert_cache(&self) -> Result<ExpertWarmupReport> {
+        self.warm_expert_cache_with_progress(|_, _| {})
+    }
+
+    pub(crate) fn warm_expert_cache_with_progress(
+        &self,
+        mut progress: impl FnMut(usize, &ExpertWarmupReport),
+    ) -> Result<ExpertWarmupReport> {
         let started = std::time::Instant::now();
         let mut report = ExpertWarmupReport::default();
         if self.cache.stats()?.capacity_bytes == 0 {
@@ -397,6 +445,7 @@ impl Gguf {
             total_experts <= 1_048_576,
             "expert warmup count exceeds bounded traversal limit"
         );
+        progress(total_experts, &report);
         let max_experts = geometry.iter().map(|(_, n)| *n).max().unwrap_or(0);
         for expert in 0..max_experts {
             for &(names, count) in &geometry {
@@ -430,6 +479,7 @@ impl Gguf {
                     }
                     None => report.experts_skipped_budget += 1,
                 }
+                progress(total_experts, &report);
             }
         }
         report.elapsed_seconds = started.elapsed().as_secs_f64();
@@ -744,7 +794,7 @@ fn map_file(path: &Path) -> Result<(Arc<Mmap>, Parsed, expert_io::Source)> {
     let mapping = Arc::new(unsafe { MmapOptions::new().map(&file) }.context("map GGUF shard")?);
     let parsed =
         Parsed::read(&mapping).with_context(|| format!("parse GGUF {}", path.display()))?;
-    let source = expert_io::Source::new(path, file, len);
+    let source = expert_io::Source::new(path, file, len)?;
     Ok((mapping, parsed, source))
 }
 
@@ -770,6 +820,27 @@ fn shard_paths(path: &Path, count: usize, number: usize) -> Result<Vec<PathBuf>>
         .collect())
 }
 
+pub(crate) struct RemoteHeader {
+    name: PathBuf,
+    size: usize,
+    parsed: Parsed,
+}
+
+impl RemoteHeader {
+    pub(crate) fn parse(name: &str, prefix: &[u8], size: u64) -> Result<Self> {
+        let size = usize::try_from(size).context("GGUF remote shard size exceeds address space")?;
+        ensure!(
+            size <= isize::MAX as usize && prefix.len() <= size,
+            "invalid remote shard size"
+        );
+        Ok(Self {
+            name: PathBuf::from(name),
+            size,
+            parsed: Parsed::read_prefix(prefix, size)?,
+        })
+    }
+}
+
 struct Parsed {
     version: u32,
     meta: BTreeMap<String, Value>,
@@ -780,6 +851,10 @@ struct Parsed {
 
 impl Parsed {
     fn read(bytes: &[u8]) -> Result<Self> {
+        Self::read_prefix(bytes, bytes.len())
+    }
+
+    fn read_prefix(bytes: &[u8], file_size: usize) -> Result<Self> {
         let mut reader = Reader {
             bytes,
             cursor: 0,
@@ -939,10 +1014,9 @@ impl Parsed {
                 .checked_add(tensor.byte_len)
                 .context("tensor range overflow")?;
             ensure!(
-                end <= bytes.len(),
-                "tensor {} is truncated: requires byte {end}, file has {}",
-                tensor.name,
-                bytes.len()
+                end <= file_size,
+                "tensor {} is truncated: requires byte {end}, file has {file_size}",
+                tensor.name
             );
             ranges.push((tensor.file_offset, end, tensor.name.as_str()));
         }
@@ -1150,6 +1224,32 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_file(&self.0);
         }
+    }
+
+    #[test]
+    fn remote_header_uses_advertised_file_size_and_native_quant_checks() {
+        let prefix = fixture(&[], &[("w", &[128, 1], 0, 0)], &[]);
+        let total = prefix.len() as u64 + 512;
+        let header = RemoteHeader::parse("x.gguf", &prefix, total).unwrap();
+        let source = Gguf::from_remote_headers(vec![header]).unwrap();
+        assert!(source.headers_only());
+        assert_eq!(source.expert_cache_stats().unwrap().io_scratch_max_bytes,0);
+        assert!(source.tensor("w").is_err());
+        assert!(RemoteHeader::parse("x.gguf", &prefix, total - 1).is_err());
+        let bad = fixture(&[], &[("w", &[256, 1], 10, 0)], &[]);
+        assert!(RemoteHeader::parse("q4_k_m.gguf", &bad, total).is_err());
+        let partial = fixture(
+            &[
+                ("split.count", 4, 2u32.to_le_bytes().to_vec()),
+                ("split.no", 4, 0u32.to_le_bytes().to_vec()),
+                ("split.tensors.count", 10, 1u64.to_le_bytes().to_vec()),
+            ],
+            &[],
+            &[],
+        );
+        let header =
+            RemoteHeader::parse("x-00001-of-00002.gguf", &partial, partial.len() as u64).unwrap();
+        assert!(Gguf::from_remote_headers(vec![header]).is_err());
     }
 
     #[test]
@@ -1465,7 +1565,18 @@ mod tests {
         ));
         let mut model = Gguf::open(&file.0).unwrap();
         model.set_expert_cache_capacity(64).unwrap();
-        let warmed = model.warm_expert_cache().unwrap();
+        let mut progress = Vec::new();
+        let warmed = model
+            .warm_expert_cache_with_progress(|total, report| {
+                progress.push((
+                    report.experts_considered,
+                    total,
+                    report.experts_ready,
+                    report.payload_bytes_loaded,
+                ));
+            })
+            .unwrap();
+        assert_eq!(progress, [(0, 2, 0, 0), (1, 2, 1, 48), (2, 2, 1, 48)]);
         assert_eq!(
             (
                 warmed.experts_considered,
@@ -1511,4 +1622,15 @@ mod tests {
         let disabled = Gguf::open(&file.0).unwrap();
         assert_eq!(disabled.warm_expert_cache().unwrap().experts_considered, 0);
     }
+    #[test]
+    fn expert_stats_report_the_sources_effective_io_bound() {
+        let path=std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/tiny-qwen3moe.gguf");
+        let model=Gguf::open(path).unwrap();
+        let expected=std::env::var("NEXTORA_EXPERT_READ_KIB").ok()
+            .map(|value|value.parse::<usize>().unwrap()*1024).unwrap_or(1024*1024);
+        assert_eq!(model.expert_cache_stats().unwrap().io_scratch_max_bytes,expected);
+        assert_eq!(model.expert_cache_stats().unwrap().resident_bytes,0);
+    }
+
 }

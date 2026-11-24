@@ -1,4 +1,25 @@
-> **Migration note (20 November 2026):** The previous native/Strata parity reports in this file describe the earlier two-runtime repository. The current PR #9 removes the Strata runtime and relies on independent native numerical tests. New merged-branch CI is required before treating the consolidation as validated.\n\n# Nextora 0.9.1 validation record
+# Nextora validation record
+
+## Integrated model setup and Vulkan decode, 24 November 2026
+
+The integrated source on top of `5ead89a` passed 196 Linux and 195 Windows
+Rust tests. The Linux release build passed 21 CLI checks, 30 HTTP checks and
+79 desktop/mobile UI checks. The model setup suites exercised Hub downloads
+against a local fixture server, per-model tuning in a separate worker, service
+restoration, explicit activation, chat and live Insight. Seven long-context
+UI checks covered model eligibility and saved settings.
+
+On Windows the RX 9070 XT matched the original F32 attention kernels at
+40,959 and 40,960 populated positions. At 40,960 positions the comparison
+covered all 1,310,720 scores and 4,096 weighted outputs. The six Direct shader
+modules rebuilt byte-for-byte from the checked-in shader sources. For
+checkpoint, driver, cache and throughput details, see the
+[AMD performance record](docs/AMD-PERFORMANCE.md).
+
+## Historical checks
+
+The records below include results obtained before the independent runtime
+replaced the former two-runtime implementation.
 
 Validated 17 November 2026. The independent package is `nextora-engine` 0.2.1;
 the encompassing project is Nextora 0.9.1.

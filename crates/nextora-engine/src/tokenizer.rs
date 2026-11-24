@@ -22,6 +22,9 @@ use tokenizers::{AddedToken, PreTokenizerWrapper, SplitDelimiterBehavior};
 
 // The spelling is part of the model's tokenizer contract: notably, each digit
 // is split individually. Replacing it with the GPT-2 default changes token IDs.
+// Qwen3.5/Qwen3.8 dense use NFC and keep combining marks with letters.
+// https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/tokenizer.json
+const QWEN35_SPLIT: &str = r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?[\p{L}\p{M}]+|\p{N}| ?[^\s\p{L}\p{M}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+";
 const QWEN2_SPLIT: &str = r"(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+";
 
 pub struct Tokenizer {
@@ -165,8 +168,8 @@ impl Tokenizer {
             .and_then(Value::as_str)
             .context("tokenizer.ggml.pre must explicitly identify the pre-tokenizer")?;
         ensure!(
-            matches!(pre, "qwen2" | "gpt2" | "default"),
-            "unsupported pre-tokenizer {pre:?}; supported: qwen2, gpt2, default"
+            matches!(pre, "qwen2" | "qwen35" | "gpt2" | "default"),
+            "unsupported pre-tokenizer {pre:?}; supported: qwen2, qwen35, gpt2, default"
         );
 
         for name in [
@@ -268,9 +271,13 @@ impl Tokenizer {
             .build()
             .map_err(|error| anyhow!("cannot construct GGUF BPE tokenizer: {error}"))?;
         let mut bpe = tokenizers::Tokenizer::new(model);
-        if pre == "qwen2" {
+        if matches!(pre, "qwen2" | "qwen35") {
+            if pre == "qwen35" {
+                bpe.with_normalizer(Some(tokenizers::normalizers::unicode::NFC))
+                    .map_err(|error| anyhow!("cannot construct Qwen3.5 NFC normalizer: {error}"))?;
+            }
             let split = Split::new(
-                SplitPattern::Regex(QWEN2_SPLIT.to_owned()),
+                SplitPattern::Regex(if pre == "qwen35" { QWEN35_SPLIT } else { QWEN2_SPLIT }.to_owned()),
                 SplitDelimiterBehavior::Isolated,
                 false,
             )
@@ -555,6 +562,34 @@ mod tests {
             ),
         );
         (gguf, first)
+    }
+
+    #[test]
+    fn qwen35_normalizes_nfc_and_keeps_marks_with_letters() {
+        let mut gguf = fixture();
+        gguf.meta.insert("tokenizer.ggml.pre".into(), Value::String("qwen35".into()));
+        let tokenizer = Tokenizer::from_gguf(&gguf).unwrap();
+        assert_eq!(tokenizer.pre_tokenizer(), "qwen35");
+        for (decomposed, composed) in [("cafe\u{301}", "café"), ("a\u{30a}", "å")] {
+            assert_eq!(tokenizer.encode(decomposed).unwrap(), tokenizer.encode(composed).unwrap());
+            assert_eq!(tokenizer.decode(&tokenizer.encode(decomposed).unwrap()).unwrap(), composed);
+        }
+        // U+0338 has no NFC composition for z. The qwen35 split keeps its
+        // combining bytes in the letter run, allowing a real BPE merge.
+        let Value::Array(vocab) = gguf.meta.get_mut("tokenizer.ggml.tokens").unwrap() else { panic!() };
+        let base = vocab.len() as u32;
+        let mark = [byte_symbol(0xcc), byte_symbol(0xb8)].iter().collect::<String>();
+        let merged = format!("z{mark}");
+        vocab.extend([mark.clone(), merged.clone()].into_iter().map(Value::String));
+        let Value::Array(kinds) = gguf.meta.get_mut("tokenizer.ggml.token_type").unwrap() else { panic!() };
+        kinds.extend([Value::U32(1), Value::U32(1)]);
+        gguf.meta.insert("tokenizer.ggml.merges".into(), Value::Array(vec![
+            Value::String(format!("{} {}", byte_symbol(0xcc), byte_symbol(0xb8))),
+            Value::String(format!("z {mark}")),
+        ]));
+        assert_eq!(Tokenizer::from_gguf(&gguf).unwrap().encode("z\u{338}").unwrap(), vec![base + 1]);
+        gguf.meta.insert("tokenizer.ggml.pre".into(), Value::String("qwen2".into()));
+        assert_ne!(Tokenizer::from_gguf(&gguf).unwrap().encode("z\u{338}").unwrap(), vec![base + 1]);
     }
 
     #[test]

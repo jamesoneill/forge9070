@@ -4,7 +4,7 @@
 //! configuration changes are published until the replacement has loaded and its
 //! optional profile file has been committed.
 use super::*;
-use crate::runtime::Backend;
+use crate::{runtime::Backend, vulkan::{KvPrecision, KvPlacement}};
 use serde::{Deserialize, Serialize};
 use std::{fs, process::Command};
 
@@ -14,20 +14,35 @@ const MAX_SCAN_DEPTH: usize = 16;
 const MAX_SCAN_MODELS: usize = 1024;
 const MAX_SCAN_MESSAGES: usize = 256;
 
+fn disabled(value: &bool) -> bool { !*value }
+fn gpu_placement(value: &KvPlacement) -> bool { *value == KvPlacement::Gpu }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct ServiceSettings {
-    backend: String,
-    device: Option<usize>,
-    ctx: usize,
+    pub(super) backend: String,
+    pub(super) device: Option<usize>,
+    pub(super) ctx: usize,
     pub(super) max_tokens: usize,
     pub(super) parallel: usize,
     pub(super) max_queued: usize,
     pub(super) queue_timeout_secs: u64,
-    vram_mib: usize,
-    expert_ram_mib: Option<usize>,
-    ram_margin_mib: usize,
-    expert_warmup: bool,
+    pub(super) vram_mib: usize,
+    pub(super) expert_ram_mib: Option<usize>,
+    pub(super) ram_margin_mib: usize,
+    pub(super) expert_warmup: bool,
+    #[serde(default, skip_serializing_if = "disabled")]
+    pub(super) fast_math: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) direct_experts: Option<bool>,
+    #[serde(default, skip_serializing_if = "KvPrecision::is_standard")]
+    pub(super) kv_precision: KvPrecision,
+    #[serde(default, skip_serializing_if = "gpu_placement")]
+    pub(super) kv_placement: KvPlacement,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) kv_ram_mib: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) threads: Option<usize>,
 }
 
 impl ServiceSettings {
@@ -56,6 +71,12 @@ impl ServiceSettings {
             expert_ram_mib: args.backend.expert_ram_mib,
             ram_margin_mib: args.backend.ram_margin_mib,
             expert_warmup: args.backend.expert_warmup,
+            threads: None,
+            fast_math: args.backend.fast_math,
+            direct_experts: args.backend.direct_experts,
+            kv_precision: args.backend.kv_precision,
+            kv_placement: args.backend.kv_placement,
+            kv_ram_mib: args.backend.kv_ram_mib,
         })
     }
 
@@ -79,8 +100,16 @@ impl ServiceSettings {
         })
     }
 
-    fn validate(&self, args: &ServeArgs) -> Result<()> {
+    pub(super) fn validate(&self, args: &ServeArgs) -> Result<()> {
         let backend = self.backend()?;
+        ensure!(self.direct_experts != Some(true) || matches!(backend, Backend::Auto | Backend::Vulkan), "direct expert access requires the Vulkan backend");
+        ensure!(!self.fast_math || matches!(backend, Backend::Auto | Backend::Vulkan), "fast math requires the Vulkan backend");
+        ensure!(!self.kv_precision.is_compact() || matches!(backend, Backend::Auto | Backend::Vulkan), "compact context memory requires the Vulkan backend");
+        ensure!(self.kv_placement != KvPlacement::Ram || matches!(backend, Backend::Auto | Backend::Vulkan), "RAM context placement requires the Vulkan backend");
+        ensure!(self.kv_placement != KvPlacement::Ram || self.parallel == 1, "RAM context placement currently requires one active request");
+        ensure!(self.kv_ram_mib.is_none() || self.kv_placement == KvPlacement::Ram, "kv_ram_mib requires RAM context placement");
+        ensure!(!self.kv_precision.is_compact() || self.parallel == 1, "compact context memory currently requires one active request");
+        ensure!(self.threads.is_none_or(|n| (1..=1024).contains(&n)), "threads must be in 1..=1024");
         ensure!(
             (2..=1_048_576).contains(&self.ctx),
             "context must be in 2..=1048576; model limits are also enforced on load"
@@ -113,6 +142,7 @@ impl ServiceSettings {
         for (name, n) in [
             ("vram_mib", self.vram_mib),
             ("expert_ram_mib", self.expert_ram_mib.unwrap_or(0)),
+            ("kv_ram_mib", self.kv_ram_mib.unwrap_or(0)),
             ("ram_margin_mib", self.ram_margin_mib),
         ] {
             ensure!(
@@ -123,11 +153,16 @@ impl ServiceSettings {
         Ok(())
     }
 
-    fn args(&self, base: &ServeArgs) -> Result<ServeArgs> {
+    pub(super) fn args(&self, base: &ServeArgs) -> Result<ServeArgs> {
         self.validate(base)?;
         let mut args = base.clone();
         let backend = self.backend()?;
         args.backend.cpu = false;
+        args.backend.fast_math = self.fast_math;
+        args.backend.direct_experts = self.direct_experts;
+        args.backend.kv_precision = self.kv_precision;
+        args.backend.kv_placement = self.kv_placement;
+        args.backend.kv_ram_mib = self.kv_ram_mib;
         args.backend.backend = Some(backend);
         args.backend.device = self.device;
         // This permission is supplied only on the CLI, never via a profile or UI.
@@ -150,12 +185,12 @@ impl ServiceSettings {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct ServiceProfile {
-    directory: Option<PathBuf>,
-    model: Option<String>,
+    pub(super) directory: Option<PathBuf>,
+    pub(super) model: Option<String>,
     pub(super) settings: ServiceSettings,
 }
 
-fn checked_directory(path: &Path) -> Result<PathBuf> {
+pub(super) fn checked_directory(path: &Path) -> Result<PathBuf> {
     ensure!(!path.as_os_str().is_empty(), "model directory is empty");
     ensure!(
         path.as_os_str().len() <= 32768,
@@ -166,7 +201,7 @@ fn checked_directory(path: &Path) -> Result<PathBuf> {
     Ok(real)
 }
 
-fn selected_path(root: &Path, id: &str) -> Result<PathBuf> {
+pub(super) fn selected_path(root: &Path, id: &str) -> Result<PathBuf> {
     ensure!(
         !id.is_empty() && id.len() <= 32768,
         "a non-empty model catalogue ID is required"
@@ -296,24 +331,12 @@ pub(super) fn startup(
     let mut catalogue = BTreeMap::new();
     let mut startup_error = None;
     let mut desired_model = None;
-    let loaded = if let Some(id) = &profile.model {
-        let attempt =
-            (|| -> Result<(PathBuf, String, BTreeMap<String, PathBuf>, Arc<ServedModel>)> {
-                let root = checked_directory(
-                    profile
-                        .directory
-                        .as_deref()
-                        .context("profile model requires a directory")?,
-                )?;
-                let path = selected_path(&root, id)?;
-                let id = id_for(&root, &path)?;
-                let scan = scan_directory(&root)?;
-                let mut catalogue = scan.catalogue();
-                catalogue.insert(id.clone(), path.clone());
-                let loaded = ServedModel::load(id.clone(), &path, &profile.settings.args(args)?)?;
-                Ok((root, id, catalogue, loaded))
-            })();
-        match attempt {
+    let loaded = if from_saved_profile && args.open_ui && profile.model.is_some() {
+        // Open the browser immediately so the saved model's startup is observable.
+        desired_model = profile.model.take();
+        None
+    } else if let Some(id) = &profile.model {
+        match open_profile_model(&profile, id, args, |_| {}) {
             Ok((root, id, found, loaded)) => {
                 profile.directory = Some(root);
                 profile.model = Some(id);
@@ -349,13 +372,89 @@ pub(super) fn startup(
     Ok((profile, catalogue, loaded, startup_error, desired_model))
 }
 
+fn open_profile_model(
+    profile: &ServiceProfile,
+    id: &str,
+    args: &ServeArgs,
+    progress: impl Fn(LoadStep),
+) -> Result<(PathBuf, String, BTreeMap<String, PathBuf>, Arc<ServedModel>)> {
+    let root = checked_directory(
+        profile
+            .directory
+            .as_deref()
+            .context("profile model requires a directory")?,
+    )?;
+    let path = selected_path(&root, id)?;
+    let id = id_for(&root, &path)?;
+    progress(LoadStep::Stage("scanning", "Checking the model directory"));
+    let mut catalogue = scan_directory(&root)?.catalogue();
+    catalogue.insert(id.clone(), path.clone());
+    let loaded = ServedModel::load(id.clone(), &path, &profile.settings.args(args)?, progress)?;
+    Ok((root, id, catalogue, loaded))
+}
+
+/// The caller reserves the admission gate before accepting HTTP connections.
+/// This path reads the startup profile and never writes the saved settings file.
+pub(super) fn restore_in_background(server: &Arc<Server>, id: String) -> Result<()> {
+    let server = Arc::clone(server);
+    server.admission.state.lock().unwrap().changing = true;
+    let (locked, wait_for_lock) = std::sync::mpsc::sync_channel(0);
+    std::thread::Builder::new()
+        .name("nextora-model-restore".into())
+        .spawn(move || {
+            let _admin = server.administration.lock().unwrap();
+            if locked.send(()).is_err() {
+                return;
+            }
+            let mut profile = server.profile.read().unwrap().clone();
+            let loaded = open_profile_model(&profile, &id, &server.args, |step| {
+                server.load_progress.lock().unwrap().update(step);
+            });
+            match loaded {
+                Ok((root, id, catalogue, loaded)) => {
+                    profile.directory = Some(root);
+                    profile.model = Some(id);
+                    *server.catalogue.write().unwrap() = catalogue;
+                    *server.profile.write().unwrap() = profile;
+                    *server.desired_model.write().unwrap() = None;
+                    *server.loaded.write().unwrap() = Some(loaded);
+                    server
+                        .load_progress
+                        .lock()
+                        .unwrap()
+                        .finish("ready", "Model ready");
+                }
+                Err(error) => {
+                    let message = format!("Saved model could not be loaded: {error:#}");
+                    eprintln!("{message}");
+                    *server.startup_error.write().unwrap() = Some(message.clone());
+                    server
+                        .load_progress
+                        .lock()
+                        .unwrap()
+                        .finish("failed", message);
+                }
+            }
+            server.admission.state.lock().unwrap().changing = false;
+            server.admission.changed.notify_all();
+        })?;
+    wait_for_lock.recv()?;
+    Ok(())
+}
+
+pub(super) fn native_backends(architecture: &str) -> &'static [&'static str] {
+    if architecture == "qwen35" { &["cpu", "hybrid"] } else { &["cpu", "vulkan", "hybrid"] }
+}
+
 #[derive(Serialize)]
-struct FoundModel {
-    id: String,
+pub(super) struct FoundModel {
+    pub(super) id: String,
     path: PathBuf,
     bytes: usize,
     shards: usize,
-    architecture: String,
+    pub(super) architecture: String,
+    pub(super) training_context: usize,
+    native_backends: &'static [&'static str],
 }
 #[derive(Serialize)]
 struct RejectedModel {
@@ -410,7 +509,7 @@ fn is_later_shard(path: &Path) -> bool {
         && &prefix[prefix.len() - 5..] != "00001"
 }
 
-fn inspect_model(root: &Path, path: &Path) -> Result<FoundModel> {
+pub(super) fn inspect_model(root: &Path, path: &Path) -> Result<FoundModel> {
     let path = path.canonicalize()?;
     ensure!(
         path.starts_with(root),
@@ -419,10 +518,6 @@ fn inspect_model(root: &Path, path: &Path) -> Result<FoundModel> {
     let g = Arc::new(crate::gguf::Gguf::open(&path)?);
     // Validate layout and the small norm vectors, not expert caches or sequence state.
     let model = crate::model::Model::load(g.clone(), 1)?;
-    ensure!(
-        model.config().expert_count > 0,
-        "native coding service accepts supported sparse MoE models; this checkpoint is dense"
-    );
     let tokenizer = crate::tokenizer::Tokenizer::from_gguf(&g)?;
     ensure!(
         tokenizer.vocab_size() == model.config().vocab_size,
@@ -435,6 +530,8 @@ fn inspect_model(root: &Path, path: &Path) -> Result<FoundModel> {
         bytes: g.mapped_bytes(),
         shards: g.shard_paths().len(),
         architecture: model.config().architecture.clone(),
+        training_context: model.config().training_context_length,
+        native_backends: native_backends(&model.config().architecture),
     })
 }
 
@@ -507,6 +604,7 @@ fn scan_directory(directory: &Path) -> Result<ScanReport> {
                 continue;
             }
             if kind.is_dir() {
+                if item.file_name().to_string_lossy().starts_with(".nextora-partial-") { continue; }
                 if depth < MAX_SCAN_DEPTH {
                     dirs.push((path, depth + 1));
                 } else {
@@ -556,7 +654,7 @@ fn scan_directory(directory: &Path) -> Result<ScanReport> {
     Ok(report)
 }
 
-fn in_wsl() -> bool {
+pub(super) fn in_wsl() -> bool {
     cfg!(target_os = "linux")
         && (std::env::var_os("WSL_DISTRO_NAME").is_some()
             || fs::read_to_string("/proc/sys/kernel/osrelease")
@@ -605,6 +703,7 @@ pub(super) fn config_value(server: &Server) -> Value {
         "desired_model": *server.desired_model.read().unwrap(),
         "settings": profile.settings, "models_dir": profile.directory, "model": profile.model,
         "settings_file": server.args.settings_file,
+        "effective_threads": server.pool.read().unwrap().current_num_threads(),
         "persistence": if server.args.settings_file.is_some() { "Successful changes are saved to the configured settings file." } else { "Changes apply to this process. Export settings and restart with --settings-file to retain them." },
         "startup": { "host": server.args.host, "port": server.args.port, "threads": server.threads, "max_connections": server.args.max_connections, "api_key_required": server.args.api_key.is_some() }
     })
@@ -616,6 +715,8 @@ pub(super) fn handle_control(
     request: &Request,
 ) -> Result<bool> {
     match (request.method.as_str(), request.path.as_str()) {
+        (_, path) if path.starts_with("/api/tuning/") => super::tuning::handle(server, stream, request)?,
+        (_, path) if path.starts_with("/api/hub/") => super::hub::handle(server, stream, request)?,
         ("GET", "/api/config") => json_response(stream, 200, &config_value(server))?,
         ("GET", "/api/hardware") => json_response(stream, 200, &crate::runtime::hardware_report())?,
         ("POST", "/api/models/scan") => {
@@ -688,7 +789,18 @@ pub(super) fn handle_control(
                 profile.model = Some(load.model);
                 profile
             };
-            match apply_profile(server, profile) {
+            let loading_model = profile.model.is_some();
+            server.load_progress.lock().unwrap().begin();
+            let result = apply_profile(server, profile);
+            {
+                let mut progress = server.load_progress.lock().unwrap();
+                match &result {
+                    Ok(()) if loading_model => progress.finish("ready", "Model ready"),
+                    Ok(()) => progress.finish("idle", "No model loaded"),
+                    Err((_, error)) => progress.finish("failed", error.clone()),
+                }
+            }
+            match result {
                 Ok(()) => {
                     let mut response = config_value(server);
                     response["runtime"] = server
@@ -723,6 +835,7 @@ fn apply_profile(
     idle(server)?;
     let bad = |error: anyhow::Error| (400, format!("{error:#}"));
     let effective = profile.settings.args(&server.args).map_err(bad)?;
+    let next_pool = super::worker_pool(profile.settings.threads.or(server.threads)).map_err(bad)?;
     let previous_profile = server.profile.read().unwrap().clone();
     let (path, mut catalogue) = if let Some(id) = &profile.model {
         let root = checked_directory(
@@ -735,6 +848,11 @@ fn apply_profile(
         let path = selected_path(&root, id).map_err(bad)?;
         // Validate the exact selected entry again; no arbitrary absolute path is accepted.
         let found = inspect_model(&root, &path).map_err(bad)?;
+        server
+            .load_progress
+            .lock()
+            .unwrap()
+            .update(LoadStep::Stage("scanning", "Checking the model directory"));
         let catalogue = scan_directory(&root).map_err(bad)?.catalogue();
         profile.directory = Some(root);
         profile.model = Some(found.id);
@@ -785,11 +903,18 @@ fn apply_profile(
         .map(|m| (m.id.clone(), m.model.source.path.clone()));
     drop(previous);
     let next = match (profile.model.as_ref(), path.as_ref()) {
-        (Some(id), Some(path)) => ServedModel::load(id.clone(), path, &effective).map(Some),
+        (Some(id), Some(path)) => ServedModel::load(id.clone(), path, &effective, |step| {
+            server.load_progress.lock().unwrap().update(step);
+        })
+        .map(Some),
         _ => Ok(None),
     };
     let next = next.and_then(|model| {
         if let Some(staged) = staged {
+            server.load_progress.lock().unwrap().update(LoadStep::Stage(
+                "saving",
+                "Saving the working configuration",
+            ));
             staged.commit()?;
         }
         Ok(model)
@@ -799,6 +924,7 @@ fn apply_profile(
             *server.loaded.write().unwrap() = next;
             *server.catalogue.write().unwrap() = catalogue;
             *server.profile.write().unwrap() = profile.clone();
+            *server.pool.write().unwrap() = next_pool;
             *server.startup_error.write().unwrap() = None;
             *server.desired_model.write().unwrap() = None;
             let mut gate = server.admission.state.lock().unwrap();
@@ -812,7 +938,17 @@ fn apply_profile(
         Err(error) => {
             let restored = previous_identity
                 .map(|(id, path)| {
-                    ServedModel::load(id, &path, &previous_profile.settings.args(&server.args)?)
+                    server
+                        .load_progress
+                        .lock()
+                        .unwrap()
+                        .update(LoadStep::Stage("restoring", "Restoring the previous model"));
+                    ServedModel::load(
+                        id,
+                        &path,
+                        &previous_profile.settings.args(&server.args)?,
+                        |_| {},
+                    )
                 })
                 .transpose();
             match restored {
@@ -843,12 +979,12 @@ fn apply_profile(
     result
 }
 
-struct StagedProfile {
+pub(super) struct StagedProfile {
     temporary: PathBuf,
     destination: PathBuf,
 }
 impl StagedProfile {
-    fn new(destination: &Path, profile: &ServiceProfile) -> Result<Self> {
+    pub(super) fn new(destination: &Path, profile: &ServiceProfile) -> Result<Self> {
         check_profile_file(destination)?;
         // Existing files must actually be native profiles, never arbitrary JSON.
         if destination.exists() {
@@ -890,7 +1026,7 @@ impl StagedProfile {
         file.sync_all().context("flush staged settings-file")?;
         Ok(staged)
     }
-    fn commit(self) -> Result<()> {
+    pub(super) fn commit(self) -> Result<()> {
         check_profile_file(&self.destination)?;
         // std::fs::rename atomically replaces regular files on both Unix and Windows.
         fs::rename(&self.temporary, &self.destination)
@@ -926,6 +1062,9 @@ pub(super) fn origin_allowed(origin: Option<&str>, host: &str, port: u16) -> boo
 pub(super) fn asset(path: &str) -> Option<(&'static str, &'static str)> {
     match path {
         "/" | "/index.html" => Some(("text/html; charset=utf-8", include_str!("../ui/index.html"))),
+        "/ui/tuning.js" => Some(("application/javascript; charset=utf-8", include_str!("../ui/tuning.js"))),
+        "/ui/chat.js" => Some(("application/javascript; charset=utf-8", include_str!("../ui/chat.js"))),
+        "/ui/library.js" => Some(("application/javascript; charset=utf-8", include_str!("../ui/library.js"))),
         "/ui/app.js" => Some((
             "application/javascript; charset=utf-8",
             include_str!("../ui/app.js"),
@@ -989,6 +1128,142 @@ pub(super) fn open_browser(url: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn direct_expert_profile_omits_automatic_and_preserves_explicit_false() {
+        use clap::Parser;
+        #[derive(Parser)] struct Options { #[command(flatten)] args: ServeArgs }
+        let args=Options::parse_from(["nextora","--backend","vulkan"]).args;
+        let original=ServiceSettings::from_args(&args).unwrap();
+        let legacy=serde_json::to_value(&original).unwrap();
+        assert!(legacy.get("direct_experts").is_none());
+        let restored:ServiceSettings=serde_json::from_value(legacy.clone()).unwrap();
+        assert_eq!(serde_json::to_value(restored).unwrap(),legacy);
+        for mode in [false,true] {
+            let mut settings=original.clone();settings.direct_experts=Some(mode);
+            let saved=serde_json::to_value(&settings).unwrap();assert_eq!(saved["direct_experts"],mode);
+            let restored:ServiceSettings=serde_json::from_value(saved).unwrap();
+            assert_eq!(restored.args(&args).unwrap().backend.direct_experts,Some(mode));
+            settings.backend="cpu".into();
+            assert_eq!(settings.validate(&args).is_err(),mode);
+        }
+    }
+
+    #[test]
+    fn fast_math_profile_is_opt_in_and_survives_settings_roundtrip() {
+        use clap::Parser;
+        #[derive(Parser)]
+        struct Options {
+            #[command(flatten)]
+            args: ServeArgs,
+        }
+        let args = Options::parse_from(["nextora", "--backend", "vulkan"]).args;
+        let original = ServiceSettings::from_args(&args).unwrap();
+        let legacy = serde_json::to_value(&original).unwrap();
+        assert!(legacy.get("fast_math").is_none());
+        let mut settings: ServiceSettings = serde_json::from_value(legacy).unwrap();
+        assert!(!settings.fast_math);
+        settings.fast_math = true;
+        let saved = serde_json::to_value(&settings).unwrap();
+        assert_eq!(saved["fast_math"], true);
+        let settings: ServiceSettings = serde_json::from_value(saved).unwrap();
+        settings.validate(&args).unwrap();
+        assert!(settings.args(&args).unwrap().backend.fast_math);
+        for backend in ["cpu", "hybrid"] {
+            let mut invalid = settings.clone();
+            invalid.backend = backend.into();
+            assert!(invalid.validate(&args).is_err());
+        }
+    }
+
+    #[test]
+    fn compact_context_settings_are_opt_in_and_roundtrip() {
+        use clap::Parser;
+        #[derive(Parser)] struct Options { #[command(flatten)] args: ServeArgs }
+        let args = Options::parse_from(["nextora", "--backend", "vulkan"]).args;
+        let original = ServiceSettings::from_args(&args).unwrap();
+        let legacy = serde_json::to_value(&original).unwrap();
+        assert!(legacy.get("kv_precision").is_none());
+        let mut settings: ServiceSettings = serde_json::from_value(legacy).unwrap();
+        assert_eq!(settings.kv_precision, KvPrecision::F32);
+        settings.kv_precision = KvPrecision::Q4_64;
+        settings.ctx = 524288;
+        let saved = serde_json::to_value(&settings).unwrap();
+        assert_eq!(saved["kv_precision"], "q4_64");
+        let settings: ServiceSettings = serde_json::from_value(saved).unwrap();
+        assert_eq!(settings.args(&args).unwrap().backend.kv_precision, KvPrecision::Q4_64);
+        for backend in ["cpu", "hybrid"] {
+            let mut invalid = settings.clone(); invalid.backend = backend.into();
+            assert!(invalid.validate(&args).is_err());
+        }
+    }
+
+    #[test]
+    fn ram_context_placement_roundtrips_and_enforces_its_backend_and_slots() {
+        use clap::Parser;
+        #[derive(Parser)] struct Options { #[command(flatten)] args: ServeArgs }
+        let args = Options::parse_from(["nextora", "--backend", "vulkan"]).args;
+        let original = ServiceSettings::from_args(&args).unwrap();
+        let legacy = serde_json::to_value(&original).unwrap();
+        assert!(legacy.get("kv_placement").is_none() && legacy.get("kv_ram_mib").is_none());
+        let mut settings: ServiceSettings = serde_json::from_value(legacy).unwrap();
+        assert_eq!(settings.kv_placement, KvPlacement::Gpu);
+        settings.kv_placement = KvPlacement::Ram;
+        settings.kv_ram_mib = Some(16384);
+        let saved = serde_json::to_value(&settings).unwrap();
+        assert_eq!(saved["kv_placement"], "ram");
+        let settings: ServiceSettings = serde_json::from_value(saved).unwrap();
+        let effective = settings.args(&args).unwrap();
+        assert_eq!(effective.backend.kv_placement, KvPlacement::Ram);
+        assert_eq!(effective.backend.kv_ram_mib, Some(16384));
+        for backend in ["cpu", "hybrid"] {
+            let mut invalid = settings.clone(); invalid.backend = backend.into();
+            assert!(invalid.validate(&args).is_err());
+        }
+        let mut invalid = settings.clone(); invalid.parallel = 2;
+        assert!(invalid.validate(&args).is_err());
+        let mut invalid = settings; invalid.kv_placement = KvPlacement::Gpu;
+        assert!(invalid.validate(&args).is_err());
+    }
+
+    #[test]
+    fn saved_model_startup_defers_to_ui_and_preserves_broken_profile() {
+        use clap::Parser;
+        #[derive(Parser)]
+        struct Options {
+            #[command(flatten)]
+            args: ServeArgs,
+        }
+        let mut args = Options::parse_from(["nextora", "--open-ui", "--backend", "cpu"]).args;
+        let directory = std::env::temp_dir().join(format!(
+            "nextora-profile-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&directory).unwrap();
+        let profile = ServiceProfile {
+            directory: Some(directory.clone()),
+            model: Some("missing.gguf".into()),
+            settings: ServiceSettings::from_args(&args).unwrap(),
+        };
+        let bytes = serde_json::to_vec(&profile).unwrap();
+        let file = directory.join("service.json");
+        fs::write(&file, &bytes).unwrap();
+        args.settings_file = Some(file.clone());
+        let (profile, _, loaded, error, desired) = startup(&mut args).unwrap();
+        assert!(loaded.is_none() && error.is_none() && profile.model.is_none());
+        assert_eq!(desired.as_deref(), Some("missing.gguf"));
+        assert!(open_profile_model(&profile, desired.as_deref().unwrap(), &args, |_| {}).is_err());
+        assert_eq!(fs::read(&file).unwrap(), bytes);
+        args.open_ui = false;
+        let (_, _, _, headless_error, _) = startup(&mut args).unwrap();
+        assert!(headless_error.is_some());
+        fs::remove_file(file).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
     #[test]
     fn browser_origin_is_exact_and_cli_has_no_origin() {
         assert!(origin_allowed(None, "localhost:9070", 9070));
