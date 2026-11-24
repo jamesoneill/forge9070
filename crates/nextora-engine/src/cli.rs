@@ -32,6 +32,8 @@ pub enum EngineCommand {
     Doctor,
     /// Inspect a local GGUF's size and build a conservative memory/quantisation plan.
     ModelFit(crate::model_fit::ModelFitArgs),
+    /// Convert eligible floating-point GGUF matrix rows to Q4_0/Q8_0 in a NEW single-file output.
+    Quantize(crate::offline_quant::OfflineQuantArgs),
     /// Read-only hardware advisor using discovery and existing successful native benchmark reports.
     Insight {
         /// JSON report from 'nextora bench --json-out' (repeat for several workloads).
@@ -165,6 +167,7 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             unreachable!("serve dispatches with its own shared worker budget")
         }
         EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
+        EngineCommand::Quantize(args) => print_json(&crate::offline_quant::quantize(&args)?),
         EngineCommand::ModelFit(args) => {
             if let Some(out) = &args.json_out {
                 check_report_destination(&args.model, out)?;
