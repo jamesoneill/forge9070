@@ -13,6 +13,7 @@ pub mod gguf;
 pub mod insight;
 pub mod math;
 pub mod model_fit;
+pub mod offline_quant;
 pub mod memory;
 pub mod model;
 pub mod performance;
