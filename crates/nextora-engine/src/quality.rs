@@ -143,7 +143,7 @@ fn validate_models(reference:&RuntimeModel,candidate:&RuntimeModel)->Result<()>{
 pub fn compare(args:&QualityArgs)->Result<Value>{
     ensure!((1..=16).contains(&args.prompts.len()),"quality comparison requires 1..=16 prompts");
     ensure!((1..=128).contains(&args.steps),"--steps must be in 1..=128");
-    ensure!((128..=131072).contains(&args.ctx),"--ctx must be in 128..=131072");
+    ensure!((16..=131072).contains(&args.ctx),"--ctx must be in 16..=131072");
     ensure!(args.ctx>args.steps,"context must exceed reference-step count");
     ensure!(args.prompts.iter().all(|p|!p.is_empty() && p.len()<=16384),
         "prompts must be nonempty and at most 16 KiB");
