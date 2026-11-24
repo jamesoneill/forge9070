@@ -416,6 +416,66 @@ mod tests {
         fs::remove_dir(base).unwrap();
     }
 
+
+    #[test]
+    fn target_file_size_chooses_safe_quantization_and_fails_impossible_budget() {
+        use std::io::Write;
+        let base=std::env::temp_dir().join(format!("nextora-budget-test-{}-{}",
+            std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        fs::create_dir(&base).unwrap();
+        let input=base.join("source.gguf");
+        let output=base.join("one-mib.gguf");
+        let mut data=Vec::new();
+        data.extend_from_slice(b"GGUF");
+        data.extend_from_slice(&3u32.to_le_bytes());
+        data.extend_from_slice(&1u64.to_le_bytes());
+        data.extend_from_slice(&2u64.to_le_bytes());
+        write_string(&mut data,"general.architecture").unwrap();
+        data.extend_from_slice(&8u32.to_le_bytes());
+        write_string(&mut data,"qwen3").unwrap();
+        write_string(&mut data,"general.file_type").unwrap();
+        data.extend_from_slice(&4u32.to_le_bytes());
+        data.extend_from_slice(&1u32.to_le_bytes());
+        write_string(&mut data,"blk.0.ffn_up.weight").unwrap();
+        data.extend_from_slice(&2u32.to_le_bytes());
+        data.extend_from_slice(&256u64.to_le_bytes());
+        data.extend_from_slice(&4096u64.to_le_bytes());
+        data.extend_from_slice(&1u32.to_le_bytes());
+        data.extend_from_slice(&0u64.to_le_bytes());
+        let offset=align(data.len() as u64,32).unwrap() as usize;
+        data.resize(offset,0);
+        let mut f=File::create(&input).unwrap();
+        f.write_all(&data).unwrap();
+        for _ in 0..4096 {
+            for i in 0..256 {
+                f.write_all(&f16::from_f32((i as f32-128.)/128.).to_le_bytes()).unwrap();
+            }
+        }
+        f.sync_all().unwrap();
+        drop(f);
+        let original_length=fs::metadata(&input).unwrap().len();
+        let args=OfflineQuantArgs {
+            model:input.clone(),output:output.clone(),
+            target:None,target_size_mib:Some(1),max_nrmse:0.25
+        };
+        let report=quantize(&args).unwrap();
+        assert_eq!(report["size_target_met"],true);
+        assert!(report["output_size_bytes"].as_u64().unwrap()<=1024*1024);
+        assert_eq!(report["mixed_precision_plan"]["importance_matrix_used"],false);
+        assert_eq!(report["model_quality_verified"],false);
+        assert!(fs::metadata(&input).unwrap().len()==original_length);
+        let actual=Gguf::open(&output).unwrap();
+        assert_eq!(actual.tensors["blk.0.ffn_up.weight"].ty,QuantType::Q4_0);
+        drop(actual);
+        fs::remove_file(&output).unwrap();
+        let mut impossible=args;
+        impossible.max_nrmse=0.000001;
+        assert!(quantize(&impossible).is_err());
+        assert!(!output.exists());
+        fs::remove_file(input).unwrap();
+        fs::remove_dir(base).unwrap();
+    }
+
     #[test]
     fn unaligned_or_nonfinite_source_is_rejected() {
         assert!(encode_row(&[f32::NAN;32],QuantType::Q4_0,&mut vec![]).is_err());
