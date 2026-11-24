@@ -251,7 +251,9 @@ pub fn dot_kernel(ty: QuantType, width: usize) -> &'static str {
         && std::arch::is_x86_feature_detected!("avx2")
         && std::arch::is_x86_feature_detected!("fma")
     {
-        return if ty == QuantType::F16 {
+        return if matches!(ty, QuantType::Q4_K | QuantType::Q6_K) {
+            "avx2_f64_k_quant"
+        } else if ty == QuantType::F16 {
             if std::arch::is_x86_feature_detected!("f16c") {
                 "avx2_fma_f16c"
             } else {
@@ -261,8 +263,11 @@ pub fn dot_kernel(ty: QuantType, width: usize) -> &'static str {
             "avx2_fma"
         };
     }
-    let _ = (ty, width);
-    "scalar"
+    if matches!(ty, QuantType::Q4_K | QuantType::Q6_K) {
+        "portable_f64_k_quant"
+    } else {
+        "scalar"
+    }
 }
 
 /// The matrix entry point checks the activation vector once, before dispatching
@@ -272,31 +277,22 @@ pub(crate) fn dot_finite_input(ty: QuantType, bytes: &[u8], input: &[f32]) -> Re
         bytes.len() == ty.row_bytes(input.len())?,
         "dot-product row byte length mismatch"
     );
-    #[cfg(target_arch = "x86_64")]
-    {
-        let kernel = dot_kernel(ty, input.len());
-        if kernel != "scalar" {
-            // SAFETY: dispatch checks every feature required by the selected
-            // function, including F16C for half conversion. Exact byte length
-            // and block geometry were checked above; loads stay within slices.
-            let value = unsafe {
-                if kernel == "avx512f_bw_dq_fma_k_quant" {
-                    dot_k_avx512(ty, bytes, input)
-                } else if kernel == "avx2_fma_f16c" {
-                    dot_f16_avx2_fma_f16c(bytes, input)
-                } else {
-                    dot_avx2_fma(ty, bytes, input)
-                }
-            };
-            ensure!(
-                value.is_finite(),
-                "non-finite {} dot-product result",
-                ty.name()
-            );
-            return Ok(value);
-        }
-    }
-    dot_scalar_finite(ty, bytes, input)
+    // The dispatch checks each ISA before entering its target_feature function.
+    // All loads operate on complete blocks validated by row_bytes above.
+    let value = match dot_kernel(ty, input.len()) {
+        #[cfg(target_arch = "x86_64")]
+        "avx512f_bw_dq_fma_k_quant" => unsafe { dot_k_avx512(ty, bytes, input) },
+        #[cfg(target_arch = "x86_64")]
+        "avx2_f64_k_quant" => unsafe { dot_k_avx2_wide(ty, bytes, input) },
+        #[cfg(target_arch = "x86_64")]
+        "avx2_fma_f16c" => unsafe { dot_f16_avx2_fma_f16c(bytes, input) },
+        #[cfg(target_arch = "x86_64")]
+        "avx2_fma" => unsafe { dot_avx2_fma(ty, bytes, input) },
+        "portable_f64_k_quant" => dot_k_wide(ty, bytes, input),
+        _ => return dot_scalar_finite(ty, bytes, input),
+    };
+    ensure!(value.is_finite(), "non-finite {} dot-product result", ty.name());
+    Ok(value)
 }
 
 /// The previous checked AVX2 path, retained for paired CPU-kernel measurements.
@@ -443,6 +439,29 @@ unsafe fn dot_k_avx512(ty: QuantType, bytes: &[u8], input: &[f32]) -> f32 {
         }
         _mm512_reduce_add_ps(_mm512_add_ps(first, second))
     }
+}
+
+// Keep the cancellation-sensitive K-format fallback accurate on hosts without
+// AVX-512. Independent double lanes let LLVM vectorize the block reduction.
+#[inline(always)]
+fn dot_k_wide(ty: QuantType, bytes: &[u8], input: &[f32]) -> f32 {
+    let mut sums = [0.0f64; 4];
+    let mut decoded = [0.0f32; 256];
+    for (block, values) in bytes.chunks_exact(ty.block_bytes()).zip(input.chunks_exact(256)) {
+        decode_extended_block(ty, block, &mut decoded);
+        for (weights, activations) in decoded.chunks_exact(4).zip(values.chunks_exact(4)) {
+            for lane in 0..4 {
+                sums[lane] += f64::from(weights[lane]) * f64::from(activations[lane]);
+            }
+        }
+    }
+    sums.into_iter().sum::<f64>() as f32
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn dot_k_avx2_wide(ty: QuantType, bytes: &[u8], input: &[f32]) -> f32 {
+    dot_k_wide(ty, bytes, input)
 }
 
 fn dot_scalar_finite(ty: QuantType, bytes: &[u8], input: &[f32]) -> Result<f32> {
@@ -1006,6 +1025,28 @@ mod avx512_k_tests {
             }
         }
         bytes
+    }
+
+    #[test]
+    fn k_quant_fallback_preserves_residual_after_large_terms_cancel() {
+        for ty in [QuantType::Q4_K, QuantType::Q6_K] {
+            // Repeat one nonzero weight across three blocks. Each lane sees
+            // +2^32, +1 and -2^32, so F32 accumulation loses the residual.
+            let seed = encoded(ty, 256, 3, f16::from_f32(1.0), f16::from_f32(0.0));
+            let bytes = seed[1..].repeat(3);
+            let mut weights = [0.0; 256];
+            decode_extended_block(ty, &seed[1..], &mut weights);
+            let lane = weights.iter().position(|w| *w != 0.0).unwrap();
+            let mut input = vec![0.0; 768];
+            input[lane] = 4294967296.0;
+            input[lane + 256] = 1.0;
+            input[lane + 512] = -input[lane];
+            assert_eq!(dot_k_wide(ty, &bytes, &input), weights[lane]);
+            #[cfg(target_arch = "x86_64")]
+            if std::arch::is_x86_feature_detected!("avx2") {
+                assert_eq!(unsafe { dot_k_avx2_wide(ty, &bytes, &input) }, weights[lane]);
+            }
+        }
     }
 
     #[test]

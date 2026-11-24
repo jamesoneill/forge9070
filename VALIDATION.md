@@ -2,7 +2,7 @@
 
 ## Integrated model setup and Vulkan decode, 24 November 2026
 
-The integrated source on top of `5ead89a` passed 196 Linux and 195 Windows
+The integrated source on top of `5ead89a` passed 197 Linux and 196 Windows
 Rust tests. The Linux release build passed 21 CLI checks, 30 HTTP checks and
 79 desktop/mobile UI checks. The model setup suites exercised Hub downloads
 against a local fixture server, per-model tuning in a separate worker, service

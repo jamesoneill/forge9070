@@ -30,6 +30,8 @@ or faster SSD storage alone cannot remove that measured wait.
   CPU kernel measurements, not whole-model token-rate claims. Tests compare
   independent bit layouts, complete synthetic model hidden/logit outputs, and
   an F64 numerical reference for ill-conditioned benchmark rows.
+- For CPUs without the AVX-512 K-format kernel, Q4_K and Q6_K dot products
+  accumulate in F64 lanes to retain small residuals after cancellation.
 - Bounded expert-read scratch now defaults to 1 MiB and allocates only the aligned
   span needed for small reads. A typical 884,736-byte matrix requires one read
   instead of 14. On the existing F: volume, complete expert-cache warmup measured
@@ -147,6 +149,25 @@ per prompt. Direct fast mode now reclaims unleased, unpinned cache entries
 before placing a supported prompt expert on CPU. Transient prompt weights
 keep their existing admission priority. The genuine insufficient-capacity
 fallback remains available.
+
+## Integration benchmark, 24 November 2026
+
+The Windows release build used the same RX 9070 XT and Qwen3-30B-A3B
+Q4_K_M (`5eed9fdfc8dd2a614fa0f344befbb68d9e049978`), with a 40,960-token
+window, 14,000 MiB Vulkan budget, F32 GPU KV and Q8 activations.
+
+| Workload | Packed | Direct |
+| --- | --- | --- |
+| 21-token prompt, 128 decode steps | 30.03 and 30.18 tok/s | 38.01 tok/s |
+| 4,096-token coding prompt, 64 decode steps | — | 15.61 tok/s |
+
+The short run used Packed, Direct, then Packed on the same machine, with two
+warmups and three measured samples per configuration. All 15 continuations
+had the same token checksum. The longer run used the release CLI with one
+warmup and one measured pass. Prefill took 170.06 seconds (24.09 tok/s), and
+decode took 4.10 seconds. The GPU completed every selected expert with zero
+CPU fallbacks. A separate 128-step forced trajectory with a 644-token prefix
+matched all 19,447,808 Packed reference logits bit-for-bit.
 
 ## What AMD memory features mean here
 
