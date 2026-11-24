@@ -30,6 +30,8 @@ pub enum EngineCommand {
     Serve(crate::server::ServeArgs),
     /// Report CPU availability and eligible Vulkan adapters without claiming execution was verified.
     Doctor,
+    /// Inspect a local GGUF's size and build a conservative memory/quantisation plan.
+    ModelFit(crate::model_fit::ModelFitArgs),
     /// Read-only hardware advisor using discovery and existing successful native benchmark reports.
     Insight {
         /// JSON report from 'nextora bench --json-out' (repeat for several workloads).
@@ -163,6 +165,20 @@ fn dispatch(command: EngineCommand) -> Result<()> {
             unreachable!("serve dispatches with its own shared worker budget")
         }
         EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
+        EngineCommand::ModelFit(args) => {
+            if let Some(out) = &args.json_out {
+                check_report_destination(&args.model, out)?;
+            }
+            let report = crate::model_fit::evaluate(&args)?;
+            if let Some(out) = &args.json_out {
+                let source = Gguf::open(&args.model)?;
+                for shard in source.shard_paths() {
+                    check_report_destination(shard, out)?;
+                }
+                write_report(out, &report, Some(&args.model))?;
+            }
+            print_json(&report)
+        },
         EngineCommand::Insight { bench_reports, json_out } => {
             ensure!(bench_reports.len() <= 16, "Insight accepts no more than 16 benchmark reports");
             for source in &bench_reports {
