@@ -28,6 +28,7 @@ Start with the [Nextora launch page](../site/index.html), [rename/compatibility 
 | [Published evidence](validation/README.md) | Sanitized historical reports and their provenance |
 | [Avalon comparison](AVALON-COMPARISON.md) | Implemented MoE mechanisms and remaining differences |
 | [Expert RAM](EXPERT-RAM.md) | Bounded cache design and accounting |
+| [Concurrency benchmarking](CONCURRENCY-BENCHMARK.md) | Reproducible 1/2/4-slot native CPU/Vulkan performance sweep |
 | [Performance measurement](PERFORMANCE.md) | Compatibility-path tuning and reproducible measurements |
 | [Accuracy](ACCURACY.md) | Quantization, sampling and output-comparison limits |
 

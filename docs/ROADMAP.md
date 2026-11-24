@@ -50,3 +50,7 @@ The `nextora model-fit` CLI estimates GGUF tensor-layout sizes for hypothetical 
 ## Model-level source/candidate quality gates
 
 The `nextora quality` command now evaluates fixed raw prompts on both actual models, using a CPU reference and CPU or hardware Vulkan candidate, with identical reference-token teacher forcing. It measures softmax KL divergence, absolute logit difference and top-1 token agreement, with explicit pass/fail thresholds. This is not a coding-task benchmark, model truthfulness test, chat-template evaluation or RX 9070 XT speed result. See [MODEL-QUALITY.md](MODEL-QUALITY.md). Before accepting production-ready model conversion, we still require independent pretrained model results, task accuracy, long contexts and actual GPU memory/performance data.
+
+## Reproducible concurrency sweep
+
+The local `scripts/benchmark-concurrency.py` runs the existing native Rust model benchmark at 1, 2 and 4 active request slots, validates the output backend and benchmark checksums, and compares observed throughput and tail latency. It does not change the runtime scheduler, optimise a checkpoint, prove model correctness or capture GPU driver/clock/power fingerprints. See `docs/CONCURRENCY-BENCHMARK.md`.
