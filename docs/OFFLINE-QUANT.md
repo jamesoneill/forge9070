@@ -25,3 +25,15 @@ This is an offline CPU operation. A large model may take considerable time and t
 A full acceptance benchmark uses a supported real checkpoint, exact source/converted references, fixed prompts and token/logit checks, then measures load, VRAM, time-to-first-token, prefill, decode and concurrent request throughput. Conversion fails rather than silently accepting errors above the selected limit.
 
 See [model-fit](MODEL-FIT.md), [hardware support](HARDWARE-SUPPORT.md), [accuracy](ACCURACY.md) and [validation](../VALIDATION.md).
+
+## Automatic file-size target (experimental mixed precision)
+
+Instead of selecting a uniform Q4_0 or Q8_0 format, use an output file-size ceiling in MiB:
+
+    .\target\release\nextora.exe quantize --model 'F:\Models\source-f16.gguf' --output 'F:\Models\source-budgeted.gguf' --target-size-mib 12288 --max-nrmse 0.25
+
+The command makes a **first offline assessment pass** over eligible original floating-point matrix weights. It independently quantizes and decodes candidate Q8_0 and Q4_0 rows, accumulates measured per-tensor squared reconstruction error, then greedily chooses the lower measured incremental error per byte saved until the requested output size fits. Unsupported matrices, existing quantized weights, embeddings and normalization tensors remain unchanged. The exporter makes a **second pass** to write the chosen formats to a new file, checks every converted tensor against the same NRMSE threshold, reparses the completed GGUF, and rejects a final output above the requested size.
+
+Only one of `--target` and `--target-size-mib` may be given. If no combination of the supported candidate formats meets both the file-size ceiling and reconstruction threshold, no output is published. A target larger than the source file is rejected as unnecessary. Only **single-shard original floating-point** GGUF is supported.
+
+This is a greedy tensor-error heuristic, **not** an importance-matrix optimiser, optimal bit-allocation solver, or proof of model/task accuracy. It does not model VRAM use, KV-cache residency, PCIe transfers or sustained tokens/sec. Your real RX 9070 XT still needs workload and quality-parity benchmarks before any performance claim.
