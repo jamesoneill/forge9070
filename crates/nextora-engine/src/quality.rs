@@ -4,9 +4,8 @@
 //! blind test, or proof of real-world usefulness.
 use crate::{
     runtime::{Backend, BackendArgs, RuntimeModel},
-    model::Step,
 };
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, ensure};
 use clap::Args;
 use serde_json::{Value,json};
 use std::{path::PathBuf, time::Instant};
@@ -121,11 +120,10 @@ fn validate_models(reference:&RuntimeModel,candidate:&RuntimeModel)->Result<()>{
         reference.tokenizer.vocab_size()==candidate.tokenizer.vocab_size(),
         "tokenizer vocabulary sizes differ"
     );
-    let tokenizer_entries=|m:&RuntimeModel|->Vec<_>{
-        m.source.meta.iter().filter(|(key,_)|key.starts_with("tokenizer.")).collect()
-    };
+    let ref_tokenizer=reference.source.meta.iter().filter(|(key,_)|key.starts_with("tokenizer."));
+    let candidate_tokenizer=candidate.source.meta.iter().filter(|(key,_)|key.starts_with("tokenizer."));
     ensure!(
-        tokenizer_entries(reference)==tokenizer_entries(candidate),
+        ref_tokenizer.eq(candidate_tokenizer),
         "tokenizer metadata differs; token IDs cannot be compared reliably"
     );
     ensure!(
