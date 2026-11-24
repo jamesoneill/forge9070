@@ -10,6 +10,9 @@ Start with the [Nextora launch page](../site/index.html), [rename/compatibility 
 | [Windows quick start](WINDOWS.md) | Build on Windows, open the configuration UI, repair common startup errors |
 | [Native engine](NATIVE-ENGINE.md) | Independent Rust engine, configuration UI, model discovery, API, Windows and WSL |
 | [Nextora Insight](INSIGHT.md) | Read-only hardware assessment, benchmark-backed advice, and measured upgrade decisions |
+| [Model-level quality gates](MODEL-QUALITY.md) | Compare real model logits and token decisions against source checkpoints |
+| [Offline GGUF quantizer](OFFLINE-QUANT.md) | Conservative single-file Q4_0/Q8_0 export with per-tensor error gates |
+| [Model-fit planning](MODEL-FIT.md) | Read-only GGUF quantisation file-size estimates and GPU memory-budget advice |
 | [Hardware support](HARDWARE-SUPPORT.md) | Capability-based Vulkan selection, automatic CPU fallback and GPU-validation limitations |
 | [Loading quality and performance](MODEL-LOADING.md) | Startup stages, accuracy invariants, warmup trade-offs and reproducible benchmarks |
 | [Model selection](QWEN3.8.md) | Exact Qwen3.8 GGUF revisions, shards, original and community variants |
@@ -26,6 +29,7 @@ Start with the [Nextora launch page](../site/index.html), [rename/compatibility 
 | [Published evidence](validation/README.md) | Sanitized historical reports and their provenance |
 | [Avalon comparison](AVALON-COMPARISON.md) | Implemented MoE mechanisms and remaining differences |
 | [Expert RAM](EXPERT-RAM.md) | Bounded cache design and accounting |
+| [Concurrency benchmarking](CONCURRENCY-BENCHMARK.md) | Reproducible 1/2/4-slot native CPU/Vulkan performance sweep |
 | [Performance measurement](PERFORMANCE.md) | Compatibility-path tuning and reproducible measurements |
 | [Accuracy](ACCURACY.md) | Quantization, sampling and output-comparison limits |
 
