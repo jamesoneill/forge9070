@@ -345,6 +345,25 @@ pub fn live_recommendations(host: &Value, admission: &Value, memory: &Value, mea
         out.push(advice("expert-fallback-observed","medium","CPU expert fallback counter is non-zero on this loaded model",
             "Benchmark a supported workload, check transfer costs and allocation constraints, then compare memory tuning before considering a larger-VRAM card.","conditional_only"));
     }
+    // These are cumulative counts since model load, not performance samples.
+    // Misses without a measured latency regression do NOT establish a need for
+    // more RAM, VRAM, NVMe or a new GPU.
+    let hits=memory["host_expert_cache_hits_cumulative"].as_u64();
+    let misses=memory["host_expert_cache_misses_cumulative"].as_u64();
+    if let (Some(hits),Some(misses))=(hits,misses) {
+        if hits.saturating_add(misses)>=100 && misses>hits.saturating_mul(3) {
+            out.push(advice("host-expert-cache-misses","medium",
+                "Cumulative host expert cache misses exceed three times hits over at least 100 accesses",
+                "Profile repeat decode workloads and memory pressure, then experiment with bounded RAM cache and warmup. High misses alone do not prove that buying RAM or VRAM helps.",
+                "no_purchase"));
+        }
+    }
+    if memory["host_expert_read_errors_cumulative"].as_u64().unwrap_or(0)>0 {
+        out.push(advice("expert-read-errors","high",
+            "One or more expert weight reads failed since the current checkpoint loaded",
+            "Check model-shard integrity and storage errors before interpreting throughput or tuning caches.",
+            "no_purchase"));
+    }
     if host["available_host_ram_bytes"].as_u64().is_some_and(|n|n<4*GIB) {
         out.push(advice("available-host-memory-low","medium","Less than 4 GiB host RAM available to this process in the current snapshot",
             "Measure paging during a real workload before recommending more RAM. Available memory is not installed memory.","conditional_only"));
@@ -411,6 +430,24 @@ mod live_and_comparison_tests {
         assert!(r.iter().any(|x|x["id"]=="gpu-budget-headroom"));
         assert!(r.iter().any(|x|x["id"]=="expert-fallback-observed"));
         assert!(r.iter().all(|x|x["estimated_speedup"].is_null()));
+    }
+    #[test]
+    fn cache_miss_advice_does_not_recommend_hardware_purchase() {
+        let r=live_recommendations(&json!({"available_host_ram_bytes":8*GIB}),
+            &json!({"capacity":2,"queued":0}),
+            &json!({"host_expert_cache_hits_cumulative":20,"host_expert_cache_misses_cumulative":180}),
+            &json!({"completed_requests":3}),Some("vulkan"));
+        let advice=r.iter().find(|v|v["id"]=="host-expert-cache-misses").unwrap();
+        assert_eq!(advice["purchase"],"no_purchase");
+        assert!(advice["estimated_speedup"].is_null());
+    }
+    #[test]
+    fn no_cache_advice_when_counters_are_absent() {
+        let r=live_recommendations(&json!({"available_host_ram_bytes":8*GIB}),
+            &json!({"capacity":2,"queued":0}),
+            &json!({}),
+            &json!({"completed_requests":3}),Some("cpu"));
+        assert!(!r.iter().any(|v|v["id"]=="host-expert-cache-misses"));
     }
     #[test]
     fn comparison_rejects_unmatched_concurrency() {
