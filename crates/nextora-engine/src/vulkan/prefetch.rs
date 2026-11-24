@@ -94,13 +94,17 @@ fn worker(source: Arc<Gguf>, receiver: Receiver<(usize, usize)>, counts: Arc<Cou
     }
 }
 
+fn prefetch_enabled(value: Option<&str>) -> bool {
+    value.is_some_and(|value| {
+        matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "on")
+    })
+}
+
 impl Prefetcher {
     pub(super) fn new(source: Arc<Gguf>, layers: usize, experts: usize) -> Self {
-        // Opt out of speculative disk I/O if the host cache contends with decode.
-        // The setting affects performance only, never model routing or maths.
-        let enabled = std::env::var("NEXTORA_MOE_PREFETCH")
-            .map(|value| value != "0")
-            .unwrap_or(true);
+        // Explicit opt-in while target-device speed and contention remain
+        // unverified. A merge must never silently introduce disk activity.
+        let enabled = prefetch_enabled(std::env::var("NEXTORA_MOE_PREFETCH").ok().as_deref());
         let counts = Arc::new(Counts::default());
         let sender = if enabled {
             let (sender, receiver) = sync_channel(ONE_REQUEST_CAPACITY);
@@ -141,6 +145,17 @@ impl Prefetcher {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn background_disk_prefetch_requires_explicit_opt_in() {
+        assert!(!prefetch_enabled(None));
+        for value in ["", "0", "false", "off", "unexpected"] {
+            assert!(!prefetch_enabled(Some(value)));
+        }
+        for value in ["1", "true", "on", "TRUE", " On "] {
+            assert!(prefetch_enabled(Some(value)));
+        }
+    }
 
     #[test]
     fn routing_hotspots_need_repeated_evidence() {
