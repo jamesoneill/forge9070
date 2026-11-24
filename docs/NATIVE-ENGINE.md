@@ -60,6 +60,45 @@ Include `"cache_salt": "my-agent"` on each request from an agent that should reu
 
 Inspect `GET /v1/status` for queue prompt-token accounting and the configured prefill chunk size. Neither control alone improves token computation throughput; physical-GPU benchmarking is required.
 
+## Routing-guided, bounded host expert prefetch
+
+The Qwen3.8 native Vulkan path now observes **actual decode routing IDs** by
+layer and uses a conservative, frequency-based prediction to warm **host RAM**
+expert triplets for future decode requests. Only repeated hot selections qualify
+(at least 16 observations for the layer and at least 25% selection frequency).
+One candidate is scheduled every 32 decoded tokens using a per-layer
+round-robin policy. Work is handled by one background worker with a queue of
+capacity one; if the queue is busy the hint is dropped, not accumulated.
+Background host prefetch is **disabled by default** while performance and
+contention remain unverified on physical hardware. Set `NEXTORA_MOE_PREFETCH=1`
+(or `true` / `on`) in the Nextora process environment to enable this
+experimental optimisation. Unset it or use `0` to disable it. Restart the
+service after changing the variable and compare against the disabled baseline.
+
+Key invariants:
+
+- **Prediction never changes routing or skips selected experts.** A mistaken
+  prediction only consumes spare host-cache space and disk I/O.
+- Existing non-evicting atomic `warm_batch` admission loads gate/up/down
+  together, or declines without evicting live or hot entries.
+- The host cache remains bounded by the same configured memory capacity.
+  This does not prefill GPU VRAM or borrow KV/recurrent state memory.
+- Prefill routing is not used for training the decode predictor or scheduling
+  hints, so large prompts do not thrash the decode cache.
+- No network traffic, model weights modification, or external inference engine.
+- Metrics appear under
+  `runtime.execution.memory.predictive_host_prefetch`: scheduled,
+  completed, loaded bytes, busy skips, budget skips, and errors.
+  A completed hint may load zero bytes if the triplet is already resident.
+
+**Important:** The worker uses the same safe expert cache and its admission
+lock, which can still compete with active inference. This first implementation
+is deliberately conservative, not a proof of reduced latency or true
+asynchronous GPU expert transfers. Benchmark cold and warm caches and watch
+host memory pressure on the actual GPU before increasing hint frequency.
+Disabling background prefetch under contention and GPU-resident prefetch
+are separate future work.
+
 ## Bounded host/GPU overlap for MoE expert misses
 
 The native Vulkan Qwen3.8 path can overlap **CPU expert fallback calculations**
