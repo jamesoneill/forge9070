@@ -67,13 +67,13 @@ def main():
                     expect(page.locator('#loaded-model-name')).to_have_text(old.name)
                     code, current = json_request('/v1/status')
                     assert code == 200 and current['model'] == old.name
-                    assert Path(current['runtime']['shards'][0]).resolve() == old.resolve()
+                    assert Path(current['runtime']['shards'][0]).samefile(old)
                     expect(page.locator('#tuning-prepare-rerun')).to_be_visible()
                     page.locator('#tuning-use').click()
                     expect(page.locator('#loaded-model-name')).to_have_text(target.name)
                     expect(page.locator('#ctx')).to_have_value('384')
                     code, current = json_request('/v1/status')
-                    assert code == 200 and Path(current['runtime']['shards'][0]).resolve() == target.resolve()
+                    assert code == 200 and Path(current['runtime']['shards'][0]).samefile(target)
                     assert current['runtime']['config']['architecture'] == 'qwen35'
                     assert current['runtime']['config']['expert_count'] == 0
                     page.locator('#chat-prompt').fill('hello')

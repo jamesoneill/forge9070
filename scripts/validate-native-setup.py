@@ -109,7 +109,7 @@ def main():
             assert saved.read_bytes() == original_bytes, 'Preparing changed the active profile file'
             assert request('/api/config')['settings'] == original['settings']
             status = request('/v1/status')
-            assert status['model'] == old.name and Path(status['runtime']['shards'][0]).resolve() == old.resolve(), status
+            assert status['model'] == old.name and Path(status['runtime']['shards'][0]).samefile(old), status
             cached = request('/api/tuning/profile', target)
             assert cached['cached'] and cached['result'] == report
             repeated = request('/api/tuning/start', setup, expected=(200, 202))
@@ -121,7 +121,7 @@ def main():
             cancelled = wait(terminal)
             assert cancelled['phase'] == 'cancelled', cancelled
             status = request('/v1/status')
-            assert status['model'] == old.name and Path(status['runtime']['shards'][0]).resolve() == old.resolve()
+            assert status['model'] == old.name and Path(status['runtime']['shards'][0]).samefile(old)
             assert saved.read_bytes() == original_bytes
             # Profile lookup is target-based even while a different model is serving.
             assert request('/api/tuning/profile', target)['cached']

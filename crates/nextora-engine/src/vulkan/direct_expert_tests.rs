@@ -17,9 +17,12 @@ fn quantized(input: &[f32]) -> Vec<f32> {
 #[ignore = "requires explicit Vulkan direct-expert execution environment"]
 fn software_vulkan_direct_expert_arrays_all_formats_and_rebinding() {
     assert_eq!(std::env::var("NEXTORA_VULKAN_TEST").as_deref(), Ok("1"));
-    assert_eq!(std::env::var("NEXTORA_DIRECT_EXPERTS").as_deref(), Ok("1"));
     for fast in [false, true] {
-        let device = Device::new(&DeviceOptions { fast_math: fast, ..options(64 * 1024 * 1024) }).unwrap();
+        let device = Device::new(&DeviceOptions {
+            fast_math: fast,
+            direct_experts: Some(true),
+            ..options(64 * 1024 * 1024)
+        }).unwrap();
         assert!(device.direct_experts, "test requires descriptor-array support");
         for id in [0,1,2,8,11,12,13,14,18,20,21,22,23,30,42] {
             let ty=QuantType::try_from(id).unwrap();

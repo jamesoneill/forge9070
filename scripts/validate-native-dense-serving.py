@@ -82,7 +82,7 @@ def main():
                 assert prepared['preparing'] and not prepared['activated']
                 assert prepared['result']['winner'], prepared
                 active = call('/v1/status')
-                assert active['model'] == previous.name and Path(active['runtime']['shards'][0]).resolve() == previous.resolve()
+                assert active['model'] == previous.name and Path(active['runtime']['shards'][0]).samefile(previous)
                 assert saved.read_bytes() == unchanged
                 call('/api/tuning/use', target, expected=(200, 202))
                 loaded = finish()
@@ -91,7 +91,7 @@ def main():
                 assert active['model'] == filename, active
                 assert active['runtime']['config']['architecture'] == architecture, active
                 assert active['runtime']['config']['expert_count'] == 0, 'Expected an actually served dense model'
-                assert Path(active['runtime']['shards'][0]).resolve() == (root / filename).resolve()
+                assert Path(active['runtime']['shards'][0]).samefile(root / filename)
                 assert any(entry['id'] == filename for entry in call('/v1/models')['data'])
                 chat(filename)
                 profile = call('/api/tuning/profile', target)
