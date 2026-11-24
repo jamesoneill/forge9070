@@ -15,7 +15,9 @@ pub const LOOP_LAYERS: std::ops::Range<usize> = 6..18;
 pub const EPILOGUE_LAYERS: std::ops::Range<usize> = 18..24;
 pub const LOOP_PASSES: usize = 3;
 pub const EXECUTED_LAYER_APPLICATIONS: usize =
-    PRELUDE_LAYERS.end + LOOP_LAYERS.len() * LOOP_PASSES + EPILOGUE_LAYERS.len();
+    (PRELUDE_LAYERS.end-PRELUDE_LAYERS.start)
+        + (LOOP_LAYERS.end-LOOP_LAYERS.start) * LOOP_PASSES
+        + (EPILOGUE_LAYERS.end-EPILOGUE_LAYERS.start);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
