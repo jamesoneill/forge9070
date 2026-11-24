@@ -84,10 +84,15 @@ fn check_logits(a:&[f32],b:&[f32])->Result<LogitStats>{
         "invalid softmax normalizer");
     let log_a=a_max+a_total.ln();
     let log_b=b_max+b_total.ln();
-    let kl=a.iter().zip(b).map(|(&x,&y)|{
-        let logp=f64::from(x)-log_a;
-        logp.exp()*(logp-f64::from(y)+log_b)
-    }).sum::<f64>().max(0.);
+    // Identical floating-point logits represent the same distribution.
+    // Avoid tiny positive numerical cancellation becoming a false failure at
+    // --max-mean-kl 0, while retaining strict finite-value validation.
+    let kl=if max_abs==0. { 0. } else {
+        a.iter().zip(b).map(|(&x,&y)|{
+            let logp=f64::from(x)-log_a;
+            logp.exp()*(logp-f64::from(y)+log_b)
+        }).sum::<f64>().max(0.)
+    };
     ensure!(kl.is_finite(),"non-finite softmax KL");
     Ok(LogitStats {
         reference_top:u32::try_from(a_top)?,
