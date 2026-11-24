@@ -12,6 +12,7 @@ pub mod context;
 pub mod gguf;
 pub mod insight;
 pub mod math;
+pub mod model_fit;
 pub mod memory;
 pub mod model;
 pub mod performance;
