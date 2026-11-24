@@ -19,6 +19,7 @@ pub mod model;
 pub mod performance;
 pub mod protocol;
 pub mod quant;
+pub mod quality;
 pub mod qwen38;
 pub mod runtime;
 pub mod server;

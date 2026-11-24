@@ -34,6 +34,8 @@ pub enum EngineCommand {
     ModelFit(crate::model_fit::ModelFitArgs),
     /// Convert eligible floating-point GGUF matrix rows to Q4_0/Q8_0 in a NEW single-file output.
     Quantize(crate::offline_quant::OfflineQuantArgs),
+    /// Compare model-level logits and next-token agreement on identical raw prompts.
+    Quality(crate::quality::QualityArgs),
     /// Read-only hardware advisor using discovery and existing successful native benchmark reports.
     Insight {
         /// JSON report from 'nextora bench --json-out' (repeat for several workloads).
@@ -168,6 +170,23 @@ fn dispatch(command: EngineCommand) -> Result<()> {
         }
         EngineCommand::Doctor => print_json(&crate::runtime::hardware_report()),
         EngineCommand::Quantize(args) => print_json(&crate::offline_quant::quantize(&args)?),
+        EngineCommand::Quality(args) => {
+            if let Some(out) = &args.json_out {
+                let reference=Gguf::open(&args.reference)?;
+                let candidate=Gguf::open(&args.candidate)?;
+                for shard in reference.shard_paths().iter().chain(candidate.shard_paths()) {
+                    check_report_destination(shard, out)?;
+                }
+            }
+            let report=crate::quality::compare(&args)?;
+            if let Some(out) = &args.json_out {
+                write_report(out, &report, None)?;
+            }
+            print_json(&report)?;
+            ensure!(report["passed"].as_bool() == Some(true),
+                "model-level quality thresholds failed; inspect the report");
+            Ok(())
+        },
         EngineCommand::ModelFit(args) => {
             if let Some(out) = &args.json_out {
                 check_report_destination(&args.model, out)?;

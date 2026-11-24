@@ -10,6 +10,7 @@ Start with the [Nextora launch page](../site/index.html), [rename/compatibility 
 | [Windows quick start](WINDOWS.md) | Build on Windows, open the configuration UI, repair common startup errors |
 | [Native engine](NATIVE-ENGINE.md) | Independent Rust engine, configuration UI, model discovery, API, Windows and WSL |
 | [Nextora Insight](INSIGHT.md) | Read-only hardware assessment, benchmark-backed advice, and measured upgrade decisions |
+| [Model-level quality gates](MODEL-QUALITY.md) | Compare real model logits and token decisions against source checkpoints |
 | [Offline GGUF quantizer](OFFLINE-QUANT.md) | Conservative single-file Q4_0/Q8_0 export with per-tensor error gates |
 | [Model-fit planning](MODEL-FIT.md) | Read-only GGUF quantisation file-size estimates and GPU memory-budget advice |
 | [Hardware support](HARDWARE-SUPPORT.md) | Capability-based Vulkan selection, automatic CPU fallback and GPU-validation limitations |
