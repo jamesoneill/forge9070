@@ -46,3 +46,7 @@ The `nextora model-fit` CLI estimates GGUF tensor-layout sizes for hypothetical 
 ### Experimental offline quantizer (follow-up)
 
 `nextora quantize` now encodes eligible single-shard floating point GGUF matrices to Q4_0 or Q8_0, retaining other tensors and preserving source files. Every tensor has a normalized RMS round-trip reconstruction gate, and a new output is parsed before publication. This **does not** implement an importance-aware optimiser, optimum mixed precision, benchmarked 16GB VRAM fit or whole-model quality parity. See `docs/OFFLINE-QUANT.md` and issue #19.
+
+## Model-level source/candidate quality gates
+
+The `nextora quality` command now evaluates fixed raw prompts on both actual models, using a CPU reference and CPU or hardware Vulkan candidate, with identical reference-token teacher forcing. It measures softmax KL divergence, absolute logit difference and top-1 token agreement, with explicit pass/fail thresholds. This is not a coding-task benchmark, model truthfulness test, chat-template evaluation or RX 9070 XT speed result. See [MODEL-QUALITY.md](MODEL-QUALITY.md). Before accepting production-ready model conversion, we still require independent pretrained model results, task accuracy, long contexts and actual GPU memory/performance data.
