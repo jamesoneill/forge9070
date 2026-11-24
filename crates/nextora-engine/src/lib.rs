@@ -11,6 +11,7 @@ pub mod cli;
 pub mod context;
 pub mod gguf;
 pub mod insight;
+pub mod inkling_plan;
 pub mod math;
 pub mod model_fit;
 pub mod offline_quant;

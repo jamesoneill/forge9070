@@ -54,3 +54,7 @@ The `nextora quality` command now evaluates fixed raw prompts on both actual mod
 ## Reproducible concurrency sweep
 
 The local `scripts/benchmark-concurrency.py` runs the existing native Rust model benchmark at 1, 2 and 4 active request slots, validates the output backend and benchmark checksums, and compares observed throughput and tail latency. It does not change the runtime scheduler, optimise a checkpoint, prove model correctness or capture GPU driver/clock/power fingerprints. See `docs/CONCURRENCY-BENCHMARK.md`.
+
+## Inkling 2 Mini architectural groundwork
+
+The Rust module `inkling_plan` now encodes the source-confirmed fixed schedule (24 stored layers, 48 layer applications) and pass-aware message dependencies. Native inference remains **unsupported**: learned message/residual operations, local/global attention, format loading, numerical parity and Radeon hardware tests are missing. See [INKLING-ARCHITECTURE.md](INKLING-ARCHITECTURE.md) and issue #20.
