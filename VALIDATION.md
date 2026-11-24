@@ -11,7 +11,7 @@ UI checks covered model eligibility and saved settings.
 
 On Windows the RX 9070 XT matched the original F32 attention kernels at
 40,959 and 40,960 populated positions. At 40,960 positions the comparison
-covered all 1,310,720 scores and 4,096 weighted outputs. The six Direct shader
+covered all 1,310,720 scores and 4,096 weighted outputs. All eight shipped shader
 modules rebuilt byte-for-byte from the checked-in shader sources. For
 checkpoint, driver, cache and throughput details, see the
 [AMD performance record](docs/AMD-PERFORMANCE.md).

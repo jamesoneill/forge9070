@@ -29,15 +29,15 @@ layout(push_constant) uniform Parameters {
     uint off2; uint off3; uint groups_x; uint flags;
 } p;
 shared float reduction[128];
-uint weight_word(uint index) {
 #ifdef NEXTORA_DIRECT_EXPERTS
+uint weight_word(uint index) {
     // WorkGroupID is dynamically uniform within its compute invocation group.
     uint slot=p.op==0u&&(p.flags&512u)!=0u?gl_WorkGroupID.z:0u;
     return weight_slots[slot].words[index];
-#else
-    return w[index];
-#endif
 }
+#else
+#define weight_word(index) w[index]
+#endif
 
 
 float checked(float value) {
