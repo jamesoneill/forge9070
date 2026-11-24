@@ -38,3 +38,7 @@ see [governance](REPOSITORY-GOVERNANCE.md).
 The read-only `nextora insight` command combines Vulkan discovery, available RAM and CPU thread counts with verified native benchmark reports. The local console shows recent request rates, queue depth and Nextora-owned allocations. Use `nextora insight-compare` to compare two reports with matching recorded workload fields. See [Nextora Insight](INSIGHT.md) for commands and measurement limits.
 
 Future work includes driver and model fingerprinting, transfer and memory-pressure profiling, controlled tuning trials, thermal and power measurements, storage analysis, opt-in benchmark sharing and price-aware upgrade comparisons. Benchmark uploads and hardware purchases require separate approval.
+
+## Reproducible concurrency sweep
+
+The local `scripts/benchmark-concurrency.py` runs the existing native Rust model benchmark at 1, 2 and 4 active request slots, validates the output backend and benchmark checksums, and compares observed throughput and tail latency. It does not change the runtime scheduler, optimise a checkpoint, prove model correctness or capture GPU driver/clock/power fingerprints. See `docs/CONCURRENCY-BENCHMARK.md`.
