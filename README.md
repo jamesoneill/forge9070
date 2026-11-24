@@ -226,6 +226,10 @@ See [migration](docs/COMPATIBILITY.md) for unsupported former Strata commands,
 and [native runtime](docs/NATIVE-ENGINE.md) for the supported API and model
 architectures. Only the native configurations are supported.
 
+## Plan model fit before changing hardware
+
+`nextora model-fit --model /models/checkpoint.gguf --target-vram-mib 16384 --target-file-mib 12288 --ctx 4096 --requests 1` inspects a complete GGUF shard set and returns **hypothetical** size estimates for eligible floating-point matrix weights, a headroom-aware nominal GPU budget and conservative host-memory evidence. It does not create new weights, improve model quality, measure actual VRAM residency or enable previously unsupported architectures. Read [model-fit planning](docs/MODEL-FIT.md) and run real model benchmarks before hardware purchases.
+
 ## Loading quality and performance
 
 Nextora checks GGUF and tokenizer metadata before probing or allocating Vulkan resources,
