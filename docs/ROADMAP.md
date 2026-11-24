@@ -42,3 +42,7 @@ Future work includes driver and model fingerprinting, transfer and memory-pressu
 ## Memory-aware model-fit planning (initial implementation)
 
 The `nextora model-fit` CLI estimates GGUF tensor-layout sizes for hypothetical offline quantisation and plans nominal GPU headroom and host memory needs from the existing memory planner. It **does not produce a quantised checkpoint**, validate accuracy, measure VRAM residency, or add Inkling support. The acceptance gate for an encoder is a new-file write, roundtrip data integrity, quantization error checks and real model quality parity. Support for looped transformer architectures and optimised expert offloading remains follow-up implementation work; neither is claimed here.
+
+### Experimental offline quantizer (follow-up)
+
+`nextora quantize` now encodes eligible single-shard floating point GGUF matrices to Q4_0 or Q8_0, retaining other tensors and preserving source files. Every tensor has a normalized RMS round-trip reconstruction gate, and a new output is parsed before publication. This **does not** implement an importance-aware optimiser, optimum mixed precision, benchmarked 16GB VRAM fit or whole-model quality parity. See `docs/OFFLINE-QUANT.md` and issue #19.
