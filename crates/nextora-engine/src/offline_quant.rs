@@ -8,6 +8,8 @@ use anyhow::{Context, Result, bail, ensure};
 use clap::{Args, ValueEnum};
 use half::f16;
 use serde_json::{Value, json};
+#[path = "quant_budget.rs"]
+mod budget;
 use std::{
     fs::{self, OpenOptions, File},
     io::{BufWriter, Write},
@@ -39,7 +41,11 @@ pub struct OfflineQuantArgs {
     #[arg(long)]
     pub output: PathBuf,
     #[arg(long, value_enum)]
-    pub target: Target,
+    pub target: Option<Target>,
+    /// Alternative to --target: select Q4_0/Q8_0 per tensor to meet a maximum output file size.
+    /// The planner checks per-tensor reconstruction error; this is NOT a model-quality guarantee.
+    #[arg(long)]
+    pub target_size_mib: Option<u64>,
     /// Maximum normalized RMS reconstruction error per converted tensor.
     #[arg(long, default_value_t = 0.25)]
     pub max_nrmse: f64,
@@ -170,6 +176,11 @@ fn temporary_path(output:&Path)->Result<(Temporary,File)> {
 pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     ensure!(args.max_nrmse.is_finite() && args.max_nrmse>0. && args.max_nrmse<=1.,
         "max-nrmse must be a finite value in (0,1]");
+    ensure!(args.target.is_some() != args.target_size_mib.is_some(),
+        "select exactly one of --target or --target-size-mib");
+    ensure!(args.target_size_mib.is_none_or(|m|m>0),
+        "--target-size-mib must be positive");
+
     ensure!(!args.output.exists(), "output already exists; overwriting is forbidden");
     // A dangling symlink also counts as an existing destination.
     ensure!(fs::symlink_metadata(&args.output).is_err(), "output path already exists");
@@ -177,13 +188,25 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     let source=Gguf::open(&args.model)?;
     ensure!(source.shard_paths().len()==1,
         "offline quantizer currently requires a single-file GGUF; split checkpoints are not supported");
-    let goal=args.target.quant();
+    let static_target=args.target.map(Target::quant);
+    let target_bytes=args.target_size_mib.map(|m|m.checked_mul(1024*1024)
+        .context("target-size-mib exceeds supported file size")).transpose()?;
+    let selected_plan=if let Some(bytes)=target_bytes {
+        Some(budget::plan(&source,bytes,args.max_nrmse)?)
+    } else {None};
+    let file_type=if let Some(plan)=&selected_plan {
+        let q4=plan.formats.values().filter(|&&ty|ty==QuantType::Q4_0).count();
+        let q8=plan.formats.values().filter(|&&ty|ty==QuantType::Q8_0).count();
+        if q4>=q8 {2u32} else {7u32}
+    } else {
+        args.target.context("explicit format is missing")?.gguf_file_type()
+    };
     let original_type=source.meta.get("general.file_type");
     if let Some(value)=original_type {
         ensure!(matches!(value,crate::gguf::Value::U32(_)),
             "general.file_type must be uint32 to change quantization safely");
     }
-    let (metadata_count,metadata)=source.preserved_metadata(Some(args.target.gguf_file_type()))?;
+    let (metadata_count,metadata)=source.preserved_metadata(Some(file_type))?;
     let mut header=Vec::new();
     header.extend_from_slice(b"GGUF");
     header.extend_from_slice(&source.version.to_le_bytes());
@@ -194,8 +217,13 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     let mut current=0u64;
     let mut converted_count=0usize;
     for (name,tensor) in &source.tensors {
-        let converted=eligible(name,&tensor.dims,tensor.ty,goal);
-        let format=if converted {goal} else {tensor.ty};
+        let format=if let Some(plan)=&selected_plan {
+            plan.formats.get(name).copied().unwrap_or(tensor.ty)
+        } else {
+            let goal=static_target.context("quantization format not selected")?;
+            if eligible(name,&tensor.dims,tensor.ty,goal) {goal} else {tensor.ty}
+        };
+        let converted=format!=tensor.ty;
         let rows=tensor.dims.iter().skip(1).try_fold(1u64,|n,d|n.checked_mul(*d)).context("row count overflow")?;
         let stride=u64::try_from(format.row_bytes(usize::try_from(tensor.dims[0])?)?)?;
         let bytes=rows.checked_mul(stride).context("output tensor size overflow")?;
@@ -212,6 +240,12 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     ensure!(converted_count>0,"no eligible floating-point matrices to convert; already quantized sources cannot be requantized");
     let start_data=align(u64::try_from(header.len())?,source.alignment as u64)?;
     let expected_length=start_data.checked_add(current).context("output size overflow")?;
+    if let Some(plan)=&selected_plan {
+        ensure!(expected_length==plan.estimated_file_bytes,
+            "quantization plan and output GGUF descriptor size disagree");
+        ensure!(expected_length<=plan.goal_bytes,
+            "quantized GGUF would exceed requested output file-size budget");
+    }
     let (temp,file)=temporary_path(&args.output)?;
     let mut output=BufWriter::with_capacity(1024*1024,file);
     output.write_all(&header)?;
@@ -238,8 +272,8 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
             let mut peak_error=0f32;
             for row in 0..rows {
                 tensor.read_row(row,&mut values)?;
-                encode_row(&values,goal,&mut packed)?;
-                crate::quant::decode_row(goal,&packed,&mut decoded)?;
+                encode_row(&values,d.format,&mut packed)?;
+                crate::quant::decode_row(d.format,&packed,&mut decoded)?;
                 for (&a,&b) in values.iter().zip(&decoded) {
                     let delta=(a-b).abs();
                     peak_error=peak_error.max(delta);
@@ -256,7 +290,7 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
                 d.name,normalised,args.max_nrmse);
             error_metrics.push(json!({
                 "name":d.name, "source_format":tensor.quant_type().name(),
-                "destination_format":goal.name(), "rows":rows, "nrmse":normalised,
+                "destination_format":d.format.name(), "rows":rows, "nrmse":normalised,
                 "max_abs_error":peak_error, "accepted":true
             }));
         }
@@ -283,7 +317,11 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     fs::hard_link(&temp.0,&args.output).context("publish validated output without overwriting")?;
     Ok(json!({
         "schema":"nextora.quantize.v1",
-        "target_format":goal.name(),"source_file_name":args.model.file_name().map(|s|s.to_string_lossy().to_string()),
+        "target_format":static_target.map(|ty|ty.name()).unwrap_or("MIXED_Q4_0_Q8_0"),
+        "size_target_bytes":target_bytes,
+        "size_target_met":target_bytes.map(|maximum|measured<=maximum),
+        "mixed_precision_plan":selected_plan.as_ref().map(|p|p.report.clone()),
+        "source_file_name":args.model.file_name().map(|s|s.to_string_lossy().to_string()),
         "output_file_name":args.output.file_name().map(|s|s.to_string_lossy().to_string()),
         "output_size_bytes":measured,"converted_tensors":converted_count,
         "retained_tensor_count":descriptors.len()-converted_count,
@@ -293,7 +331,7 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
         "model_quality_verified":false,"hardware_performance_verified":false,
         "limitations":[
             "Single-shard GGUF only; metadata types and unchanged tensors retained verbatim",
-            "No importance matrix, variable-bit target sizing, calibration or model-level quality parity",
+            "No importance matrix, calibration, globally optimal bit allocation or model-level quality parity",
             "Successful tensor reconstruction checks do not establish a supported architecture, valid tokenizer or stable execution",
             "CPU-only offline conversion; no driver changes, GPU allocation or external calls"
         ]
@@ -360,7 +398,7 @@ mod tests {
         source.write_all(&data).unwrap();source.sync_all().unwrap();drop(source);
         let initial=fs::read(&input).unwrap();
         for target in [Target::Q4_0, Target::Q8_0] {
-            let args=OfflineQuantArgs {model:input.clone(),output:output.clone(),target,max_nrmse:0.25};
+            let args=OfflineQuantArgs {model:input.clone(),output:output.clone(),target:Some(target),target_size_mib:None,max_nrmse:0.25};
             let report=quantize(&args).unwrap();
             assert_eq!(report["converted_tensors"],1);
             assert_eq!(report["validated_gguf_roundtrip"],true);
