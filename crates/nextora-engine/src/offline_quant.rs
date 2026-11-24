@@ -325,6 +325,59 @@ mod tests {
             assert!(error<if target==QuantType::Q8_0 {0.02} else {0.2});
         }
     }
+
+    #[test]
+    fn writes_parseable_new_gguf_and_never_overwrites_source() {
+        use std::io::Write;
+        let base=std::env::temp_dir().join(format!("nextora-quant-test-{}-{}",
+            std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        fs::create_dir(&base).unwrap();
+        let input=base.join("input.gguf");
+        let output=base.join("output.gguf");
+        let mut data=Vec::new();
+        data.extend_from_slice(b"GGUF");
+        data.extend_from_slice(&3u32.to_le_bytes());
+        data.extend_from_slice(&1u64.to_le_bytes()); // one tensor
+        data.extend_from_slice(&2u64.to_le_bytes()); // metadata count
+        write_string(&mut data,"general.architecture").unwrap();
+        data.extend_from_slice(&8u32.to_le_bytes()); // string type
+        write_string(&mut data,"qwen3").unwrap();
+        write_string(&mut data,"general.file_type").unwrap();
+        data.extend_from_slice(&4u32.to_le_bytes()); // u32
+        data.extend_from_slice(&1u32.to_le_bytes()); // F16
+        write_string(&mut data,"blk.0.ffn_up.weight").unwrap();
+        data.extend_from_slice(&2u32.to_le_bytes()); // 2D
+        data.extend_from_slice(&256u64.to_le_bytes());
+        data.extend_from_slice(&1u64.to_le_bytes());
+        data.extend_from_slice(&1u32.to_le_bytes()); // F16
+        data.extend_from_slice(&0u64.to_le_bytes()); // data offset
+        let offset=align(data.len() as u64,32).unwrap() as usize;
+        data.resize(offset,0);
+        for i in 0..256 {
+            data.extend_from_slice(&f16::from_f32((i as f32-128.)/128.).to_le_bytes());
+        }
+        let mut source=File::create(&input).unwrap();
+        source.write_all(&data).unwrap();source.sync_all().unwrap();drop(source);
+        let initial=fs::read(&input).unwrap();
+        for target in [Target::Q4_0, Target::Q8_0] {
+            let args=OfflineQuantArgs {model:input.clone(),output:output.clone(),target,max_nrmse:0.25};
+            let report=quantize(&args).unwrap();
+            assert_eq!(report["converted_tensors"],1);
+            assert_eq!(report["validated_gguf_roundtrip"],true);
+            let parsed=Gguf::open(&output).unwrap();
+            assert_eq!(parsed.tensors["blk.0.ffn_up.weight"].ty,target.quant());
+            assert_eq!(parsed.meta["general.file_type"].as_u64(),Some(target.gguf_file_type() as u64));
+            assert_eq!(fs::read(&input).unwrap(),initial);
+            let original_output=fs::read(&output).unwrap();
+            assert!(quantize(&args).is_err());
+            assert_eq!(fs::read(&output).unwrap(),original_output);
+            drop(parsed);
+            fs::remove_file(&output).unwrap();
+        }
+        fs::remove_file(input).unwrap();
+        fs::remove_dir(base).unwrap();
+    }
+
     #[test]
     fn unaligned_or_nonfinite_source_is_rejected() {
         assert!(encode_row(&[f32::NAN;32],QuantType::Q4_0,&mut vec![]).is_err());
