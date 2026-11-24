@@ -38,3 +38,7 @@ see [governance](REPOSITORY-GOVERNANCE.md).
 The read-only `nextora insight` command combines Vulkan discovery, available RAM and CPU thread counts with verified native benchmark reports. The local console shows recent request rates, queue depth and Nextora-owned allocations. Use `nextora insight-compare` to compare two reports with matching recorded workload fields. See [Nextora Insight](INSIGHT.md) for commands and measurement limits.
 
 Future work includes driver and model fingerprinting, transfer and memory-pressure profiling, controlled tuning trials, thermal and power measurements, storage analysis, opt-in benchmark sharing and price-aware upgrade comparisons. Benchmark uploads and hardware purchases require separate approval.
+
+## Memory-aware model-fit planning (initial implementation)
+
+The `nextora model-fit` CLI estimates GGUF tensor-layout sizes for hypothetical offline quantisation and plans nominal GPU headroom and host memory needs from the existing memory planner. It **does not produce a quantised checkpoint**, validate accuracy, measure VRAM residency, or add Inkling support. The acceptance gate for an encoder is a new-file write, roundtrip data integrity, quantization error checks and real model quality parity. Support for looped transformer architectures and optimised expert offloading remains follow-up implementation work; neither is claimed here.
