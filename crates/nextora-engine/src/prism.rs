@@ -19,7 +19,7 @@ pub(crate) fn declared(meta: &BTreeMap<String, Value>) -> bool {
 }
 
 /// Apply the orthonormal Sylvester transform independently to each block.
-fn hadamard(values: &mut [f32], block: usize) {
+pub(crate) fn hadamard(values: &mut [f32], block: usize) {
     let scale = (block as f32).sqrt().recip();
     for chunk in values.chunks_exact_mut(block) {
         let mut stride = 1;
@@ -173,7 +173,9 @@ impl Basis {
         Ok(Self { block, signs, forward, inverse, grouped_gdn, tied })
     }
 
-    pub(crate) fn activation(&self, name: &str, input: &[f32],
+    pub(crate) fn block_size(&self) -> usize { self.block }
+
+    pub(crate) fn signed_activation(&self, name: &str, input: &[f32],
                              keys: usize, heads: usize) -> Result<Option<Vec<f32>>> {
         if !self.forward.contains(name) && !(self.tied && name == "token_embd.weight") {
             return Ok(None);
@@ -186,6 +188,16 @@ impl Basis {
             out.copy_from_slice(input);
         }
         for (v, sign) in out.iter_mut().zip(signs) { *v *= sign; }
+        crate::math::finite(&out, "Prism signed activation")?;
+        Ok(Some(out))
+    }
+
+    #[cfg(test)]
+    fn activation(&self, name: &str, input: &[f32],
+                  keys: usize, heads: usize) -> Result<Option<Vec<f32>>> {
+        let Some(mut out) = self.signed_activation(name, input, keys, heads)? else {
+            return Ok(None);
+        };
         hadamard(&mut out, self.block);
         crate::math::finite(&out, "Prism forward activation")?;
         Ok(Some(out))
