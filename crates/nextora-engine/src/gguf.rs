@@ -895,6 +895,13 @@ impl Parsed {
                 .with_context(|| format!("read metadata {key}"))?;
             meta.insert(key, value);
         }
+        // Ordinary Q2_0 decoding is not sufficient for folded Prism weights.
+        // Fail closed for every local/remote shard until all consumers implement
+        // the declared activation basis, including inverse row reads.
+        ensure!(
+            !meta.keys().any(|key| key == "prism.hadamard" || key.starts_with("prism.hadamard.")),
+            "Prism Hadamard-folded weights are not supported by Nextora; ordinary Q2_0 decoding would produce incorrect output"
+        );
         let count = split_integer(&meta, "split.count", 1)?;
         let number = split_integer(&meta, "split.no", 0)?;
         ensure!(
@@ -1224,6 +1231,20 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_file(&self.0);
         }
+    }
+
+    #[test]
+    fn folded_weight_metadata_is_rejected_before_tensor_execution() {
+        for key in ["prism.hadamard", "prism.hadamard.weight_names", "prism.hadamard.future_extension"] {
+            let prefix = fixture(&[(key, 4, 1u32.to_le_bytes().to_vec())], &[], &[]);
+            let error = Parsed::read(&prefix).err().expect("folded metadata must be rejected");
+            assert!(format!("{error:#}").contains("Prism Hadamard-folded"));
+            let error = RemoteHeader::parse("folded.gguf", &prefix, prefix.len() as u64)
+                .err().expect("remote catalogue must reject folded metadata");
+            assert!(format!("{error:#}").contains("Prism Hadamard-folded"));
+        }
+        let ordinary = fixture(&[("general.file_type", 4, 1u32.to_le_bytes().to_vec())], &[], &[]);
+        assert!(Parsed::read(&ordinary).is_ok());
     }
 
     #[test]
