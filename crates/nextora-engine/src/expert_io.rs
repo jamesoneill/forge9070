@@ -88,6 +88,8 @@ impl Source {
         }
         read_exact_offset(&self.buffered, offset, &mut bytes)
             .context("buffered expert offset read")?;
+        #[cfg(target_os = "linux")]
+        advise_consumed_buffered_pages(&self.buffered, offset, end);
         Ok(LoadedBytes {
             bytes,
             method: ReadMethod::Buffered,
@@ -129,6 +131,53 @@ fn open_direct(path: &Path) -> Option<File> {
 )))]
 fn open_direct(_path: &Path) -> Option<File> {
     None
+}
+
+// Only whole pages entirely inside the owned read are eligible. A partial
+// page may contain unrelated tensors; never request eviction of that page.
+#[cfg(target_os = "linux")]
+fn interior_page_range(start: u64, end: u64, page: u64) -> Option<(u64, u64)> {
+    if page == 0 || end <= start {
+        return None;
+    }
+    let first = start.checked_add((page - start % page) % page)?;
+    let last = end - end % page;
+    (last > first).then(|| (first, last - first))
+}
+
+#[cfg(target_os = "linux")]
+fn advise_consumed_buffered_pages(file: &File, start: u64, end: u64) {
+    use std::os::fd::AsRawFd;
+    // Experimental: the file cache is shared with mmap readers and other
+    // processes. Default off; DONTNEED is advisory, not a memory guarantee.
+    if std::env::var_os("NEXTORA_EXPERT_DROP_BUFFERED_CACHE").as_deref()
+        != Some(std::ffi::OsStr::new("1"))
+    {
+        return;
+    }
+    // SAFETY: sysconf accepts this constant and does not dereference pointers.
+    let page = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    let Ok(page) = u64::try_from(page) else { return };
+    let Some((first, length)) = interior_page_range(start, end, page) else { return };
+    let (Ok(first), Ok(length)) = (libc::off_t::try_from(first), libc::off_t::try_from(length))
+        else { return };
+    // SAFETY: the live descriptor is borrowed for this call; the range is
+    // checked and nonzero. The result is deliberately advisory, not an I/O error.
+    let _ = unsafe {
+        libc::posix_fadvise(file.as_raw_fd(), first, length, libc::POSIX_FADV_DONTNEED)
+    };
+}
+
+#[cfg(all(test, target_os = "linux"))]
+#[test]
+fn cache_advice_never_includes_partial_pages() {
+    assert_eq!(interior_page_range(0, 8192, 4096), Some((0, 8192)));
+    assert_eq!(interior_page_range(1, 8193, 4096), Some((4096, 4096)));
+    assert_eq!(interior_page_range(1, 4096, 4096), None);
+    assert_eq!(interior_page_range(0, 4095, 4096), None);
+    assert_eq!(interior_page_range(0, 0, 4096), None);
+    assert_eq!(interior_page_range(u64::MAX - 1, u64::MAX, 4096), None);
+    assert_eq!(interior_page_range(1, 8192, 0), None);
 }
 
 fn read_offset(file: &File, offset: u64, output: &mut [u8]) -> std::io::Result<usize> {
