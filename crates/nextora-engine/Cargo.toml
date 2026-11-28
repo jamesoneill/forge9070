@@ -8,6 +8,10 @@ description = "Nextora native Rust CPU and Vulkan inference engine"
 license = "MIT"
 publish = false
 
+[features]
+experimental-prism = []
+prism-vulkan = ["experimental-prism"]
+
 [dependencies]
 sha2 = "0.10"
 anyhow = "1"
