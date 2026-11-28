@@ -186,6 +186,7 @@ pub fn quantize(args:&OfflineQuantArgs)->Result<Value> {
     ensure!(fs::symlink_metadata(&args.output).is_err(), "output path already exists");
     ensure!(!same_existing(&args.model,&args.output)?, "output must not overwrite input");
     let source=Gguf::open(&args.model)?;
+    ensure!(!crate::prism::declared(&source.meta), "offline quantization of folded Prism checkpoints is unsupported");
     ensure!(source.shard_paths().len()==1,
         "offline quantizer currently requires a single-file GGUF; split checkpoints are not supported");
     let static_target=args.target.map(Target::quant);
