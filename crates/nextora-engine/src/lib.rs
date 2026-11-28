@@ -24,6 +24,7 @@ pub mod quant;
 pub mod quality;
 pub mod qwen38;
 pub mod qwen35;
+pub(crate) mod prism;
 pub mod rope;
 pub mod runtime;
 pub mod server;
@@ -58,6 +59,8 @@ pub fn capabilities() -> serde_json::Value {
         "independent_runtime": true,
         "rusting_strata_dependency": false,
         "stage": "native_gpu_and_coding_api_target_hardware_acceptance_pending",
+        "experimental_prism_build": cfg!(feature = "experimental-prism"),
+        "experimental_prism_vulkan_build": cfg!(feature = "prism-vulkan"),
         "architectures": ["qwen3", "qwen3moe", "qwen35", "qwen4exp"],
         "architecture_backends": {"qwen3":["cpu","vulkan","hybrid"],"qwen3moe":["cpu","vulkan","hybrid"],"qwen35":["cpu","hybrid"],"qwen4exp":["cpu","vulkan","hybrid"]},
         "weight_formats": ["F32", "F16", "BF16", "Q4_0", "Q8_0", "Q2_0", "Q3_K", "Q4_K", "Q5_K", "Q6_K", "IQ2_S", "IQ3_XXS", "IQ3_S", "IQ4_NL", "IQ4_XS"],
