@@ -1,0 +1,25 @@
+#version 450
+// One workgroup per orthonormal Hadamard block, signed input already prepared.
+// 256 lanes cooperate on up to 1024 values. No vendor-specific subgroup assumptions.
+layout(local_size_x=256) in;
+layout(set=0,binding=1,std430) buffer Input { float a[]; };
+layout(push_constant) uniform Parameters { uint op; uint width; uint block; } p;
+shared float work[1024];
+void main() {
+    uint lane=gl_LocalInvocationID.x;
+    uint base=gl_WorkGroupID.x*p.block;
+    if (p.block==0 || p.block>1024 || base+p.block>p.width) return;
+    for(uint i=lane;i<p.block;i+=256) work[i]=a[base+i];
+    barrier();
+    for(uint stride=1;stride<p.block;stride*=2) {
+        for(uint j=lane;j<p.block/2;j+=256) {
+            uint low=(j/stride)*(2*stride)+j%stride;
+            float x=work[low], y=work[low+stride];
+            work[low]=x+y;
+            work[low+stride]=x-y;
+        }
+        barrier();
+    }
+    float scale=1.0/sqrt(float(p.block));
+    for(uint i=lane;i<p.block;i+=256) a[base+i]=work[i]*scale;
+}
