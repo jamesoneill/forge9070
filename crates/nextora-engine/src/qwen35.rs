@@ -72,6 +72,7 @@ pub struct Qwen35 {
     pub(crate) output: String,
     pub(crate) frequencies: Vec<f32>,
     owner: Arc<()>,
+    prism: Option<crate::prism::Basis>,
 }
 #[derive(Debug, Clone)]
 struct Recurrent {
@@ -559,6 +560,7 @@ impl Qwen35 {
             );
         }
         let frequencies = common.rope_frequencies()?;
+        let prism = crate::prism::Basis::from_gguf(g)?;
         Ok(Self {
             source,
             executor,
@@ -569,6 +571,7 @@ impl Qwen35 {
             output,
             frequencies,
             owner: Arc::new(()),
+            prism,
         })
     }
     pub fn common_config(&self) -> &Config {
@@ -632,8 +635,14 @@ impl Qwen35 {
         }
     }
     fn mv(&self, name: &str, input: &[f32], output: &mut [f32]) -> Result<()> {
-        self.executor
-            .matvec(&self.source.tensor(name)?, input, output)
+        let tensor = self.source.tensor(name)?;
+        if let Some(basis) = &self.prism {
+            if let Some(signed) = basis.signed_activation(name, input,
+                self.architecture.recurrent_key_heads, self.architecture.recurrent_value_heads)? {
+                return self.executor.matvec_prism(&tensor, &signed, basis.block_size(), output);
+            }
+        }
+        self.executor.matvec(&tensor, input, output)
     }
     fn attention(
         &self,
@@ -775,6 +784,9 @@ impl Qwen35 {
             self.source
                 .tensor("token_embd.weight")?
                 .read_row(token as usize, &mut w.residual)?;
+            if let Some(basis) = &self.prism {
+                basis.embedding("token_embd.weight", &mut w.residual)?;
+            }
             math::rope_angles_scaled(
                 state.position,
                 &self.frequencies,
