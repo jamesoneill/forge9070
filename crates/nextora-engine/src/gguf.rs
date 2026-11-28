@@ -295,7 +295,7 @@ impl Gguf {
         if count > 1 {
             ensure!(!tensors.is_empty(), "GGUF shard set contains no tensors");
         }
-        Ok(Self {
+        let assembled = Self {
             path: paths[0].clone(),
             version: first.version,
             meta: first.meta,
@@ -307,7 +307,11 @@ impl Gguf {
             paths,
             identity,
             cache: ExpertCache::new(capacity_bytes),
-        })
+        };
+        // Validate the complete descriptor set, including remote catalogue
+        // headers, before any execution path sees a folded checkpoint.
+        crate::prism::Basis::from_gguf(&assembled)?;
+        Ok(assembled)
     }
 
     pub fn shard_paths(&self) -> &[PathBuf] {
@@ -899,7 +903,7 @@ impl Parsed {
         // Fail closed for every local/remote shard until all consumers implement
         // the declared activation basis, including inverse row reads.
         ensure!(
-            !meta.keys().any(|key| key == "prism.hadamard" || key.starts_with("prism.hadamard.")),
+            cfg!(feature = "experimental-prism") || !crate::prism::declared(&meta),
             "Prism Hadamard-folded weights are not supported by Nextora; ordinary Q2_0 decoding would produce incorrect output"
         );
         let count = split_integer(&meta, "split.count", 1)?;
@@ -1233,6 +1237,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(feature = "experimental-prism"))]
     #[test]
     fn folded_weight_metadata_is_rejected_before_tensor_execution() {
         for key in ["prism.hadamard", "prism.hadamard.weight_names", "prism.hadamard.future_extension"] {
