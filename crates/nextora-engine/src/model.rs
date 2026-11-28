@@ -27,6 +27,16 @@ pub trait MatvecExecutor: Send + Sync + std::fmt::Debug {
     fn matvec(&self, tensor: &Tensor<'_>, input: &[f32], output: &mut [f32]) -> Result<()>;
     fn name(&self) -> &'static str;
 
+    /// The input is already signed/permuted, but not rotated. Default CPU
+    /// implementation; GPU executors may perform the FWHT before projection.
+    fn matvec_prism(&self, tensor: &Tensor<'_>, input: &[f32], block: usize, output: &mut [f32]) -> Result<()> {
+        ensure!(block.is_power_of_two() && input.len() % block == 0, "invalid Prism activation geometry");
+        let mut rotated = input.to_vec();
+        crate::prism::hadamard(&mut rotated, block);
+        math::finite(&rotated, "Prism activation")?;
+        self.matvec(tensor, &rotated, output)
+    }
+
     /// Execute every routed expert and merge in selection order. An accelerator
     /// can batch these dependent projections without changing model semantics.
     fn routed_moe(
